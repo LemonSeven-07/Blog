@@ -6,8 +6,8 @@ const KoaStatic = require('koa-static');
 const parameter = require('koa-parameter');
 
 require('../config/config.default.js');
-// const errHandler = require('./errHandler.js');
-// const router = require('../router/index.js');
+const errHandler = require('./errHandler.js');
+const router = require('../router/index.js');
 
 const app = new Koa();
 
@@ -22,10 +22,10 @@ app.use(KoaStatic(path.join(__dirname, '../uploads')));
 // 全局注入参数校验能力 ctx.verifyParams 校验请求体；ctx.verifyQuery 校验查询参数；ctx.verifyHeader 校验请求头
 app.use(parameter(app));
 // 将 koa-router 定义的所有路由规则挂载到 Koa 应用，使请求能够匹配到对应的处理函数。
-// app.use(router.routes());
+app.use(router.routes());
 // 处理 HTTP 方法不被允许时的响应
-// app.use(router.allowedMethods());
+app.use(router.allowedMethods());
 
 // 统一处理异常
-// app.on('error', errHandler);
+app.on('error', errHandler);
 module.exports = app;

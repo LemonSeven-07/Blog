@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "lsof -ti :8000 | xargs kill -9 2>/dev/null && nodemon ./src/main.js",
+    "dev": "lsof -ti :${PORT:-8090} | xargs kill -9 2>/dev/null && PORT=${PORT:-8090} nodemon ./src/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -1,9 +1,4 @@
 module.exports = {
-  registerFormatError: {
-    code: '10001',
-    message: '注册用户数据不合法',
-    data: null,
-  },
   userRegisterError: {
     code: '10002',
     message: '用户注册失败',
@@ -29,18 +24,13 @@ module.exports = {
     message: '密码错误',
     data: null,
   },
-  loginFormatError: {
-    code: '10007',
-    message: '登录数据不合法',
-    data: null,
-  },
   userLoginError: {
-    code: '10008',
+    code: '10007',
     message: '用户登录失败',
     data: null,
   },
   userDoesNotExist: {
-    code: '10009',
+    code: '10008',
     message: '用户不存在',
     data: null,
   },
@@ -60,13 +50,23 @@ module.exports = {
     data: null,
   },
   hasNotAdminPermission: {
-    code: '10010',
+    code: '10009',
     message: '没有管理员权限',
     data: null,
   },
   userDeleteError: {
-    code: '10011',
+    code: '10010',
     message: '用户删除失败',
+    data: null,
+  },
+  userUpdateError: {
+    code: '10011',
+    message: '用户修改失败',
+    data: null,
+  },
+  findUsersError: {
+    code: '10012',
+    message: '用户搜索失败',
     data: null,
   },
 };

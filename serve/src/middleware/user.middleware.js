@@ -10,19 +10,8 @@ const {
   userLoginError,
   userDoesNotExist,
   invalidPassword,
+  hasNotAdminPermission,
 } = require('../constant/err.type');
-
-const validator = (rules, error) => {
-  return async (ctx, next) => {
-    try {
-      ctx.verifyParams(rules);
-    } catch (error) {
-      return ctx.app.emit('error', error, ctx);
-    }
-
-    await next();
-  };
-};
 
 const verifyUser = async (ctx, next) => {
   const { username } = ctx.request.body;
@@ -56,15 +45,19 @@ const verifyEmail = async (ctx, next) => {
 
 const cryptPassword = async (ctx, next) => {
   const { password } = ctx.request.body;
-  const regex = /^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/;
-  if (regex.test(password)) {
-    // 使用 bcryptjs 加密密码
-    const salt = bcrypt.genSaltSync(10);
-    ctx.request.body.password = bcrypt.hashSync(password, salt);
-    await next();
-  } else {
-    return ctx.app.emit('error', passwordFormatError, ctx);
-  }
+  // const regex = /^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/;
+  // if (regex.test(password)) {
+  //   // 使用 bcryptjs 加密密码
+  //   const salt = bcrypt.genSaltSync(10);
+  //   ctx.request.body.password = bcrypt.hashSync(password, salt);
+  //   await next();
+  // } else {
+  //   return ctx.app.emit('error', passwordFormatError, ctx);
+  // }
+
+  const salt = bcrypt.genSaltSync(10);
+  ctx.request.body.password = bcrypt.hashSync(password, salt);
+  await next();
 };
 
 const verifyLogin = async (ctx, next) => {
@@ -87,10 +80,23 @@ const verifyLogin = async (ctx, next) => {
   await next();
 };
 
+const hadUpdatePermission = async (ctx, next) => {
+  const { role } = ctx.state.user;
+  const { role: newRole, notice, disabledDiscuss } = ctx.request.body;
+  if (
+    role !== 1 &&
+    (notice !== undefined || disabledDiscuss !== undefined || newRole !== undefined)
+  ) {
+    return ctx.app.emit('error', hasNotAdminPermission, ctx);
+  }
+
+  await next();
+};
+
 module.exports = {
-  validator,
   verifyUser,
   verifyEmail,
   cryptPassword,
   verifyLogin,
+  hadUpdatePermission,
 };

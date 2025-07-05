@@ -1,0 +1,94 @@
+const Joi = require('joi');
+const moment = require('moment');
+
+module.exports = {
+  updateUserSchema: Joi.object({
+    username: Joi.string()
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .messages({
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+      }),
+    // password: Joi.string()
+    //   .pattern(/^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/)
+    //   .messages({
+    //     'string.pattern.base': '密码由字母、数字和符号组成，长度8-16位',
+    //   }),
+    password: Joi.string()
+      .pattern(/^[a-zA-Z0-9!@#*,]{6,16}$/)
+      .messages({
+        'string.pattern.base': '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
+      }),
+    email: Joi.string().email().messages({
+      'string.email': '请输入有效的邮箱地址',
+    }),
+    role: Joi.number().integer().messages({
+      'number.integer': '用户权限必须是整数',
+    }),
+    notice: Joi.boolean().strict().messages({
+      'boolean.base': 'notice必须是布尔值',
+    }),
+    disabledDiscuss: Joi.boolean().strict().messages({
+      'boolean.base': 'disabledDiscuss必须是布尔值',
+    }),
+  })
+    .or('username', 'password', 'email', 'role', 'notice', 'disabledDiscuss')
+    .messages({
+      'object.missing': '必要字段为空',
+    }),
+  adminUpdateUserSchema: Joi.object({
+    role: Joi.number().integer().messages({
+      'number.integer': '用户权限必须是整数',
+    }),
+    notice: Joi.boolean().strict().messages({
+      'boolean.base': 'notice必须是布尔值',
+    }),
+    disabledDiscuss: Joi.boolean().strict().messages({
+      'boolean.base': 'disabledDiscuss必须是布尔值',
+    }),
+  })
+    .or('role', 'notice', 'disabledDiscuss')
+    .messages({
+      'object.missing': '必要字段为空',
+    }),
+  getUersSchema: Joi.object({
+    pageNum: Joi.number().integer().messages({
+      'number.integer': 'pageNum必须是整数',
+    }),
+    pageSize: Joi.number().integer().messages({
+      'number.integer': 'pageSize必须是整数',
+    }),
+    username: Joi.string()
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .messages({
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+      }),
+    type: Joi.number().integer().messages({
+      'number.integer': 'type必须是整数',
+    }), // 检索类型 type = 1 github 用户 type = 2 站内用户 不传则检索所有
+    rangeDate: Joi.string()
+      .pattern(/^\d{4}-\d{2}-\d{2},\s*\d{4}-\d{2}-\d{2}$/)
+      .custom((value, helpers) => {
+        const [startDateStr, endDateStr] = value.split(/\s*,\s*/);
+
+        // 验证是否为有效日期
+        if (
+          !moment(startDateStr, 'YYYY-MM-DD', true).isValid() ||
+          !moment(endDateStr, 'YYYY-MM-DD', true).isValid()
+        ) {
+          return helpers.error('any.invalid');
+        }
+
+        // 验证结束日期不小于开始日期
+        if (moment(endDateStr).isBefore(moment(startDateStr))) {
+          return helpers.error('date.endBeforeStart');
+        }
+
+        return value;
+      })
+      .messages({
+        'string.pattern.base': '日期范围格式应为"YYYY-MM-DD, YYYY-MM-DD"',
+        'any.invalid': '包含无效的日期',
+        'date.endBeforeStart': '结束日期不能早于开始日期',
+      }),
+  }),
+};

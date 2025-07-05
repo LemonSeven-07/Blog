@@ -1,3 +1,5 @@
+const { format } = require('mysql2');
+
 module.exports = {
   username: {
     type: 'string',
@@ -5,11 +7,13 @@ module.exports = {
     min: 4,
     max: 12,
     format: /^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/,
-    message: '用户名由中文、字母、横杠和下划线组成，长度4-32位',
+    message: '用户名由中文、字母、横杠和下划线组成，长度4-12位',
   },
   password: {
     type: 'string',
     required: true,
+    format: /^[a-zA-Z0-9!@#*,]{6,16}$/,
+    message: '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
   },
   email: {
     type: 'string',

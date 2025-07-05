@@ -5,9 +5,17 @@ const {
   userLoginError,
   userDeleteError,
   userDoesNotExist,
+  userUpdateError,
+  findUsersError,
 } = require('../constant/err.type.js');
 
-const { createUser, getUserInfo, removeUser } = require('../service/user.service.js');
+const {
+  createUser,
+  getUserInfo,
+  removeUser,
+  updateUer,
+  findUsers,
+} = require('../service/user.service.js');
 
 class UserController {
   async register(ctx) {
@@ -19,8 +27,8 @@ class UserController {
       // 3、返回结果
       ctx.body = {
         code: '200',
-        message: '用户注册成功',
         data: null,
+        message: '用户注册成功',
       };
     } catch (error) {
       return ctx.app.emit('error', userRegisterError, ctx);
@@ -46,11 +54,11 @@ class UserController {
       // 3、返回结果
       ctx.body = {
         code: '200',
-        message: '登录成功',
         data: {
           ...userInfo,
           token: jwt.sign(userInfo, JWT_SECRET, { expiresIn: EXPIRESIN }),
         },
+        message: '登录成功',
       };
     } catch (error) {
       return ctx.app.emit('error', userLoginError, ctx);
@@ -58,7 +66,6 @@ class UserController {
   }
 
   async remove(ctx) {
-    console.log(900, ctx.request.params);
     const { userId } = ctx.request.params;
     try {
       const res = await removeUser(userId);
@@ -67,11 +74,43 @@ class UserController {
       }
       ctx.body = {
         code: '200',
-        message: '删除成功',
         data: null,
+        message: '删除成功',
       };
     } catch (err) {
       return ctx.app.emit('error', userDeleteError, ctx);
+    }
+  }
+
+  async update(ctx) {
+    const { userId } = ctx.request.params;
+    try {
+      const res = await updateUer(ctx.request.body, userId);
+      if (!res) {
+        return ctx.app.emit('error', userUpdateError, ctx);
+      }
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '修改成功',
+      };
+    } catch (err) {
+      return ctx.app.emit('error', userUpdateError, ctx);
+    }
+  }
+
+  async findAll(ctx) {
+    const { pageNum = 1, pageSize = 10, username, type, rangeDate } = ctx.query;
+    const { userId } = ctx.state.user;
+    try {
+      const res = await findUsers({ pageNum, pageSize, username, type, rangeDate }, userId);
+      ctx.body = {
+        code: '200',
+        data: res,
+        message: '操作成功',
+      };
+    } catch (err) {
+      return ctx.app.emit('error', findUsersError, ctx);
     }
   }
 }

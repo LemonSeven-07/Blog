@@ -69,4 +69,29 @@ module.exports = {
     message: '用户搜索失败',
     data: null,
   },
+  findTagsError: {
+    code: '10013',
+    message: '标签搜索失败',
+    data: null,
+  },
+  findCategoriesError: {
+    code: '10014',
+    message: '分类搜索失败',
+    data: null,
+  },
+  commentError: {
+    code: '10015',
+    message: '评论失败',
+    data: null,
+  },
+  deleteCommentError: {
+    code: '10016',
+    message: '评论删除失败',
+    data: null,
+  },
+  findCommentError: {
+    code: '10017',
+    message: '评论获取失败',
+    data: null,
+  },
 };

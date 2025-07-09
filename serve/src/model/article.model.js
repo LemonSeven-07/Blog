@@ -1,0 +1,59 @@
+const moment = require('moment');
+
+const { DataTypes } = require('sequelize');
+
+const seq = require('../db/seq');
+const Tag = require('./tag.model');
+const Category = require('./category.model');
+
+const Article = seq.define('article', {
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    comment: '文章标题',
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    comment: '文章内容',
+  },
+  viewCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    comment: '浏览量',
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+    get() {
+      return moment(this.getDataValue('createdAt')).format('YYYY-MM-DD HH:mm:ss');
+    },
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+    get() {
+      return moment(this.getDataValue('updatedAt')).format('YYYY-MM-DD HH:mm:ss');
+    },
+  },
+});
+
+// associate 解决循环依赖问题。当模型 A 关联模型 B，同时模型 B 又关联模型 A 时，associate 可以延迟关联的执行，避免循环引用报错。
+Article.associate = () => {
+  // 一篇文章（Article）可以拥有多个标签（Tag）
+  // 外键存储在 Tag 表中（默认字段名是 articleId，指向 Article 的主键 id）
+  Article.hasMany(Tag);
+  // 一篇文章（Article）可以属于多个分类（Category）
+  // 外键存储在 Category 表中（默认字段名是 articleId，指向 Article.id）
+  Article.hasMany(Category);
+};
+
+// Article.sync({ force: true })
+//   .then(() => {
+//     console.log('Article表创建成功');
+//   })
+//   .catch(err => {
+//     console.log('Article表创建失败', err);
+//   });
+
+module.exports = Article;

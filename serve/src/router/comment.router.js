@@ -1,0 +1,31 @@
+const Router = require('koa-router');
+
+const {
+  createCommentSchema,
+  replyCommentSchema,
+  deleteCommentSchema,
+  getCommentSchema,
+} = require('../constant/schema.js');
+
+const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
+const { joiValidate } = require('../middleware/validator.middleware.js');
+const { create, reply, remove, findAll } = require('../controller/comment.controller.js');
+
+const router = new Router({ prefix: '/comment' });
+
+// 添加评论
+router.post('/create', auth, joiValidate(createCommentSchema), create);
+
+// 删除评论(一级评论以及回复)
+router.delete('/', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
+
+// 回复评论
+router.post('/reply', auth, joiValidate(replyCommentSchema), reply);
+
+// 删除回复评论
+router.delete('/reply', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
+
+// 获取当前文章的所有评论和回复或者一级评论下的回复
+router.get('/list', auth, joiValidate(getCommentSchema, 'query'), findAll);
+
+module.exports = router;

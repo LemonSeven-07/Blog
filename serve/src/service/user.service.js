@@ -28,7 +28,7 @@ class UserService {
       password,
       email,
     });
-    return res.dataValues;
+    return res ? res.dataValues : null;
   }
 
   async removeUser(userId) {

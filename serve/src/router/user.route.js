@@ -48,6 +48,7 @@ router.delete('/:userId', auth, hadAdminPermission, remove);
 // 修改用户信息
 router.patch('/:userId', auth, joiValidate(updateUserSchema), hadUpdatePermission, update);
 
+// 获取用户列表(需要管理员权限)
 router.get('/list', auth, joiValidate(getUersSchema, 'query'), hadAdminPermission, findAll);
 
 module.exports = router;

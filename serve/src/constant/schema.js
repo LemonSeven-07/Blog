@@ -91,4 +91,49 @@ module.exports = {
         'date.endBeforeStart': '结束日期不能早于开始日期',
       }),
   }),
+  createCommentSchema: Joi.object({
+    content: Joi.string().required().messages({
+      'string.empty': '评论内容不能为空',
+    }),
+    entityId: Joi.number().integer().required().messages({
+      'number.empty': '文章id不能为空',
+      'number.integer': 'entityId必须是整数',
+    }),
+  }),
+  replyCommentSchema: Joi.object({
+    content: Joi.string().required().messages({
+      'string.empty': '评论内容不能为空',
+    }),
+    entityId: Joi.number().integer().required().messages({
+      'number.empty': '文章id不能为空',
+      'number.integer': 'entityId必须是整数',
+    }),
+    parentId: Joi.number().integer().required().messages({
+      'number.empty': '一级评论id不能为空',
+      'number.integer': 'parentId必须是整数',
+    }),
+    replyToUserId: Joi.number().integer().required().messages({
+      'number.empty': '回复的用户id不能为空',
+      'number.integer': 'replyToUserId必须是整数',
+    }),
+  }),
+  deleteCommentSchema: Joi.object({
+    id: Joi.number().integer().required().messages({
+      'number.empty': 'id不能为空',
+      'number.integer': 'id必须是整数',
+    }),
+  }),
+  getCommentSchema: Joi.object({
+    id: Joi.number().integer().messages({
+      'number.integer': 'id必须是整数',
+    }),
+    entityType: Joi.string().valid('post', 'comment').required().messages({
+      'string.empty': 'entityType不能为空',
+      'any.only': 'entityType必须是post或comment',
+    }),
+    entityId: Joi.number().integer().required().messages({
+      'number.empty': '文章id不能为空',
+      'number.integer': 'entityId必须是整数',
+    }),
+  }),
 };

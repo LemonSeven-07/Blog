@@ -24,6 +24,8 @@ class UserController {
     try {
       // 2、操作数据库
       const res = await createUser({ username, password, email });
+      if (!res) return ctx.app.emit('error', userRegisterError, ctx);
+
       // 3、返回结果
       ctx.body = {
         code: '200',

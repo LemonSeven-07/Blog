@@ -57,32 +57,40 @@ class CommentService {
     if (id) whereOpt.id = id; // 如果有传入id，则查询特定评论
     // 查询所有一级评论和其回复
     const res = await Comment.findAll({
+      // 1. 定义查询条件
       where: whereOpt,
+      // 2. 定义关联模型和字段
       include: [
+        // 2.1 关联评论作者信息
         {
-          model: User,
-          as: 'author',
-          attributes: ['id', 'username'], // 只返回需要的用户字段
+          model: User, // 关联User模型
+          as: 'author', // 使用在Comment模型中定义的关联别名
+          attributes: ['id', 'username'], // 只返回用户的id和username字段
         },
+        // 2.2 关联回复评论
         {
-          model: Comment,
-          as: 'replies', // 关联回复
+          model: Comment, // 关联Comment模型自身(自关联)
+          as: 'replies', // 使用在Comment模型中定义的关联别名
+          // 2.2.1 嵌套关联：回复的作者信息
           include: [
             {
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username'], // 只返回需要的用户字段
+              model: User, // 关联User模型
+              as: 'author', // 回复的作者
+              attributes: ['id', 'username'], // 只返回必要字段
             },
+            // 2.2.2 嵌套关联：回复的目标用户
             {
-              model: User,
-              as: 'replyToUser',
+              model: User, // 再次关联User模型
+              as: 'replyToUser', // 回复的目标用户
               attributes: ['id', 'username'],
             },
           ],
-          order: [['createdAt', 'ASC']], // 回复按时间正序
+          // 2.2.3 回复的排序规则
+          order: [['createdAt', 'ASC']], // 回复按创建时间升序排列(从早到晚)
         },
       ],
-      order: [['createdAt', 'DESC']], // 按创建时间降序排列
+      // 3. 主查询的排序规则
+      order: [['createdAt', 'DESC']], // 一级评论按创建时间降序排列(从新到旧)
     });
     return res;
   }

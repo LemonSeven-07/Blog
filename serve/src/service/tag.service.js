@@ -8,7 +8,7 @@ class tagService {
     const res = await Tag.findAll({
       // 指定查询的字段
       attributes: [
-        'name', // 选择 name 字段
+        'name', // 选择 name 标签名字段
         // sequelize.fn('COUNT', sequelize.col('name')) → 定义聚合函数
         // 'count' → 指定返回结果的字段别名
         // sequelize.fn() → 第一个参数 'COUNT' 是 SQL 聚合函数相当于 SQL 中的 COUNT(name)，第二个参数是要计算的列

@@ -86,11 +86,11 @@ class CommentService {
             },
           ],
           // 2.2.3 回复的排序规则
-          order: [['createdAt', 'ASC']], // 回复按创建时间升序排列(从早到晚)
+          order: [['createdAt', 'ASC']], // 回复：旧→新（保证对话顺序）
         },
       ],
       // 3. 主查询的排序规则
-      order: [['createdAt', 'DESC']], // 一级评论按创建时间降序排列(从新到旧)
+      order: [['createdAt', 'DESC']], // // 一级评论：新→旧
     });
     return res;
   }

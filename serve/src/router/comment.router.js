@@ -26,6 +26,6 @@ router.post('/reply', auth, joiValidate(replyCommentSchema), reply);
 router.delete('/reply', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
 
 // 获取当前文章的所有评论和回复或者一级评论下的回复
-router.get('/list', auth, joiValidate(getCommentSchema, 'query'), findAll);
+router.get('/list', auth, joiValidate(getCommentSchema), findAll);
 
 module.exports = router;

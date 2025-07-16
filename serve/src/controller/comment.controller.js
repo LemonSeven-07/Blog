@@ -35,7 +35,6 @@ class CommentController {
         message: '操作成功',
       };
     } catch (error) {
-      console.error('Error in reply:', error);
       return ctx.app.emit('error', commentError, ctx);
     }
   }
@@ -62,7 +61,7 @@ class CommentController {
     try {
       // 查询所有一级评论和其回复
       const res = await findComment({ id, entityId, entityType });
-      if (!res) return ctx.app.emit('error', findCommentError, ctx);
+
       ctx.body = {
         code: '200',
         data: res,

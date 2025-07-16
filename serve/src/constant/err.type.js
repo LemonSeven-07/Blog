@@ -1,3 +1,5 @@
+const { create } = require('../controller/article.controller');
+
 module.exports = {
   userRegisterError: {
     code: '10002',
@@ -92,6 +94,26 @@ module.exports = {
   findCommentError: {
     code: '10017',
     message: '评论获取失败',
+    data: null,
+  },
+  createArticleError: {
+    code: '10018',
+    message: '文章创建失败',
+    data: null,
+  },
+  articleAlreadyExists: {
+    code: '10019',
+    message: '文章标题已存在',
+    data: null,
+  },
+  articleCreateError: {
+    code: '10020',
+    message: '文章创建失败',
+    data: null,
+  },
+  findArticleError: {
+    code: '10021',
+    message: '文章获取失败',
     data: null,
   },
 };

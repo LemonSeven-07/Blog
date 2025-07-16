@@ -19,12 +19,13 @@ const kpValidate = rules => {
   };
 };
 
-const joiValidate = (rules, source = 'body') => {
+const joiValidate = rules => {
   return async (ctx, next) => {
-    let verifyData = {};
-    if (source === 'query') {
+    let verifyData = {},
+      method = ctx.request.method;
+    if (method === 'GET') {
       verifyData = ctx.query;
-    } else if (source === 'body') {
+    } else {
       verifyData = ctx.request.body;
     }
 

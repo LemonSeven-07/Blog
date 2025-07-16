@@ -1,7 +1,7 @@
+const moment = require('moment');
 const { DataTypes } = require('sequelize');
 
 const seq = require('../db/seq');
-const Article = require('./article.model');
 
 const Tag = seq.define('tag', {
   name: {
@@ -14,24 +14,33 @@ const Tag = seq.define('tag', {
     allowNull: false,
     comment: '文章ID',
   },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
+    get() {
+      const rawValue = this.getDataValue('createdAt');
+      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
+    },
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
+    get() {
+      const rawValue = this.getDataValue('updatedAt');
+      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
+    },
+  },
 });
 
 // associate 解决循环依赖问题。当模型 A 关联模型 B，同时模型 B 又关联模型 A 时，associate 可以延迟关联的执行，避免循环引用报错。
-Tag.associate = () => {
+Tag.associate = models => {
   // 定义 Tag 与 Article 的多对一关系，外键 articleId 存储在 Tag 表中
   // 查询时：通过 tag.article 访问关联的文章
-  Tag.belongsTo(Article, {
+  Tag.belongsTo(models.article, {
     as: 'article',
     foreignKey: 'articleId',
+    constraints: false, // 显式禁用
   });
 };
-
-// Tag.sync({ force: true })
-//   .then(() => {
-//     console.log('tag表创建成功');
-//   })
-//   .catch(err => {
-//     console.log('tag表创建失败', err);
-//   });
 
 module.exports = Tag;

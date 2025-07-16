@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const moment = require('moment');
 
 const seq = require('../db/seq');
-const User = require('./user.model');
 
 const Comment = seq.define(
   'comment',
@@ -45,16 +44,18 @@ const Comment = seq.define(
     },
     createdAt: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+      defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
       get() {
-        return moment(this.getDataValue('createdAt')).format('YYYY-MM-DD HH:mm:ss');
+        const rawValue = this.getDataValue('createdAt');
+        return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
       },
     },
     updatedAt: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+      defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
       get() {
-        return moment(this.getDataValue('updatedAt')).format('YYYY-MM-DD HH:mm:ss');
+        const rawValue = this.getDataValue('updatedAt');
+        return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
       },
     },
   },
@@ -72,45 +73,49 @@ const Comment = seq.define(
   },
 );
 
-Comment.belongsTo(User, {
-  foreignKey: 'userId',
-  as: 'author',
-});
+Comment.associate = models => {
+  Comment.belongsTo(models.user, {
+    foreignKey: 'userId',
+    as: 'author',
+  });
 
-Comment.belongsTo(User, {
-  foreignKey: 'replyToUserId',
-  as: 'replyToUser',
-});
+  Comment.belongsTo(models.user, {
+    foreignKey: 'replyToUserId',
+    as: 'replyToUser',
+  });
 
-Comment.belongsTo(Comment, {
-  foreignKey: 'parentId',
-  as: 'parentComment',
-  foreignKeyConstraint: true,
-  onDelete: 'cascade', // 添加级联删除
-});
+  Comment.belongsTo(models.comment, {
+    foreignKey: 'parentId',
+    as: 'parentComment',
+    foreignKeyConstraint: true,
+    onDelete: 'cascade', // 添加级联删除
+  });
 
-Comment.hasMany(Comment, {
-  // 表示在 comments 表中用于存储关联关系的字段
-  // 子评论将通过 parentId 字段关联到父评论
-  // 对应数据库中的 parentId 列
-  foreignKey: 'parentId',
-  // 定义从父评论访问子评论时使用的名称
-  // 允许通过 getReplies()、setReplies() 等方法操作关联数据
-  as: 'replies',
-  // 在数据库层面创建真正的外键约束
-  // 确保数据完整性（不能插入无效的 parentId）
-  // 必须为 true 才能使 onDelete 生效
-  foreignKeyConstraint: true,
-  // 当父评论被删除时，自动删除所有关联的子评论
-  // 这是数据库级别的约束
-  onDelete: 'cascade',
-});
+  Comment.hasMany(models.comment, {
+    // 表示在 comments 表中用于存储关联关系的字段
+    // 子评论将通过 parentId 字段关联到父评论
+    // 对应数据库中的 parentId 列
+    foreignKey: 'parentId',
+    // 定义从父评论访问子评论时使用的名称
+    // 允许通过 getReplies()、setReplies() 等方法操作关联数据
+    as: 'replies',
+    // 在数据库层面创建真正的外键约束
+    // 确保数据完整性（不能插入无效的 parentId）
+    // 必须为 true 才能使 onDelete 生效
+    foreignKeyConstraint: true,
+    // 当父评论被删除时，自动删除所有关联的子评论
+    // 这是数据库级别的约束
+    onDelete: 'cascade',
+  });
 
-// Comment.sync({ force: true })
-//   .then(() => {
-//     console.log('评论表创建成功');
-//   })
-//   .catch(err => {
-//     console.log('评论表创建失败', err);
-//   });
+  Comment.belongsTo(models.article, {
+    foreignKey: 'entityId',
+    constraints: false, // 取消外键约束
+    scope: {
+      entityType: 'post', // 只关联文章评论
+    },
+    as: 'article', // 设置别名为 article
+  });
+};
+
 module.exports = Comment;

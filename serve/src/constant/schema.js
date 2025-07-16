@@ -136,4 +136,37 @@ module.exports = {
       'number.integer': 'entityId必须是整数',
     }),
   }),
+  createArticleSchema: Joi.object({
+    categoryList: Joi.array().items(Joi.string()).required().messages({
+      'array.base': 'categoryList必须是一个数组',
+    }),
+    content: Joi.string().required().messages({
+      'string.empty': '文章内容不能为空',
+    }),
+    tagList: Joi.array().items(Joi.string()).required().messages({
+      'array.base': 'tagList必须是一个数组',
+    }),
+    title: Joi.string().min(1).max(100).required().messages({
+      'string.empty': '文章标题不能为空',
+      'string.min': '文章标题长度不能小于1',
+      'string.max': '文章标题长度不能大于100',
+    }),
+  }),
+  getArticlesSchema: Joi.object({
+    pageNum: Joi.number().integer().messages({
+      'number.integer': 'pageNum必须是整数',
+    }),
+    pageSize: Joi.number().integer().messages({
+      'number.integer': 'pageSize必须是整数',
+    }),
+    keyword: Joi.string().allow('').messages({
+      'string.empty': 'keyword不能为空',
+    }),
+    tag: Joi.string().allow('').messages({
+      'string.empty': 'tag不能为空',
+    }),
+    category: Joi.string().allow('').messages({
+      'string.empty': 'category不能为空',
+    }),
+  }),
 };

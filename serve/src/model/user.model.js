@@ -42,26 +42,20 @@ const User = seq.define('user', {
   },
   createdAt: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
+    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
     get() {
-      return moment(this.getDataValue('createdAt')).format('YYYY-MM-DD HH:mm:ss');
+      const rawValue = this.getDataValue('createdAt');
+      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
     },
   },
   updatedAt: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
+    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
     get() {
-      return moment(this.getDataValue('updatedAt')).format('YYYY-MM-DD HH:mm:ss');
+      const rawValue = this.getDataValue('updatedAt');
+      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
     },
   },
 });
-
-// User.sync({ force: true })
-//   .then(() => {
-//     console.log('用户表创建成功');
-//   })
-//   .catch(err => {
-//     console.log('用户表创建失败', err);
-//   });
 
 module.exports = User;

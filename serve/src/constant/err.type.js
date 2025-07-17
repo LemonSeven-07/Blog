@@ -1,5 +1,3 @@
-const { create } = require('../controller/article.controller');
-
 module.exports = {
   userRegisterError: {
     code: '10002',
@@ -114,6 +112,11 @@ module.exports = {
   findArticleError: {
     code: '10021',
     message: '文章获取失败',
+    data: null,
+  },
+  deleteArticleError: {
+    code: '10022',
+    message: '文章删除失败',
     data: null,
   },
 };

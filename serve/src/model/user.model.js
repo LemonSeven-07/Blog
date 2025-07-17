@@ -1,5 +1,4 @@
 const { DataTypes } = require('sequelize');
-const moment = require('moment');
 
 const seq = require('../db/seq');
 
@@ -39,22 +38,6 @@ const User = seq.define('user', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     comment: '是否禁言，true禁言，false不禁言',
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
-    get() {
-      const rawValue = this.getDataValue('createdAt');
-      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
-    },
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
-    get() {
-      const rawValue = this.getDataValue('updatedAt');
-      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
-    },
   },
 });
 

@@ -20,6 +20,8 @@ Object.values(db).forEach(model => {
   }
 });
 
+db.sequelize = seq;
+
 // // 同步所有模型到数据库;
 // seq.sync({ force: false }).then(() => {
 //   console.log('同步所有模型');

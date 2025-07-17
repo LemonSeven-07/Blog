@@ -1,5 +1,4 @@
 const { DataTypes } = require('sequelize');
-const moment = require('moment');
 
 const seq = require('../db/seq');
 
@@ -41,22 +40,6 @@ const Comment = seq.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: '回复的用户ID，如果是一级评论则为null',
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
-      get() {
-        const rawValue = this.getDataValue('createdAt');
-        return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
-      },
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
-      get() {
-        const rawValue = this.getDataValue('updatedAt');
-        return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
-      },
     },
   },
   {

@@ -1,7 +1,12 @@
 const { Op } = require('sequelize');
 
-const Article = require('../model/article.model');
-const { tag: Tag, category: Category, comment: Comment, user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
+const {
+  article: Article,
+  tag: Tag,
+  category: Category,
+  comment: Comment,
+  user: User,
+} = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class ArticleService {
   async getArticleInfo({ title }) {
@@ -70,6 +75,9 @@ class ArticleService {
       where: {
         id,
       },
+      attributes: {
+        exclude: ['updatedAt'], // 不返回更新时间戳字段
+      },
       include: [
         {
           model: Tag, // 关联 Tag 模型
@@ -119,6 +127,41 @@ class ArticleService {
       ],
     });
     return res ? res.dataValues : null;
+  }
+
+  async updateArticleViewCount({ id, viewCount }) {
+    const res = await Article.update(
+      {
+        viewCount: ++viewCount, // 浏览量加一
+      },
+      {
+        where: { id },
+      },
+    );
+    return res[0] > 0 ? true : false;
+  }
+
+  async removeComment(ids, transaction) {
+    const res = await Comment.destroy({
+      where: {
+        entityId: {
+          [Op.in]: ids,
+        },
+        entityType: 'post',
+      },
+      transaction,
+    });
+    return res > 0 ? true : false;
+  }
+
+  async removeArticle(ids, transaction) {
+    const res = await Article.destroy({
+      where: {
+        id: ids,
+      },
+      transaction,
+    });
+    return res > 0 ? true : false;
   }
 }
 

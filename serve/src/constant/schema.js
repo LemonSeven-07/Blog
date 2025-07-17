@@ -169,4 +169,17 @@ module.exports = {
       'string.empty': 'category不能为空',
     }),
   }),
+  deleteArticlesSchema: Joi.object({
+    ids: Joi.array()
+      .items(Joi.number().integer()) // 数组元素必须是整数
+      .required() // 必填字段
+      .min(1) // 数组不能为空（至少1个元素）
+      .messages({
+        'array.base': '参数必须是数组',
+        'array.empty': '数组不能为空',
+        'array.min': '数组不能为空',
+        'number.base': '数组元素必须是数字',
+        'number.integer': '数组元素必须是整数',
+      }),
+  }),
 };

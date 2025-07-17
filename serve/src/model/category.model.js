@@ -1,4 +1,3 @@
-const moment = require('moment');
 const { DataTypes } = require('sequelize');
 
 const seq = require('../db/seq');
@@ -13,22 +12,6 @@ const Category = seq.define('category', {
     type: DataTypes.INTEGER,
     allowNull: false,
     comment: '文章ID',
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
-    get() {
-      const rawValue = this.getDataValue('createdAt');
-      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
-    },
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: () => moment().format('YYYY-MM-DD HH:mm:ss'),
-    get() {
-      const rawValue = this.getDataValue('updatedAt');
-      return moment(rawValue).format('YYYY-MM-DD HH:mm:ss');
-    },
   },
 });
 

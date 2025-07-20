@@ -7,12 +7,14 @@ const {
   updateArticleViewCount,
   removeComment,
   removeArticle,
+  updateArticle,
 } = require('../service/article.service');
 
 const {
   createArticleError,
   findArticleError,
   deleteArticleError,
+  articleUpdateError,
 } = require('../constant/err.type');
 
 class articleController {
@@ -86,6 +88,29 @@ class articleController {
     } catch (err) {
       await transaction.rollback();
       ctx.app.emit('error', deleteArticleError, ctx);
+    }
+  }
+
+  async update(ctx) {
+    const { id } = ctx.params;
+    const { categoryList, content, tagList, title } = ctx.request.body;
+    const transaction = await sequelize.transaction();
+    try {
+      const res = await updateArticle({ id, categoryList, content, tagList, title }, transaction);
+      if (!res) {
+        await transaction.rollback();
+        return ctx.app.emit('error', articleUpdateError, ctx);
+      }
+
+      await transaction.commit();
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '修改成功',
+      };
+    } catch (err) {
+      await transaction.rollback();
+      ctx.app.emit('error', articleUpdateError, ctx);
     }
   }
 }

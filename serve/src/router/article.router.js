@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
 const {
-  createArticleSchema,
+  articleMaintenanceSchema,
   getArticlesSchema,
   deleteArticlesSchema,
 } = require('../constant/schema.js');
@@ -9,7 +9,13 @@ const {
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 const { joiValidate } = require('../middleware/validator.middleware.js');
 const { verifyArticleTitle } = require('../middleware/article.middleware.js');
-const { create, findAll, findById, remove } = require('../controller/article.controller.js');
+const {
+  create,
+  findAll,
+  findById,
+  remove,
+  update,
+} = require('../controller/article.controller.js');
 
 const router = new Router({ prefix: '/article' });
 
@@ -18,7 +24,7 @@ router.post(
   '/',
   auth,
   hadAdminPermission,
-  joiValidate(createArticleSchema),
+  joiValidate(articleMaintenanceSchema),
   verifyArticleTitle,
   create,
 );
@@ -31,5 +37,15 @@ router.get('/:id', findById);
 
 // 删除文章
 router.delete('/', auth, hadAdminPermission, joiValidate(deleteArticlesSchema), remove);
+
+// 文章编辑
+router.put(
+  '/:id',
+  auth,
+  hadAdminPermission,
+  joiValidate(articleMaintenanceSchema),
+  verifyArticleTitle,
+  update,
+);
 
 module.exports = router;

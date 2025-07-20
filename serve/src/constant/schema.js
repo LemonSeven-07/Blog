@@ -136,7 +136,7 @@ module.exports = {
       'number.integer': 'entityId必须是整数',
     }),
   }),
-  createArticleSchema: Joi.object({
+  articleMaintenanceSchema: Joi.object({
     categoryList: Joi.array().items(Joi.string()).required().messages({
       'array.base': 'categoryList必须是一个数组',
     }),

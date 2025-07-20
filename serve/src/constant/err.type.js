@@ -119,4 +119,9 @@ module.exports = {
     message: '文章删除失败',
     data: null,
   },
+  articleUpdateError: {
+    code: '10023',
+    message: '文章修改失败',
+    data: null,
+  },
 };

@@ -9,12 +9,15 @@ const {
 } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class ArticleService {
-  async getArticleInfo({ title }) {
+  async getArticleInfo({ id, userId, title }) {
+    const whereOpt = {
+      title,
+      userId,
+    };
+    if (id) whereOpt.id = { [Op.ne]: id };
     const res = await Article.findOne({
       attributes: ['id', 'title'],
-      where: {
-        title,
-      },
+      where: whereOpt,
     });
     return res ? res.dataValues : null;
   }
@@ -162,6 +165,30 @@ class ArticleService {
       transaction,
     });
     return res > 0 ? true : false;
+  }
+
+  async updateArticle({ id, categoryList, content, tagList, title }, transaction) {
+    const tags = tagList.map(t => ({ name: t, articleId: id }));
+    const categories = categoryList.map(c => ({ name: c, articleId: id }));
+    const res = await Article.update(
+      { title, content },
+      {
+        where: { id },
+        transaction,
+      },
+    );
+
+    await Tag.destroy({ where: { articleId: id }, transaction });
+    await Tag.bulkCreate(tags, {
+      transaction,
+    });
+
+    await Category.destroy({ where: { articleId: id }, transaction });
+    await Category.bulkCreate(categories, {
+      transaction,
+    });
+
+    return res[0] > 0 ? true : false;
   }
 }
 

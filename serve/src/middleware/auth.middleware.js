@@ -36,7 +36,6 @@ const hadAdminPermission = async (ctx, next) => {
   if (role !== 1) {
     return ctx.app.emit('error', hasNotAdminPermission, ctx);
   }
-
   await next();
 };
 

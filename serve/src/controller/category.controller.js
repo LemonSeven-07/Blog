@@ -1,10 +1,27 @@
-const { groupFindCategories } = require('../service/category.service');
-const { findCategoriesError } = require('../constant/err.type');
+const { createCategory, findCategory } = require('../service/category.service');
+const { findCategoriesError, createCategoryError } = require('../constant/err.type');
 
 class CategoryController {
-  async groupFindAll(ctx) {
+  async create(ctx) {
+    const { name } = ctx.request.body;
     try {
-      const res = await groupFindCategories();
+      const res = await createCategory(name);
+      if (!res) return ctx.app.emit('error', createCategoryError, ctx);
+
+      // 返回查询结果
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '操作成功',
+      };
+    } catch (err) {
+      ctx.app.emit('error', createCategoryError, ctx);
+    }
+  }
+
+  async findAll(ctx) {
+    try {
+      const res = await findCategory();
 
       // 返回查询结果
       ctx.body = {
@@ -13,7 +30,7 @@ class CategoryController {
         message: '操作成功',
       };
     } catch (err) {
-      return ctx.app.emit('error', findCategoriesError, ctx);
+      ctx.app.emit('error', findCategoriesError, ctx);
     }
   }
 }

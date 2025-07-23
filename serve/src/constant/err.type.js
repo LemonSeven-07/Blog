@@ -124,4 +124,29 @@ module.exports = {
     message: '文章修改失败',
     data: null,
   },
+  uploadFileTypeError: {
+    code: '10024',
+    message: '文件类型不合法',
+    data: null,
+  },
+  uploadArticlesError: {
+    code: '10025',
+    message: '上传失败',
+    data: null,
+  },
+  outputArticlesError: {
+    code: '10026',
+    message: '导出失败',
+    data: null,
+  },
+  categoryAlreadyExists: {
+    code: '10027',
+    message: '分类名已存在',
+    data: null,
+  },
+  createCategoryError: {
+    code: '10028',
+    message: '文章分类创建失败',
+    data: null,
+  },
 };

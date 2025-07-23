@@ -91,6 +91,7 @@ module.exports = {
         'date.endBeforeStart': '结束日期不能早于开始日期',
       }),
   }),
+
   createCommentSchema: Joi.object({
     content: Joi.string().required().messages({
       'string.empty': '评论内容不能为空',
@@ -136,9 +137,26 @@ module.exports = {
       'number.integer': 'entityId必须是整数',
     }),
   }),
+
+  createCategorySchema: Joi.object({
+    name: Joi.string().required().messages({
+      'string.empty': '分类名不能为空',
+    }),
+  }),
+
+  getTagsSchema: Joi.object({
+    articleId: Joi.number().integer().messages({
+      'number.integer': 'articleId必须是整数',
+    }),
+    categoryId: Joi.number().integer().messages({
+      'number.integer': 'categoryId必须是整数',
+    }),
+  }),
+
   articleMaintenanceSchema: Joi.object({
-    categoryList: Joi.array().items(Joi.string()).required().messages({
-      'array.base': 'categoryList必须是一个数组',
+    categoryId: Joi.number().integer().required().messages({
+      'number.integer': 'categoryId必须是整数',
+      'string.empty': 'categoryId不能为空',
     }),
     content: Joi.string().required().messages({
       'string.empty': '文章内容不能为空',
@@ -146,10 +164,10 @@ module.exports = {
     tagList: Joi.array().items(Joi.string()).required().messages({
       'array.base': 'tagList必须是一个数组',
     }),
-    title: Joi.string().min(1).max(100).required().messages({
+    title: Joi.string().min(1).max(50).required().messages({
       'string.empty': '文章标题不能为空',
       'string.min': '文章标题长度不能小于1',
-      'string.max': '文章标题长度不能大于100',
+      'string.max': '文章标题长度不能大于50',
     }),
   }),
   getArticlesSchema: Joi.object({
@@ -165,8 +183,11 @@ module.exports = {
     tag: Joi.string().allow('').messages({
       'string.empty': 'tag不能为空',
     }),
-    category: Joi.string().allow('').messages({
-      'string.empty': 'category不能为空',
+    categoryId: Joi.number().integer().messages({
+      'number.integer': 'categoryId必须是整数',
+    }),
+    order: Joi.string().allow('').messages({
+      'string.empty': 'order不能为空',
     }),
   }),
   deleteArticlesSchema: Joi.object({
@@ -181,5 +202,10 @@ module.exports = {
         'number.base': '数组元素必须是数字',
         'number.integer': '数组元素必须是整数',
       }),
+  }),
+  outputArticlesSchema: Joi.object({
+    ids: Joi.string()
+      .pattern(/^\d+(,\d+)*$/) // 数字和逗号组合
+      .message('必须是逗号分隔的数字字符串'),
   }),
 };

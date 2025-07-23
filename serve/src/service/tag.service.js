@@ -3,9 +3,13 @@ const { Sequelize } = require('sequelize');
 const Tag = require('../model/tag.model');
 
 class tagService {
-  async groupFindTags() {
+  async findTags({ articleId, categoryId }) {
+    const whereOpt = {};
+    articleId && Object.assign(whereOpt, { articleId });
+    categoryId && Object.assign(whereOpt, { categoryId });
     // 查询所有标签
     const res = await Tag.findAll({
+      where: whereOpt,
       // 指定查询的字段
       attributes: [
         'name', // 选择 name 标签名字段

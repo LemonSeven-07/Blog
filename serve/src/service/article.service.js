@@ -22,33 +22,41 @@ class ArticleService {
     return res ? res.dataValues : null;
   }
 
-  async createArticle({ userId, title, content, categoryList, tagList }) {
-    const tags = tagList.map(t => ({ name: t }));
-    const categories = categoryList.map(c => ({ name: c }));
+  async createArticle({ userId, title, content, categoryId, tagList }, transaction) {
+    const tags = tagList.map(t => ({ name: t, categoryId }));
     const res = await Article.create(
-      { title, content, userId, tags, categories },
+      { userId, categoryId, title, content, tags },
       {
-        include: [Tag, Category],
+        include: [Tag],
       },
     );
 
     return res ? res.dataValues : null;
   }
 
-  async findArticle({ pageNum, pageSize, keyword, tag, category, userId }) {
+  async findArticle({ categoryId, keyword, tag, userId, order, pageNum, pageSize }) {
+    let articleOrder = [['createdAt', 'DESC']];
+    if (order === 'viewCount') articleOrder = [['viewCount', 'DESC']];
+
+    const whereOpt = {
+      // userId,
+      [Op.or]: {
+        title: {
+          [Op.like]: `%${keyword || ''}%`,
+        },
+        content: {
+          [Op.like]: `%${keyword || ''}%`,
+        },
+      },
+    };
+    categoryId && Object.assign(whereOpt, { categoryId });
+
     const { count, rows } = await Article.findAndCountAll({
       limit: pageSize * 1,
       offset: (pageNum - 1) * pageSize,
-      where: {
-        userId,
-        [Op.or]: {
-          title: {
-            [Op.like]: `%${keyword || ''}%`,
-          },
-          content: {
-            [Op.like]: `%${keyword || ''}%`,
-          },
-        },
+      where: whereOpt,
+      attributes: {
+        exclude: ['updatedAt'], // 不返回更新时间戳字段
       },
       include: [
         {
@@ -58,11 +66,13 @@ class ArticleService {
         },
         {
           model: Category, // 关联 Tag 模型
-          attributes: ['name'], // 只返回 name 字段
-          where: category ? { name: category } : {}, // 如果有传入 tag，则进行过滤
+          attributes: ['id', 'name'], // 只返回 name 字段
+          as: 'category',
+          where: categoryId ? { id: categoryId } : {}, // 如果有传入 tag，则进行过滤
         },
       ],
-      order: [['createdAt', 'DESC']], // 一级评论按创建时间降序排列(从新到旧)
+      distinct: true, // 关键点：去重计数
+      order: articleOrder,
     });
 
     return {
@@ -73,7 +83,7 @@ class ArticleService {
     };
   }
 
-  async findOneArticle({ id }) {
+  async findOneArticle(id) {
     const res = await Article.findOne({
       where: {
         id,
@@ -88,7 +98,8 @@ class ArticleService {
         },
         {
           model: Category, // 关联 Category 模型
-          attributes: ['name'], // 只返回 name 字段
+          as: 'category',
+          attributes: ['id', 'name'], // 只返回 name 字段
         },
         {
           model: Comment, // 关联 Comment 模型
@@ -129,6 +140,7 @@ class ArticleService {
         },
       ],
     });
+
     return res ? res.dataValues : null;
   }
 
@@ -167,11 +179,10 @@ class ArticleService {
     return res > 0 ? true : false;
   }
 
-  async updateArticle({ id, categoryList, content, tagList, title }, transaction) {
-    const tags = tagList.map(t => ({ name: t, articleId: id }));
-    const categories = categoryList.map(c => ({ name: c, articleId: id }));
+  async updateArticle({ id, categoryId, content, tagList, title }, transaction) {
+    const tags = tagList.map(t => ({ name: t, articleId: id, categoryId }));
     const res = await Article.update(
-      { title, content },
+      { title, content, categoryId },
       {
         where: { id },
         transaction,
@@ -183,12 +194,31 @@ class ArticleService {
       transaction,
     });
 
-    await Category.destroy({ where: { articleId: id }, transaction });
-    await Category.bulkCreate(categories, {
-      transaction,
+    return res[0] > 0 ? true : false;
+  }
+
+  async outputArticle(ids) {
+    const whereOpt = {};
+    if (ids) {
+      const articleList = ids.split(',');
+      whereOpt.id = articleList;
+    }
+
+    const res = await Article.findAll({
+      where: whereOpt,
+      include: [
+        {
+          model: Tag,
+          attributes: ['name'],
+        },
+        {
+          model: Category,
+          attributes: ['name'],
+        },
+      ],
     });
 
-    return res[0] > 0 ? true : false;
+    return res ? res : [];
   }
 }
 

@@ -33,7 +33,7 @@ class UserController {
         message: '用户注册成功',
       };
     } catch (error) {
-      return ctx.app.emit('error', userRegisterError, ctx);
+      ctx.app.emit('error', userRegisterError, ctx);
     }
   }
 
@@ -63,7 +63,7 @@ class UserController {
         message: '登录成功',
       };
     } catch (error) {
-      return ctx.app.emit('error', userLoginError, ctx);
+      ctx.app.emit('error', userLoginError, ctx);
     }
   }
 
@@ -80,7 +80,7 @@ class UserController {
         message: '删除成功',
       };
     } catch (err) {
-      return ctx.app.emit('error', userDeleteError, ctx);
+      ctx.app.emit('error', userDeleteError, ctx);
     }
   }
 
@@ -97,7 +97,7 @@ class UserController {
         message: '修改成功',
       };
     } catch (err) {
-      return ctx.app.emit('error', userUpdateError, ctx);
+      ctx.app.emit('error', userUpdateError, ctx);
     }
   }
 
@@ -112,7 +112,7 @@ class UserController {
         message: '操作成功',
       };
     } catch (err) {
-      return ctx.app.emit('error', findUsersError, ctx);
+      ctx.app.emit('error', findUsersError, ctx);
     }
   }
 }

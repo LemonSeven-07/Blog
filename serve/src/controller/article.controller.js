@@ -8,6 +8,7 @@ const {
   removeComment,
   removeArticle,
   updateArticle,
+  outputArticle,
 } = require('../service/article.service');
 
 const {
@@ -15,6 +16,7 @@ const {
   findArticleError,
   deleteArticleError,
   articleUpdateError,
+  outputArticlesError,
 } = require('../constant/err.type');
 
 class articleController {
@@ -34,10 +36,18 @@ class articleController {
   }
 
   async findAll(ctx) {
-    const { pageNum = 1, pageSize = 10, keyword, tag, category } = ctx.query;
+    const { categoryId, keyword, tag, order, pageNum = 1, pageSize = 10 } = ctx.query;
     const { userId } = ctx.state.user;
     try {
-      const res = await findArticle({ pageNum, pageSize, keyword, tag, category, userId });
+      const res = await findArticle({
+        categoryId,
+        keyword,
+        tag,
+        userId,
+        order,
+        pageNum,
+        pageSize,
+      });
       ctx.body = {
         code: '200',
         message: '获取文章列表成功',
@@ -52,8 +62,10 @@ class articleController {
     const { id } = ctx.params;
     const { type = 1 } = ctx.query;
     try {
-      const res = await findOneArticle({ id });
-      if (!res) return ctx.app.emit('error', findArticleError, ctx);
+      const res = await findOneArticle(id);
+      if (!res) {
+        return ctx.app.emit('error', findArticleError, ctx);
+      }
       if (type === 1 && (await !updateArticleViewCount({ id, viewCount: res.viewCount }))) {
         return ctx.app.emit('error', findArticleError, ctx);
       }
@@ -93,10 +105,10 @@ class articleController {
 
   async update(ctx) {
     const { id } = ctx.params;
-    const { categoryList, content, tagList, title } = ctx.request.body;
+    const { categoryId, content, tagList, title } = ctx.request.body;
     const transaction = await sequelize.transaction();
     try {
-      const res = await updateArticle({ id, categoryList, content, tagList, title }, transaction);
+      const res = await updateArticle({ id, categoryId, content, tagList, title }, transaction);
       if (!res) {
         await transaction.rollback();
         return ctx.app.emit('error', articleUpdateError, ctx);
@@ -112,6 +124,30 @@ class articleController {
       await transaction.rollback();
       ctx.app.emit('error', articleUpdateError, ctx);
     }
+  }
+
+  async output(ctx) {
+    const { ids } = ctx.query;
+    try {
+      const res = await outputArticle(ids);
+      if (!res.length) return ctx.app.emit('error', outputArticlesError, ctx);
+
+      ctx.body = {
+        code: '200',
+        data: res,
+        message: '导出成功',
+      };
+    } catch (err) {
+      ctx.app.emit('error', outputArticlesError, ctx);
+    }
+  }
+
+  async upload(ctx) {
+    ctx.body = {
+      code: '200',
+      data: null,
+      message: '导入成功',
+    };
   }
 }
 

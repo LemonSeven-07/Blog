@@ -17,7 +17,7 @@ class CommentController {
         message: '操作成功',
       };
     } catch (error) {
-      return ctx.app.emit('error', commentError, ctx);
+      ctx.app.emit('error', commentError, ctx);
     }
   }
 
@@ -35,7 +35,7 @@ class CommentController {
         message: '操作成功',
       };
     } catch (error) {
-      return ctx.app.emit('error', commentError, ctx);
+      ctx.app.emit('error', commentError, ctx);
     }
   }
 
@@ -52,7 +52,7 @@ class CommentController {
         message: '删除成功',
       };
     } catch (error) {
-      return ctx.app.emit('error', deleteCommentError, ctx);
+      ctx.app.emit('error', deleteCommentError, ctx);
     }
   }
 
@@ -68,7 +68,7 @@ class CommentController {
         message: '查询成功',
       };
     } catch (error) {
-      return ctx.app.emit('error', findCommentError, ctx);
+      ctx.app.emit('error', findCommentError, ctx);
     }
   }
 }

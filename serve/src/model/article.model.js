@@ -8,6 +8,11 @@ const Article = seq.define('article', {
     allowNull: false,
     comment: '创建文章用户ID',
   },
+  categoryId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: '文章分类ID',
+  },
   title: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -31,10 +36,15 @@ Article.associate = models => {
   // 外键存储在 Tag 表中（默认字段名是 articleId，指向 Article 的主键 id）
   // hasMany(models.tag) 会自动使用 tags 作为别名（全小写复数）
   Article.hasMany(models.tag);
-  // 一篇文章（Article）可以属于多个分类（Category）
-  // 外键存储在 Category 表中（默认字段名是 articleId，指向 Article.id）
-  // hasMany(models.category) 会自动使用 categories 作为别名（全小写复数）
-  Article.hasMany(models.category);
+
+  // 一个分类（Category）可以属于多个文章（Article）
+  // 外键存储在 Article 表中（默认字段名是 categoryId，指向 category.id）
+  Article.belongsTo(models.category, {
+    as: 'category',
+    foreignKey: 'categoryId',
+    constraints: false, // 显式禁用
+  });
+
   // 一篇文章（Article）可以有多个评论（Comment）
   // hasMany(models.category) 会自动使用 comments 作为别名（全小写复数）
   Article.hasMany(models.comment, {

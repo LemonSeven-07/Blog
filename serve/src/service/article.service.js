@@ -199,9 +199,20 @@ class ArticleService {
 
   async outputArticle(ids) {
     const whereOpt = {};
+    let distinctCategories = [];
     if (ids) {
       const articleList = ids.split(',');
       whereOpt.id = articleList;
+    } else {
+      // 导出全部文章，根据分类名称生成目录结构
+      distinctCategories = await Article.findAll({
+        attributes: ['categoryId'],
+        group: ['categoryId'],
+        raw: true,
+      });
+
+      if (distinctCategories.length)
+        whereOpt.categoryId = distinctCategories.map(item => item.categoryId);
     }
 
     const res = await Article.findAll({
@@ -213,6 +224,7 @@ class ArticleService {
         },
         {
           model: Category,
+          as: 'category',
           attributes: ['name'],
         },
       ],

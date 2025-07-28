@@ -28,7 +28,6 @@ const joiValidate = rules => {
     } else {
       verifyData = ctx.request.body;
     }
-
     const { error } = await rules.validate(verifyData);
     if (error) {
       const errorMessages = error.details.map(detail => detail.message);

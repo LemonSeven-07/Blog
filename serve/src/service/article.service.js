@@ -1,4 +1,9 @@
+const fs = require('fs'); // 原生路径处理模块（用于安全拼接路径）
+const path = require('path'); // 原生路径处理模块（用于安全拼接路径）
 const { Op } = require('sequelize');
+
+const { decodeFile } = require('../utils/file');
+const { sequelize } = require('../model/index');
 
 const {
   article: Article,
@@ -22,7 +27,7 @@ class ArticleService {
     return res ? res.dataValues : null;
   }
 
-  async createArticle({ userId, title, content, categoryId, tagList }, transaction) {
+  async createArticle({ userId, title, content, categoryId, tagList }) {
     const tags = tagList.map(t => ({ name: t, categoryId }));
     const res = await Article.create(
       { userId, categoryId, title, content, tags },
@@ -190,9 +195,10 @@ class ArticleService {
     );
 
     await Tag.destroy({ where: { articleId: id }, transaction });
-    await Tag.bulkCreate(tags, {
-      transaction,
-    });
+    tags.length &&
+      (await Tag.bulkCreate(tags, {
+        transaction,
+      }));
 
     return res[0] > 0 ? true : false;
   }
@@ -232,6 +238,73 @@ class ArticleService {
 
     return res ? res : [];
   }
+
+  uploadArticle = async (file, userId, transaction) => {
+    let fileData = await fs.promises.readFile(file.filepath, 'utf8');
+    // 从md文件中分离出分类、标签、日期、文章主体内容
+    let { category, tags = [], content } = decodeFile(fileData);
+    // 通过分类查找分类id
+    const categoryData = await Category.findOne({
+      where: {
+        name: category[0],
+      },
+      transaction,
+    });
+    let createData = {
+      userId,
+      categoryId: 99, // 分类默认其他
+      title: path
+        .parse(file.originalFilename)
+        .name.replace(/[\/\\:*?"<>|]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+      content,
+    };
+
+    if (categoryData) createData.categoryId = categoryData.dataValues.id;
+
+    if (tags.length) {
+      let arr = [];
+      tags[0].split('、').forEach(tag => {
+        if (tag && tag !== '无') {
+          arr.push({ name: tag, categoryId: createData.categoryId });
+        }
+      });
+      if (arr.length) createData.tags = arr;
+    }
+
+    // 通过文章标题查找是否已存在该文章，如果有就更新表数据，没有就创建表数据
+    const articleData = await this.getArticleInfo(
+      { userId, title: createData.title },
+      { transaction },
+    );
+
+    if (articleData) {
+      // 更新表数据
+      let tagList = [];
+      if (tags.length) {
+        tagList = tags[0].split('、').filter(tag => tag && tag !== '无');
+      }
+      return await this.updateArticle(
+        {
+          id: articleData.id,
+          categoryId: createData.categoryId,
+          content,
+          tagList,
+          title: createData.title,
+        },
+        transaction,
+      );
+    } else {
+      // 创建表数据
+      const res = await Article.create(createData, {
+        include: [Tag],
+        transaction,
+      });
+
+      return res ? res.dataValues : null;
+    }
+  };
 }
 
 module.exports = new ArticleService();

@@ -16,6 +16,7 @@ const {
   removeArticle,
   updateArticle,
   outputArticle,
+  uploadArticle,
 } = require('../service/article.service');
 
 const {
@@ -24,6 +25,7 @@ const {
   deleteArticleError,
   articleUpdateError,
   outputArticlesError,
+  uploadArticlesError,
 } = require('../constant/err.type');
 
 class articleController {
@@ -31,7 +33,7 @@ class articleController {
     const { userId } = ctx.state.user;
     try {
       const res = await createArticle({ userId, ...ctx.request.body });
-      if (!res) return ctx.app.emit('error', createArticleError, ctx);
+      if (!res) throw new Error();
       ctx.body = {
         code: '200',
         message: '文章创建成功',
@@ -70,11 +72,9 @@ class articleController {
     const { type = 1 } = ctx.query;
     try {
       const res = await findOneArticle(id);
-      if (!res) {
-        return ctx.app.emit('error', findArticleError, ctx);
-      }
+      if (!res) throw new Error();
       if (type === 1 && (await !updateArticleViewCount({ id, viewCount: res.viewCount }))) {
-        return ctx.app.emit('error', findArticleError, ctx);
+        throw new Error();
       }
       ctx.body = {
         code: '200',
@@ -93,10 +93,7 @@ class articleController {
       await removeComment(ids, transaction);
 
       const res = await removeArticle(ids, transaction);
-      if (!res) {
-        await transaction.rollback();
-        return ctx.app.emit('error', deleteArticleError, ctx);
-      }
+      if (!res) throw new Error();
 
       await transaction.commit();
       ctx.body = {
@@ -116,10 +113,7 @@ class articleController {
     const transaction = await sequelize.transaction();
     try {
       const res = await updateArticle({ id, categoryId, content, tagList, title }, transaction);
-      if (!res) {
-        await transaction.rollback();
-        return ctx.app.emit('error', articleUpdateError, ctx);
-      }
+      if (!res) throw new Error();
 
       await transaction.commit();
       ctx.body = {
@@ -135,7 +129,7 @@ class articleController {
 
   async output(ctx) {
     const { ids } = ctx.query;
-    const { userId = 1 } = ctx.state.user;
+    const { userId } = ctx.state.user;
     let safeFileName = '',
       uuid = randomUUID().replace(/-/g, '_');
     const tempDir = path.join(os.tmpdir(), 'article_exports_' + uuid + '_' + userId); // 使用系统临时目录
@@ -143,7 +137,7 @@ class articleController {
     let articleGrouped = {};
     try {
       const res = await outputArticle(ids);
-      if (!res.length) return ctx.app.emit('error', outputArticlesError, ctx);
+      if (!res.length) throw new Error();
 
       if (res.length === 1) {
         // 导出单个文章
@@ -157,9 +151,9 @@ class articleController {
 
         // 2. 构建 Markdown 内容
         const markdownContent =
-          `**分类**: ${article.category?.name || '无'}\n\n` +
-          `**标签**: ${article.tags?.map(t => t.name).join(', ') || '无'}\n\n` +
-          `**创建时间**: ${article.createdAt}\n\n` +
+          `**category**: ${article.category?.name || '无'}\n\n` +
+          `**tags**: ${article.tags?.map(t => t.name).join(', ') || '无'}\n\n` +
+          `**date**: ${article.createdAt}\n\n` +
           `---\n\n${article.content}`;
 
         // 3. 创建临时目录
@@ -211,7 +205,7 @@ class articleController {
               safeFileName =
                 article.title
                   .replace(/[\/\\:*?"<>|]/g, '')
-                  .replace(/\s+/g, '_')
+                  .replace(/\s+/g, ' ')
                   .trim() + '.md';
 
               // 2. 构建 Markdown 内容
@@ -292,11 +286,46 @@ class articleController {
   }
 
   async upload(ctx) {
-    ctx.body = {
-      code: '200',
-      data: null,
-      message: '导入成功',
-    };
+    const { userId } = ctx.state.user;
+    let files = ctx.request.files.files; // 获取上传文件
+    if (!Array.isArray(files)) files = [files];
+    const transaction = await sequelize.transaction();
+    try {
+      for (let i = 0; i < files.length; i++) {
+        let res = await uploadArticle(files[i], userId, transaction);
+        if (!res) throw new Error();
+      }
+
+      await transaction.commit();
+
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '导入成功',
+      };
+    } catch (err) {
+      await transaction.rollback();
+      ctx.app.emit('error', uploadArticlesError, ctx);
+    } finally {
+      // 延迟5秒后清理临时目录（确保文件导入完成）
+      setTimeout(() => {
+        files.forEach(file => {
+          // 删除导入临时文件
+          fs.rm(
+            file.filepath,
+            {
+              recursive: true, // 递归删除
+              force: true, // 忽略不存在的路径
+              maxRetries: 3, // 重试次数(针对文件锁定)
+              retryDelay: 100, // 重试间隔(ms)
+            },
+            err => {
+              if (err) console.error('导入临时目录删除失败:', err);
+            },
+          );
+        });
+      }, 5000);
+    }
   }
 }
 

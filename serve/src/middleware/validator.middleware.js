@@ -7,7 +7,7 @@ const kpValidate = rules => {
       return ctx.app.emit(
         'error',
         {
-          code: '40001',
+          code: '400',
           data: null,
           message: errorMessages.toString(),
         },
@@ -28,13 +28,14 @@ const joiValidate = rules => {
     } else {
       verifyData = ctx.request.body;
     }
+
     const { error } = await rules.validate(verifyData);
     if (error) {
       const errorMessages = error.details.map(detail => detail.message);
       return ctx.app.emit(
         'error',
         {
-          code: '40001',
+          code: '400',
           data: null,
           message: errorMessages.toString(),
         },

@@ -40,14 +40,7 @@ router.get('/list', auth, hadAdminPermission, joiValidate(getArticlesSchema), fi
 router.delete('/', auth, hadAdminPermission, joiValidate(deleteArticlesSchema), remove);
 
 // 文章上传（支持单个上传和批量上传）
-router.post(
-  '/upload',
-  auth,
-  hadAdminPermission,
-  joiValidate(outputArticlesSchema),
-  uploadMiddleware(['text/markdown']),
-  upload,
-);
+router.post('/upload', auth, hadAdminPermission, uploadMiddleware(['text/markdown']), upload);
 
 // 文章导出（单个导出、批量导出和全部导出）
 router.get('/output', auth, hadAdminPermission, joiValidate(outputArticlesSchema), output);

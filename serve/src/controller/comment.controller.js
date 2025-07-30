@@ -9,7 +9,7 @@ class CommentController {
     ctx.request.body.userId = ctx.state.user.userId; // 获取当前登录用户的ID
     try {
       const res = await sendComment(ctx.request.body);
-      if (!res) return ctx.app.emit('error', commentError, ctx);
+      if (!res) throw new Error();
 
       ctx.body = {
         code: '200',
@@ -27,7 +27,7 @@ class CommentController {
     ctx.request.body.userId = ctx.state.user.userId; // 获取当前登录用户的ID
     try {
       const res = await sendComment(ctx.request.body);
-      if (!res) return ctx.app.emit('error', commentError, ctx);
+      if (!res) throw new Error();
 
       ctx.body = {
         code: '200',
@@ -44,7 +44,7 @@ class CommentController {
     const { url } = ctx.request; // 获取请求的URL
     try {
       const res = await removeComment({ id, url });
-      if (!res) return ctx.app.emit('error', deleteCommentError, ctx);
+      if (!res) throw new Error();
 
       ctx.body = {
         code: '200',

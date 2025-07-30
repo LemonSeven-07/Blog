@@ -149,4 +149,9 @@ module.exports = {
     message: '文章分类创建失败',
     data: null,
   },
+  fileSizeExceededError: {
+    code: '10029',
+    message: '文件大小超过限制',
+    data: null,
+  },
 };

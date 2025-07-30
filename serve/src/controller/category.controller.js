@@ -6,7 +6,7 @@ class CategoryController {
     const { name } = ctx.request.body;
     try {
       const res = await createCategory(name);
-      if (!res) return ctx.app.emit('error', createCategoryError, ctx);
+      if (!res) throw new Error();
 
       // 返回查询结果
       ctx.body = {

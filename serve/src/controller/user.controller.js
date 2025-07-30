@@ -24,7 +24,7 @@ class UserController {
     try {
       // 2、操作数据库
       const res = await createUser({ username, password, email });
-      if (!res) return ctx.app.emit('error', userRegisterError, ctx);
+      if (!res) throw new Error();
 
       // 3、返回结果
       ctx.body = {
@@ -88,9 +88,8 @@ class UserController {
     const { userId } = ctx.request.params;
     try {
       const res = await updateUer(ctx.request.body, userId);
-      if (!res) {
-        return ctx.app.emit('error', userUpdateError, ctx);
-      }
+      if (!res) throw new Error();
+
       ctx.body = {
         code: '200',
         data: null,

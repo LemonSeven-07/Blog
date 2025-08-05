@@ -2,7 +2,8 @@ const Router = require('koa-router');
 
 const {
   articleMaintenanceSchema,
-  getArticlesSchema,
+  getPaginationArticlesSchema,
+  getLoadMoreArticlesSchema,
   deleteArticlesSchema,
   outputArticlesSchema,
 } = require('../constant/schema.js');
@@ -19,6 +20,7 @@ const {
   update,
   output,
   upload,
+  loadMore,
 } = require('../controller/article.controller.js');
 
 const router = new Router({ prefix: '/article' });
@@ -33,8 +35,11 @@ router.post(
   create,
 );
 
-// 获取文章列表
-router.get('/list', auth, hadAdminPermission, joiValidate(getArticlesSchema), findAll);
+// 获取文章列表(分页查询)
+router.get('/list', auth, hadAdminPermission, joiValidate(getPaginationArticlesSchema), findAll);
+
+// 获取文章列表(滚动加载查询)
+router.get('/scroll', joiValidate(getLoadMoreArticlesSchema), loadMore);
 
 // 删除文章（单个删除和批量删除）
 router.delete('/', auth, hadAdminPermission, joiValidate(deleteArticlesSchema), remove);

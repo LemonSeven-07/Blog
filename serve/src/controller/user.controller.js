@@ -20,10 +20,10 @@ const {
 class UserController {
   async register(ctx) {
     // 1、获取数据
-    const { username, password, email } = ctx.request.body;
+    const { username, password } = ctx.request.body;
     try {
       // 2、操作数据库
-      const res = await createUser({ username, password, email });
+      const res = await createUser({ username, password });
       if (!res) throw new Error();
 
       // 3、返回结果
@@ -43,12 +43,10 @@ class UserController {
     try {
       // 2、操作数据库
       const { password, ...res } = await getUserInfo({ username });
-      const { email, notice, role, id: userId } = res;
+      const { role, id: userId } = res;
       const userInfo = {
         userId,
         username,
-        email,
-        notice,
         role,
       };
 

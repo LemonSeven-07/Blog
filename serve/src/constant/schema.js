@@ -18,20 +18,14 @@ module.exports = {
       .messages({
         'string.pattern.base': '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
       }),
-    email: Joi.string().email().messages({
-      'string.email': '请输入有效的邮箱地址',
-    }),
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
-    }),
-    notice: Joi.boolean().strict().messages({
-      'boolean.base': 'notice必须是布尔值',
     }),
     disabledDiscuss: Joi.boolean().strict().messages({
       'boolean.base': 'disabledDiscuss必须是布尔值',
     }),
   })
-    .or('username', 'password', 'email', 'role', 'notice', 'disabledDiscuss')
+    .or('username', 'password', 'role', 'disabledDiscuss')
     .messages({
       'object.missing': '必要字段为空',
     }),
@@ -39,14 +33,11 @@ module.exports = {
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
     }),
-    notice: Joi.boolean().strict().messages({
-      'boolean.base': 'notice必须是布尔值',
-    }),
     disabledDiscuss: Joi.boolean().strict().messages({
       'boolean.base': 'disabledDiscuss必须是布尔值',
     }),
   })
-    .or('role', 'notice', 'disabledDiscuss')
+    .or('role', 'disabledDiscuss')
     .messages({
       'object.missing': '必要字段为空',
     }),
@@ -93,6 +84,10 @@ module.exports = {
   }),
 
   createCommentSchema: Joi.object({
+    authorId: Joi.number().integer().required().messages({
+      'number.empty': 'authorId不能为空',
+      'number.integer': 'authorId必须是整数',
+    }),
     content: Joi.string().required().messages({
       'string.empty': '评论内容不能为空',
     }),
@@ -102,6 +97,10 @@ module.exports = {
     }),
   }),
   replyCommentSchema: Joi.object({
+    authorId: Joi.number().integer().required().messages({
+      'number.empty': 'authorId不能为空',
+      'number.integer': 'authorId必须是整数',
+    }),
     content: Joi.string().required().messages({
       'string.empty': '评论内容不能为空',
     }),
@@ -137,6 +136,20 @@ module.exports = {
       'number.integer': 'entityId必须是整数',
     }),
   }),
+  updateCommentSchema: Joi.object({
+    id: Joi.number().integer().required().messages({
+      'number.integer': 'id必须是整数',
+      'string.empty': 'id不能为空',
+    }),
+    hide: Joi.boolean().strict().messages({
+      'boolean.base': 'hide必须是布尔值',
+    }),
+    notice: Joi.boolean().strict().messages({
+      'boolean.base': 'notice必须是布尔值',
+    }),
+  })
+    .and('id') // 强制要求 id 存在（其实上面已经 .required() 了）
+    .xor('notice', 'hide'), // notice 和 hide 只能传其中一个,
 
   createCategorySchema: Joi.object({
     name: Joi.string().required().messages({
@@ -170,7 +183,7 @@ module.exports = {
       'string.max': '文章标题长度不能大于50',
     }),
   }),
-  getArticlesSchema: Joi.object({
+  getPaginationArticlesSchema: Joi.object({
     pageNum: Joi.number().integer().messages({
       'number.integer': 'pageNum必须是整数',
     }),
@@ -190,6 +203,31 @@ module.exports = {
       'string.empty': 'order不能为空',
     }),
   }),
+  getLoadMoreArticlesSchema: Joi.object({
+    keyword: Joi.string().allow('').messages({
+      'string.empty': 'keyword不能为空',
+    }),
+    tag: Joi.string().allow('').messages({
+      'string.empty': 'tag不能为空',
+    }),
+    categoryId: Joi.number().integer().messages({
+      'number.integer': 'categoryId必须是整数',
+    }),
+    sortBy: Joi.string().valid('createdAt', 'viewCount').required().messages({
+      'string.empty': 'sortBy不能为空',
+      'any.only': 'sortBy必须是createdAt或viewCount',
+    }),
+    lastId: Joi.number().integer().messages({
+      'number.empty': 'lastId不能为空',
+      'number.integer': 'lastId必须是整数',
+    }),
+    lastSortValue: Joi.string().allow('').messages({
+      'string.empty': 'lastSortValue不能为空',
+    }),
+    limit: Joi.number().integer().messages({
+      'number.integer': 'limit必须是整数',
+    }),
+  }),
   deleteArticlesSchema: Joi.object({
     ids: Joi.array()
       .items(Joi.number().integer()) // 数组元素必须是整数
@@ -207,5 +245,56 @@ module.exports = {
     ids: Joi.string()
       .pattern(/^\d+(,\d+)*$/) // 数字和逗号组合
       .message('必须是逗号分隔的数字字符串'),
+  }),
+
+  wsCommentSchema: Joi.object({
+    authorId: Joi.number().integer().required().messages({
+      'number.empty': 'authorId不能为空',
+      'number.integer': 'authorId必须是整数',
+    }),
+    content: Joi.string().required().messages({
+      'string.empty': '评论内容不能为空',
+    }),
+    entityId: Joi.number().integer().required().messages({
+      'number.empty': '文章id不能为空',
+      'number.integer': 'entityId必须是整数',
+    }),
+  }),
+  wsReplySchema: Joi.object({
+    authorId: Joi.number().integer().required().messages({
+      'number.empty': 'authorId不能为空',
+      'number.integer': 'authorId必须是整数',
+    }),
+    content: Joi.string().required().messages({
+      'string.empty': '评论内容不能为空',
+    }),
+    entityId: Joi.number().integer().required().messages({
+      'number.empty': '文章id不能为空',
+      'number.integer': 'entityId必须是整数',
+    }),
+    parentId: Joi.number().integer().required().messages({
+      'number.empty': '一级评论id不能为空',
+      'number.integer': 'parentId必须是整数',
+    }),
+    replyToUserId: Joi.number().integer().required().messages({
+      'number.empty': '回复的用户id不能为空',
+      'number.integer': 'replyToUserId必须是整数',
+    }),
+  }),
+  wsDelInteractiveSchema: Joi.object({
+    id: Joi.number().integer().required().messages({
+      'number.empty': 'id不能为空',
+      'number.integer': 'id必须是整数',
+    }),
+    authorId: Joi.number().integer().required().messages({
+      'number.empty': 'authorId不能为空',
+      'number.integer': 'authorId必须是整数',
+    }),
+  }),
+  wsGetNoticeSchema: Joi.object({
+    userId: Joi.number().integer().required().messages({
+      'number.empty': 'userId不能为空',
+      'number.integer': 'userId必须是整数',
+    }),
   }),
 };

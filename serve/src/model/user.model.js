@@ -7,23 +7,12 @@ const User = seq.define('user', {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    comment: '用户名，唯一  不重复',
+    comment: '用户名，唯一，不重复',
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
     comment: '密码',
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    comment: '邮箱，唯一  不重复',
-  },
-  notice: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
-    comment: '是否开启邮件通知, true开启，false关闭',
   },
   role: {
     type: DataTypes.TINYINT,

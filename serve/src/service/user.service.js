@@ -3,30 +3,27 @@ const { Sequelize, Op } = require('sequelize');
 const User = require('../model/user.model.js');
 
 class UserService {
-  async getUserInfo({ id, username, password, email, notice, disabledDiscuss, role }) {
+  async getUserInfo({ id, username, password, disabledDiscuss, role }) {
     const whereOpt = {};
     id && Object.assign(whereOpt, { id });
     username && Object.assign(whereOpt, { username });
     password && Object.assign(whereOpt, { password });
-    email && Object.assign(whereOpt, { email });
-    notice && Object.assign(whereOpt, { notice });
     disabledDiscuss && Object.assign(whereOpt, { disabledDiscuss });
     role && Object.assign(whereOpt, { role });
 
     // findOne 方法查询单条数据
     const res = await User.findOne({
-      attributes: ['id', 'username', 'password', 'email', 'notice', 'disabledDiscuss', 'role'],
+      attributes: ['id', 'username', 'password', 'disabledDiscuss', 'role'],
       where: whereOpt,
     });
     return res ? res.dataValues : null;
   }
 
-  async createUser({ username, password, email }) {
+  async createUser({ username, password }) {
     // 创建用户
     let res = await User.create({
       username,
       password,
-      email,
     });
     return res ? res.dataValues : null;
   }
@@ -40,15 +37,13 @@ class UserService {
     return res > 0 ? true : false;
   }
 
-  async updateUer({ username, password, email, notice, disabledDiscuss, role }, userId) {
+  async updateUer({ username, password, disabledDiscuss, role }, userId) {
     const whereOpt = { id: userId };
     const newUser = {};
 
     username && Object.assign(newUser, { username });
     password && Object.assign(newUser, { password });
-    email && Object.assign(newUser, { email });
     role && Object.assign(newUser, { role });
-    notice !== undefined && Object.assign(newUser, { notice });
     disabledDiscuss !== undefined && Object.assign(newUser, { disabledDiscuss });
     const res = await User.update(newUser, {
       where: whereOpt,
@@ -113,8 +108,6 @@ class UserService {
       attributes: [
         'id',
         'username',
-        'email',
-        'notice',
         'disabledDiscuss',
         'createdAt',
         // 判断是否是github用户和站内用户，并根据判断结果生成虚拟字段type，type = 1 github 用户 type = 2 站内用户，默认站内用户

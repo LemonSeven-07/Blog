@@ -2,7 +2,7 @@ const fs = require('fs'); // 原生路径处理模块（用于安全拼接路径
 const path = require('path'); // 原生路径处理模块（用于安全拼接路径）
 const { Op } = require('sequelize');
 
-const { decodeFile } = require('../utils/file');
+const { decodeFile } = require('../utils/index');
 const { sequelize } = require('../model/index');
 
 const {
@@ -88,6 +88,98 @@ class ArticleService {
     };
   }
 
+  async loadMoreArticle({ keyword, tag, categoryId, lastId, lastSortValue, limit, sortBy }) {
+    // 1. 定义排序规则映射表
+    const orderMap = {
+      createdAt: [
+        ['createdAt', 'DESC'],
+        ['id', 'DESC'],
+      ], // 第一排序规则：按发布时间降序. 第二排序规则：按ID降序
+      viewCount: [
+        ['viewCount', 'DESC'],
+        ['id', 'DESC'],
+      ], // 第一排序规则：按文章阅读量降序. 第二排序规则：按ID降序
+    };
+    // 根据sortBy参数选择排序规则，默认用createdAt
+    const order = orderMap[sortBy];
+
+    // 2. 构建查询条件对象
+    const whereOpt = {
+      [Op.or]: {
+        title: {
+          [Op.like]: `%${keyword || ''}%`,
+        },
+        content: {
+          [Op.like]: `%${keyword || ''}%`,
+        },
+      },
+    };
+    categoryId && Object.assign(whereOpt, { categoryId });
+    // 如果有游标值（不是第一页请求）
+    if (lastId && lastSortValue) {
+      // 确定当前排序字段（createdAt或viewCount）
+      const sortField = sortBy === 'createdAt' ? 'createdAt' : 'viewCount';
+      const sortValue = sortBy === 'createdAt' ? lastSortValue : parseInt(lastSortValue);
+
+      whereOpt[Op.or] = [
+        // 条件1：排序字段值更小的记录
+        { [sortField]: { [Op.lt]: sortValue } },
+
+        // 条件2：排序字段值相同但ID更小的记录
+        {
+          [Op.and]: [{ [sortField]: sortValue }, { id: { [Op.lt]: lastId } }],
+        },
+      ];
+    }
+
+    // 3. 执行数据库查询
+    const res = await Article.findAll({
+      where: whereOpt, // 上文构建的查询条件
+      limit: parseInt(limit), // 转换为数字类型
+      attributes: {
+        exclude: ['updatedAt'], // 不返回更新时间戳字段
+      },
+      order, // 排序规则
+      include: [
+        {
+          model: Tag, // 关联 Tag 模型
+          attributes: ['name'], // 只返回 name 字段
+          where: tag ? { name: tag } : {}, // 如果有传入 tag，则进行过滤
+        },
+        {
+          model: Category, // 关联 Tag 模型
+          attributes: ['id', 'name'], // 只返回 name 字段
+          as: 'category',
+          where: categoryId ? { id: categoryId } : {}, // 如果有传入 tag，则进行过滤
+        },
+      ],
+      // raw: false, // 保留Sequelize实例（方便调用toJSON）
+    });
+
+    // 4. 计算下一次请求的游标值
+    let lastRecord = null;
+    if (res.length) {
+      lastRecord = res[res.length - 1];
+    }
+
+    const nextCursor = lastRecord
+      ? {
+          lastId: lastRecord.id, // 记录最后一条的ID
+          // 根据当前排序方式返回对应的字段值
+          lastSortValue:
+            sortBy === 'createdAt'
+              ? lastRecord.createdAt // 时间字符串
+              : lastRecord.viewCount, // 直接返回阅读量
+        }
+      : null; // 如果没有数据了，返回null
+
+    return {
+      list: res,
+      nextCursor, // 下一次请求的游标
+      hasMore: res.length >= limit, // 是否还有更多数据
+    };
+  }
+
   async findOneArticle(id) {
     const res = await Article.findOne({
       where: {
@@ -109,8 +201,9 @@ class ArticleService {
         {
           model: Comment, // 关联 Comment 模型
           as: 'comments', // 使用在 Article 模型中定义的关联别名
-          attributes: ['id', 'content', 'createdAt'], // 只返回必要字段
+          attributes: ['id', 'content', 'createdAt', 'deletedAt'], // 只返回必要字段
           separate: true, // 单独查询嵌套数据并排序
+          paranoid: false,
           where: {
             entityId: id,
             entityType: 'post', // 确保是一级评论
@@ -119,8 +212,9 @@ class ArticleService {
             {
               model: Comment, // 自关联，获取回复评论
               as: 'replies', // 使用在 Comment 模型中定义的关联别名
-              attributes: ['id', 'content', 'createdAt'],
+              attributes: ['id', 'content', 'entityId', 'createdAt', 'deletedAt'],
               separate: true, // 单独查询嵌套数据并排序
+              paranoid: false,
               include: [
                 {
                   model: User, // 回复评论的作者信息
@@ -146,7 +240,11 @@ class ArticleService {
       ],
     });
 
-    return res ? res.dataValues : null;
+    if (res) {
+      return res.get({ plain: true });
+    } else {
+      return null;
+    }
   }
 
   async updateArticleViewCount({ id, viewCount }) {
@@ -170,6 +268,7 @@ class ArticleService {
         entityType: 'post',
       },
       transaction,
+      force: true,
     });
     return res > 0 ? true : false;
   }

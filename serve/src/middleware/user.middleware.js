@@ -5,7 +5,6 @@ const { getUserInfo } = require('../service/user.service');
 const {
   userRegisterError,
   userAlreadyExists,
-  emailAlreadyExists,
   passwordFormatError,
   userLoginError,
   userDoesNotExist,
@@ -20,21 +19,6 @@ const verifyUser = async (ctx, next) => {
     if (res) {
       // 用户名已存在
       return ctx.app.emit('error', userAlreadyExists, ctx);
-    }
-  } catch (err) {
-    return ctx.app.emit('error', userRegisterError, ctx);
-  }
-
-  await next();
-};
-
-const verifyEmail = async (ctx, next) => {
-  const { email } = ctx.request.body;
-  try {
-    const res = await getUserInfo({ email });
-    if (res) {
-      // 邮箱已存在
-      return ctx.app.emit('error', emailAlreadyExists, ctx);
     }
   } catch (err) {
     return ctx.app.emit('error', userRegisterError, ctx);
@@ -82,11 +66,8 @@ const verifyLogin = async (ctx, next) => {
 
 const hadUpdatePermission = async (ctx, next) => {
   const { role } = ctx.state.user;
-  const { role: newRole, notice, disabledDiscuss } = ctx.request.body;
-  if (
-    role !== 1 &&
-    (notice !== undefined || disabledDiscuss !== undefined || newRole !== undefined)
-  ) {
+  const { role: newRole, disabledDiscuss } = ctx.request.body;
+  if (role !== 1 && (disabledDiscuss !== undefined || newRole !== undefined)) {
     return ctx.app.emit('error', hasNotAdminPermission, ctx);
   }
 
@@ -95,7 +76,6 @@ const hadUpdatePermission = async (ctx, next) => {
 
 module.exports = {
   verifyUser,
-  verifyEmail,
   cryptPassword,
   verifyLogin,
   hadUpdatePermission,

@@ -12,9 +12,12 @@ const dotenv = require('dotenv');
   -p 3000:8000 \
   Blog */
 
-if (process.env.NODE_ENV !== 'production' && !process.env.DOCKER_INJECTED) {
-  const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
-  dotenv.config({ path: path.resolve(__dirname, '../../' + envFile) });
-} else {
-  dotenv.config();
-}
+// 根据当前环境动态加载对应的 .env 环境变量文件
+// if (process.env.NODE_ENV !== 'production' && !process.env.DOCKER_INJECTED) {
+//   const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+//   dotenv.config({ path: path.resolve(__dirname, '../../' + envFile) });
+// } else {
+//   dotenv.config();
+// }
+
+dotenv.config();

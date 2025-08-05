@@ -15,11 +15,4 @@ module.exports = {
     format: /^[a-zA-Z0-9!@#*,]{6,16}$/,
     message: '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
   },
-  email: {
-    type: 'string',
-    required: true,
-    format:
-      /^[a-zA-Z0-9\u0080-\uFFFF._%+-]+@[a-zA-Z0-9\u0080-\uFFFF.-]+\.[a-zA-Z\u0080-\uFFFF]{2,}$/,
-    message: '邮箱格式不正确',
-  },
 };

@@ -5,27 +5,32 @@ const {
   replyCommentSchema,
   deleteCommentSchema,
   getCommentSchema,
+  updateCommentSchema,
 } = require('../constant/schema.js');
 
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 const { joiValidate } = require('../middleware/validator.middleware.js');
-const { create, reply, remove, findAll } = require('../controller/comment.controller.js');
+const { verifyDisabledDiscuss } = require('../middleware/comment.middleware.js');
+const { create, reply, remove, findAll, update } = require('../controller/comment.controller.js');
 
 const router = new Router({ prefix: '/comment' });
 
 // 添加评论
-router.post('/create', auth, joiValidate(createCommentSchema), create);
-
-// 删除评论(一级评论以及回复)
-router.delete('/', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
+router.post('/create', auth, joiValidate(createCommentSchema), verifyDisabledDiscuss, create);
 
 // 回复评论
-router.post('/reply', auth, joiValidate(replyCommentSchema), reply);
+router.post('/reply', auth, joiValidate(replyCommentSchema), verifyDisabledDiscuss, reply);
+
+// 获取当前文章的所有评论和回复或者一级评论下的回复
+router.get('/list', auth, joiValidate(getCommentSchema), findAll);
+
+// 修改评论通知状态/消息通知显示状态
+router.patch('/notice', auth, joiValidate(updateCommentSchema), update);
 
 // 删除回复评论
 router.delete('/reply', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
 
-// 获取当前文章的所有评论和回复或者一级评论下的回复
-router.get('/list', auth, joiValidate(getCommentSchema), findAll);
+// 删除评论(一级评论以及回复)
+router.delete('/', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
 
 module.exports = router;

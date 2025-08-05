@@ -7,6 +7,8 @@ const { randomUUID } = require('crypto'); // 生成UUID
 
 const { sequelize } = require('../model/index');
 
+const { restructureComments } = require('../utils/index');
+
 const {
   createArticle,
   findArticle,
@@ -17,6 +19,7 @@ const {
   updateArticle,
   outputArticle,
   uploadArticle,
+  loadMoreArticle,
 } = require('../service/article.service');
 
 const {
@@ -26,6 +29,7 @@ const {
   articleUpdateError,
   outputArticlesError,
   uploadArticlesError,
+  loadMoreError,
 } = require('../constant/err.type');
 
 class articleController {
@@ -45,7 +49,15 @@ class articleController {
   }
 
   async findAll(ctx) {
-    const { categoryId, keyword, tag, order, pageNum = 1, pageSize = 10 } = ctx.query;
+    const {
+      categoryId,
+      keyword,
+      tag,
+      order,
+      behavior = 'scroll',
+      pageNum = 1,
+      pageSize = 10,
+    } = ctx.query;
     const { userId } = ctx.state.user;
     try {
       const res = await findArticle({
@@ -56,6 +68,7 @@ class articleController {
         order,
         pageNum,
         pageSize,
+        behavior,
       });
       ctx.body = {
         code: '200',
@@ -64,6 +77,37 @@ class articleController {
       };
     } catch (err) {
       ctx.app.emit('error', findArticleError, ctx);
+    }
+  }
+
+  async loadMore(ctx) {
+    const {
+      keyword,
+      tag,
+      categoryId,
+      lastId, // 上次请求的最后一条ID
+      lastSortValue, // 上次的排序字段值
+      limit = 20, // 每页数量
+      sortBy = 'createdAt', // 排序方式
+    } = ctx.query;
+
+    try {
+      const res = await loadMoreArticle({
+        keyword,
+        tag,
+        categoryId,
+        lastId,
+        lastSortValue,
+        limit,
+        sortBy,
+      });
+      ctx.body = {
+        code: '200',
+        message: '获取文章列表成功',
+        data: res,
+      };
+    } catch (err) {
+      ctx.app.emit('error', loadMoreError, ctx);
     }
   }
 
@@ -76,10 +120,14 @@ class articleController {
       if (type === 1 && (await !updateArticleViewCount({ id, viewCount: res.viewCount }))) {
         throw new Error();
       }
+
+      // 重新构建评论树结构（一级评论被删除，子评论提级；评论回复被删除不显示回复xx用户，例如：用户A：回复的评论内容）
+      const comments = restructureComments(res.comments);
+
       ctx.body = {
         code: '200',
         message: '获取文章详情成功',
-        data: res,
+        data: { ...res, comments },
       };
     } catch (err) {
       ctx.app.emit('error', findArticleError, ctx);

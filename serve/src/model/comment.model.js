@@ -5,6 +5,11 @@ const seq = require('../db/seq');
 const Comment = seq.define(
   'comment',
   {
+    authorId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: '文章作者的ID',
+    },
     content: {
       type: DataTypes.TEXT,
       allowNull: false,
@@ -25,21 +30,25 @@ const Comment = seq.define(
       allowNull: false,
       comment: '文章评论时为文章ID，对评论的回复时为评论ID',
     },
-    commentType: {
-      type: DataTypes.ENUM('comment', 'reply'),
-      allowNull: false,
-      defaultValue: 'comment',
-      comment: 'comment：一级评论，reply：对评论的回复',
-    },
     parentId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: '一级评论的ID，回复评论时为null',
+      comment: '一级评论的ID，评论时为null',
     },
     replyToUserId: {
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: '回复的用户ID，如果是一级评论则为null',
+    },
+    notice: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      comment: '是否站内通知, true开启，false关闭',
+    },
+    hide: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      comment: '是否显示消息，true显示，false隐藏',
     },
   },
   {
@@ -53,6 +62,7 @@ const Comment = seq.define(
         fields: ['parentId'],
       },
     ],
+    paranoid: true, // 软删除
   },
 );
 

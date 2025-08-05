@@ -9,11 +9,6 @@ module.exports = {
     message: '用户名已存在',
     data: null,
   },
-  emailAlreadyExists: {
-    code: '10004',
-    message: '邮箱已存在',
-    data: null,
-  },
   passwordFormatError: {
     code: '10005',
     message: '密码不合法',
@@ -94,64 +89,79 @@ module.exports = {
     message: '评论获取失败',
     data: null,
   },
-  createArticleError: {
+  commentBannedError: {
     code: '10018',
+    message: '您已被禁言，请文明留言',
+    data: null,
+  },
+  createArticleError: {
+    code: '10019',
     message: '文章创建失败',
     data: null,
   },
   articleAlreadyExists: {
-    code: '10019',
+    code: '10020',
     message: '文章标题已存在',
     data: null,
   },
   articleCreateError: {
-    code: '10020',
+    code: '10021',
     message: '文章创建失败',
     data: null,
   },
   findArticleError: {
-    code: '10021',
+    code: '10022',
     message: '文章获取失败',
     data: null,
   },
   deleteArticleError: {
-    code: '10022',
+    code: '10023',
     message: '文章删除失败',
     data: null,
   },
   articleUpdateError: {
-    code: '10023',
+    code: '10024',
     message: '文章修改失败',
     data: null,
   },
   uploadFileTypeError: {
-    code: '10024',
+    code: '10025',
     message: '文件类型不合法',
     data: null,
   },
   uploadArticlesError: {
-    code: '10025',
+    code: '10026',
     message: '上传失败',
     data: null,
   },
   outputArticlesError: {
-    code: '10026',
+    code: '10027',
     message: '导出失败',
     data: null,
   },
   categoryAlreadyExists: {
-    code: '10027',
+    code: '10028',
     message: '分类名已存在',
     data: null,
   },
   createCategoryError: {
-    code: '10028',
+    code: '10029',
     message: '文章分类创建失败',
     data: null,
   },
   fileSizeExceededError: {
-    code: '10029',
+    code: '10030',
     message: '文件大小超过限制',
+    data: null,
+  },
+  updateNoticeError: {
+    code: '10031',
+    message: '消息通知修改失败',
+    data: null,
+  },
+  loadMoreError: {
+    code: '10032',
+    message: '滚动加载失败',
     data: null,
   },
 };

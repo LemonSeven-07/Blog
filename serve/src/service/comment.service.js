@@ -2,21 +2,13 @@ const Comment = require('../model/comment.model');
 const User = require('../model/user.model');
 
 class CommentService {
-  async sendComment({
-    content,
-    userId,
-    entityType,
-    entityId,
-    commentType,
-    parentId,
-    replyToUserId,
-  }) {
+  async sendComment({ authorId, content, userId, entityType, entityId, parentId, replyToUserId }) {
     const commentData = {};
+    authorId && Object.assign(commentData, { authorId });
     content && Object.assign(commentData, { content });
     userId && Object.assign(commentData, { userId });
     entityType && Object.assign(commentData, { entityType });
     entityId && Object.assign(commentData, { entityId });
-    commentType && Object.assign(commentData, { commentType });
     parentId && Object.assign(commentData, { parentId });
     replyToUserId && Object.assign(commentData, { replyToUserId });
     const res = await Comment.create(commentData);
@@ -30,7 +22,6 @@ class CommentService {
       const res = await Comment.destroy({
         where: {
           id,
-          commentType: 'reply',
           entityType: 'comment', // 确保是对评论的回复
         },
       });
@@ -40,8 +31,7 @@ class CommentService {
       const parentComment = await Comment.findOne({
         where: {
           id,
-          commentType: 'comment',
-          entityType: 'post', // 确保是文章评论
+          entityType: 'post', // 确保是文章一级评论
         },
       });
       if (!parentComment) return false;
@@ -59,6 +49,7 @@ class CommentService {
     const res = await Comment.findAll({
       // 1. 定义查询条件
       where: whereOpt,
+      paranoid: false,
       // 2. 定义关联模型和字段
       include: [
         // 2.1 关联评论作者信息
@@ -71,6 +62,7 @@ class CommentService {
         {
           model: Comment, // 关联Comment模型自身(自关联)
           as: 'replies', // 使用在Comment模型中定义的关联别名
+          paranoid: false,
           // 2.2.1 嵌套关联：回复的作者信息
           include: [
             {
@@ -92,7 +84,24 @@ class CommentService {
       // 3. 主查询的排序规则
       order: [['createdAt', 'DESC']], // // 一级评论：新→旧
     });
-    return res;
+
+    // 将每个实例转换为纯对象
+    const plainComments = res.map(comment => comment.get({ plain: true })) || [];
+    return plainComments;
+  }
+
+  async updateNotice({ id, notice, hide }) {
+    const newComment = {};
+
+    notice !== undefined && Object.assign(newComment, { notice });
+    hide !== undefined && Object.assign(newComment, { hide });
+
+    const res = await Comment.update(newComment, {
+      where: {
+        id,
+      },
+    });
+    return res[0] > 0 ? true : false;
   }
 }
 module.exports = new CommentService();

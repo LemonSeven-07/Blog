@@ -1,6 +1,6 @@
 const Router = require('koa-router');
 
-const { username, password, email } = require('../constant/validator.js');
+const { username, password } = require('../constant/validator.js');
 const { updateUserSchema, getUersSchema } = require('../constant/schema.js');
 
 const { kpValidate, joiValidate } = require('../middleware/validator.middleware');
@@ -8,7 +8,6 @@ const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js')
 
 const {
   verifyUser,
-  verifyEmail,
   cryptPassword,
   verifyLogin,
   hadUpdatePermission,
@@ -23,10 +22,8 @@ router.post(
   kpValidate({
     username,
     password,
-    email,
   }),
   verifyUser,
-  verifyEmail,
   cryptPassword,
   register,
 );

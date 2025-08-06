@@ -8,13 +8,12 @@ if [ -f .env ]; then
 fi
 
 # 设置默认端口（可以通过环境变量覆盖）
-APP_PORT=${APP_PORT}
-WS_PORT=${WS_PORT}
+PORT=${PORT}
 
-echo "🧹 清理占用端口: $APP_PORT 和 $WS_PORT..."
+echo "🧹 清理占用端口: $PORT..."
 
 # 查找并杀死占用端口的进程
-for PORT in $APP_PORT $WS_PORT; do
+for PORT in $PORT; do
   PID=$(lsof -ti :$PORT)
   if [ -n "$PID" ]; then
     echo "🔪 端口 $PORT 被 PID $PID 占用，正在杀死..."
@@ -25,4 +24,4 @@ for PORT in $APP_PORT $WS_PORT; do
 done
 
 echo "🚀 启动 Node 服务 (nodemon)..."
-APP_PORT=$APP_PORT WS_PORT=$WS_PORT nodemon ./src/main.js
+PORT=$PORT nodemon ./src/main.js

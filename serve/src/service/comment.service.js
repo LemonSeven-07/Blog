@@ -1,5 +1,4 @@
-const Comment = require('../model/comment.model');
-const User = require('../model/user.model');
+const { comment: Comment, user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class CommentService {
   async sendComment({ authorId, content, userId, entityType, entityId, parentId, replyToUserId }) {

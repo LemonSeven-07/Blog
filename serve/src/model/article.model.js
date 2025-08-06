@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 
-const seq = require('../db/seq');
+const sequelize = require('../db/sequelize');
 
-const Article = seq.define('article', {
+const Article = sequelize.define('article', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,

@@ -2,6 +2,25 @@ const Joi = require('joi');
 const moment = require('moment');
 
 module.exports = {
+  registerOrLoginSchema: Joi.object({
+    username: Joi.string()
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+      }),
+    // password: Joi.string()
+    //   .pattern(/^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/)
+    //   .messages({
+    //     'string.pattern.base': '密码由字母、数字和符号组成，长度8-16位',
+    //   }),
+    password: Joi.string()
+      .pattern(/^[a-zA-Z0-9!@#*,]{6,16}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
+      }),
+  }),
   updateUserSchema: Joi.object({
     username: Joi.string()
       .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)

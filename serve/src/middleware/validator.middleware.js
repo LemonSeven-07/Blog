@@ -1,24 +1,3 @@
-const kpValidate = rules => {
-  return async (ctx, next) => {
-    try {
-      ctx.verifyParams(rules);
-    } catch (error) {
-      const errorMessages = error.errors.map(err => err.field + ':' + err.message);
-      return ctx.app.emit(
-        'error',
-        {
-          code: '400',
-          data: null,
-          message: errorMessages.toString(),
-        },
-        ctx,
-      );
-    }
-
-    await next();
-  };
-};
-
 const joiValidate = rules => {
   return async (ctx, next) => {
     let verifyData = {},
@@ -47,6 +26,5 @@ const joiValidate = rules => {
 };
 
 module.exports = {
-  kpValidate,
   joiValidate,
 };

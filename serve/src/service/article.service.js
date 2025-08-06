@@ -3,7 +3,6 @@ const path = require('path'); // 原生路径处理模块（用于安全拼接�
 const { Op } = require('sequelize');
 
 const { decodeFile } = require('../utils/index');
-const { sequelize } = require('../model/index');
 
 const {
   article: Article,
@@ -153,7 +152,6 @@ class ArticleService {
           where: categoryId ? { id: categoryId } : {}, // 如果有传入 tag，则进行过滤
         },
       ],
-      // raw: false, // 保留Sequelize实例（方便调用toJSON）
     });
 
     // 4. 计算下一次请求的游标值

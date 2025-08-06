@@ -1,9 +1,8 @@
 const Router = require('koa-router');
 
-const { username, password } = require('../constant/validator.js');
-const { updateUserSchema, getUersSchema } = require('../constant/schema.js');
+const { registerOrLoginSchema, updateUserSchema, getUersSchema } = require('../constant/schema.js');
 
-const { kpValidate, joiValidate } = require('../middleware/validator.middleware');
+const { joiValidate } = require('../middleware/validator.middleware');
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 
 const {
@@ -12,32 +11,16 @@ const {
   verifyLogin,
   hadUpdatePermission,
 } = require('../middleware/user.middleware.js');
+
 const { register, login, remove, update, findAll } = require('../controller/user.controller.js');
 
 const router = new Router({ prefix: '/users' });
 
 // 注册用户
-router.post(
-  '/register',
-  kpValidate({
-    username,
-    password,
-  }),
-  verifyUser,
-  cryptPassword,
-  register,
-);
+router.post('/register', joiValidate(registerOrLoginSchema), verifyUser, cryptPassword, register);
 
 // 用户登录
-router.post(
-  '/login',
-  kpValidate({
-    username,
-    password,
-  }),
-  verifyLogin,
-  login,
-);
+router.post('/login', joiValidate(registerOrLoginSchema), verifyLogin, login);
 
 // 用户删除
 router.delete('/:userId', auth, hadAdminPermission, remove);

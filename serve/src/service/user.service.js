@@ -1,6 +1,6 @@
 const { Sequelize, Op } = require('sequelize');
 
-const User = require('../model/user.model.js');
+const { user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class UserService {
   async getUserInfo({ id, username, password, disabledDiscuss, role }) {

@@ -1,21 +1,15 @@
-const Websocket = require('ws');
+const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 
-const {
-  wsCommentSchema,
-  wsReplySchema,
-  wsDelInteractiveSchema,
-  wsGetNoticeSchema,
-} = require('../constant/schema.js');
-const { getUserInfo } = require('../service/user.service');
+// 维护 WebSocket 连接集合：Map<articleId, Set<ws>>
+const articleClientsMap = new Map();
 
-// 创建Websocket服务器，监听端口8010
-const socket = new Websocket.Server({ port: process.env.WS_PORT });
+function setupWebSocket(server, subClient) {
+  // 1. 创建WebSocket服务器
+  const wss = new WebSocket.Server({ server });
 
-module.exports.listen = () => {
-  // 监听客户端的连接
-  // ws：代表的是客户端连接的 socket 对象
-  socket.on('connection', (ws, req) => {
+  // 2. WebSocket连接处理
+  wss.on('connection', (ws, req) => {
     const url = req.url || '';
     const queryString = url.split('?')[1];
     const params = new URLSearchParams(queryString);
@@ -46,65 +40,90 @@ module.exports.listen = () => {
       return;
     }
 
-    // 监听客户端消息
-    // msg：由客户端发给服务端的数据
-    ws.on('message', async msg => {
-      let params = {};
+    // 客户端连接后，需要发送所观看的文章ID
+    ws.on('message', msg => {
       try {
-        params = JSON.parse(msg);
-      } catch {
-        ws.send(JSON.stringify({ type: 'error', message: '无效的JSON' }));
-        return;
-      }
+        const data = JSON.parse(msg);
 
-      try {
-        // 针对当前用户评论评论权限判断
-        const res = await getUserInfo({ id: ws.user.userId });
-        if (res) {
-          if (res.disabledDiscuss) {
-            ws.send(JSON.stringify({ type: 'error', message: '您已被禁言，请文明留言' }));
-            return;
+        if (data.type === 'WATCH_ARTICLE') {
+          const articleId = data.articleId;
+
+          // 检查 Map 中是否已经有该文章 ID 的客户端集合
+          if (!articleClientsMap.has(articleId)) {
+            // 如果没有，则新建一个空的 Set 用来存储连接（ws）
+            articleClientsMap.set(articleId, new Set());
+
+            // 只有第一次创建该文章客户端集合时，才订阅 Redis 或消息队列的对应频道
+            // 频道名格式是 `comment:${articleId}`，用于接收该文章的评论通知
+            subClient.subscribe(`comment:${articleId}`);
           }
 
-          switch (params.method) {
-            // 创建一级评论 -》广播，重新获取消息通知
-            case 'comment':
-              break;
-            // 对评论的回复 -》广播，重新获取消息通知
-            case 'reply':
-              break;
-            // 删除评论 -》硬删除，广播，重新获取消息通知
-            case 'delComment':
-            // 删除回复 -》硬删除，广播，重新获取消息通知
-            case 'delReply':
-              break;
-            // 获取消息通知
-            case 'getNotice':
-              break;
-            // 查看消息通知 -》改变消息查看状态（以查看），重新获取消息通知
-            case 'viewNotice':
-              break;
-            // 删除消息通知 -》软删除，重新获取消息通知
-            case 'delNotice':
-              break;
-            default:
-              break;
-          }
-        } else {
-          throw new Error();
+          // 将当前的 WebSocket 连接 ws 添加到该文章对应的客户端集合中
+          articleClientsMap.get(articleId).add(ws);
+
+          // 给 ws 连接对象记录它关联的文章 ID，方便后续清理或操作时使用
+          // 比如关闭连接时知道它属于哪个文章，从对应集合中移除
+          ws.articleId = articleId;
         }
-      } catch {
-        ws.send(JSON.stringify({ type: 'error', message: '评论失败' }));
-        return;
+      } catch (err) {
+        console.error('❌ 消息解析失败:', err);
       }
-      console.log(1222, msg);
-      // // 广播所有评论消息
-      // socket.clients.forEach(client => {
-      //   client.send(String(msg));
-      // });
+    });
+
+    // 断开连接清理 ws
+    ws.on('close', () => {
+      // 取出之前存储在 ws 上的文章 ID
+      const articleId = ws.articleId;
+      // 如果 articleId 存在，并且 articleClientsMap 里有对应的文章集合
+      if (articleId && articleClientsMap.has(articleId)) {
+        // 从该文章对应的客户端集合中删除当前关闭的 ws 连接
+        articleClientsMap.get(articleId).delete(ws);
+      }
+    });
+
+    // 心跳检测
+    ws.isAlive = true; // 初始化连接状态标记
+    ws.on('pong', () => {
+      // 当收到客户端对ping的响应时，标记连接为活跃
+      ws.isAlive = true;
     });
   });
 
-  // 服务器启动，显示启动消息
-  console.log(`websocket is running on ws://localhost:${process.env.WS_PORT}`);
-};
+  // 3. 心跳检测定时器
+  setInterval(() => {
+    // 每30秒执行一次检查
+    wss.clients.forEach(ws => {
+      // 遍历所有活跃连接
+      if (!ws.isAlive) return ws.terminate(); // 如果标记为非活跃，强制关闭连接
+      ws.isAlive = false; // 重置为待检测状态
+      ws.ping(); // 发送ping帧（心跳包）
+    });
+  }, 30000);
+
+  // 4. 订阅 Redis 的所有以 'comment:' 开头的频道，比如 'comment:123', 'comment:456' 等
+  subClient.pSubscribe('comment:*', (message, channel) => {
+    // 从频道名里提取出文章ID，比如 'comment:123' -> '123'
+    const articleId = channel.split(':')[1];
+    // Redis 传过来的消息是字符串，这里转换成对象
+    const msgObj = JSON.parse(message);
+
+    // 检查有没有客户端连接集合对应这个文章ID
+    if (articleClientsMap.has(articleId)) {
+      // 遍历这个文章对应的所有 WebSocket 连接
+      for (const ws of articleClientsMap.get(articleId)) {
+        // 只给处于“连接打开”状态的客户端发送消息，避免报错
+        if (ws.readyState === WebSocket.OPEN) {
+          // 发送消息（序列化为 JSON 字符串）到客户端
+          ws.send(JSON.stringify(msgObj));
+        }
+      }
+    }
+  });
+
+  // 5. 错误处理（扩展WebSocket错误）
+  wss.on('error', err => {
+    console.error('❌ WebSocket Server Error:', err);
+  });
+}
+
+module.exports = setupWebSocket;

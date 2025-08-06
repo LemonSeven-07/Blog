@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const seq = require('../db/seq');
+const sequelize = require('../db/sequelize');
 
 const db = {};
 
@@ -20,10 +20,10 @@ Object.values(db).forEach(model => {
   }
 });
 
-db.sequelize = seq;
+db.sequelize = sequelize;
 
 // // 同步所有模型到数据库;
-// seq.sync({ force: false }).then(() => {
+// sequelize.sync({ force: false }).then(() => {
 //   console.log('同步所有模型');
 // });
 

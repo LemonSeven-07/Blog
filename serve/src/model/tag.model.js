@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 
-const seq = require('../db/seq');
+const sequelize = require('../db/sequelize');
 
-const Tag = seq.define('tag', {
+const Tag = sequelize.define('tag', {
   name: {
     type: DataTypes.STRING,
     allowNull: false,

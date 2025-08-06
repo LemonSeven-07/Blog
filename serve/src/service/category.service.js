@@ -1,6 +1,4 @@
-const { Sequelize } = require('sequelize');
-
-const Category = require('../model/category.model');
+const { category: Category } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class categoryService {
   async getCategoryInfo(name) {

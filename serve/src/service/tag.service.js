@@ -1,6 +1,6 @@
 const { Sequelize } = require('sequelize');
 
-const Tag = require('../model/tag.model');
+const { tag: Tag } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class tagService {
   async findTags({ articleId, categoryId }) {

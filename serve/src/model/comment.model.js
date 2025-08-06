@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 
-const seq = require('../db/seq');
+const sequelize = require('../db/sequelize');
 
-const Comment = seq.define(
+const Comment = sequelize.define(
   'comment',
   {
     authorId: {

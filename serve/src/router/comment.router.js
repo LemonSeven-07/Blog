@@ -6,12 +6,21 @@ const {
   deleteCommentSchema,
   getCommentSchema,
   updateCommentSchema,
+  getNoticeSchema,
 } = require('../constant/schema.js');
 
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 const { joiValidate } = require('../middleware/validator.middleware.js');
 const { verifyDisabledDiscuss } = require('../middleware/comment.middleware.js');
-const { create, reply, remove, findAll, update } = require('../controller/comment.controller.js');
+const {
+  create,
+  reply,
+  remove,
+  findAll,
+  update,
+  findUnreadCount,
+  findMessageList,
+} = require('../controller/comment.controller.js');
 
 const router = new Router({ prefix: '/comment' });
 
@@ -26,6 +35,12 @@ router.get('/list', auth, joiValidate(getCommentSchema), findAll);
 
 // 修改评论通知状态/消息通知显示状态
 router.patch('/notice', auth, joiValidate(updateCommentSchema), update);
+
+// 获取当前用户未读消息数量（文章评论和评论回复）
+router.get('/unread/count', auth, findUnreadCount);
+
+// 获取当前用户消息通知列表（包含已读和未读）
+router.get('/notice/list', auth, joiValidate(getNoticeSchema), findMessageList);
 
 // 删除回复评论
 router.delete('/reply', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);

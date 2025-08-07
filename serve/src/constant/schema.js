@@ -169,6 +169,18 @@ module.exports = {
   })
     .and('id') // 强制要求 id 存在（其实上面已经 .required() 了）
     .xor('notice', 'hide'), // notice 和 hide 只能传其中一个,
+  getNoticeSchema: Joi.object({
+    pageNum: Joi.number().integer().messages({
+      'number.integer': 'pageNum必须是整数',
+    }),
+    pageSize: Joi.number().integer().messages({
+      'number.integer': 'pageSize必须是整数',
+    }),
+    type: Joi.string().valid('all', 'unread', 'read').messages({
+      'string.empty': 'type不能为空',
+      'any.only': 'type必须是all或unread或read',
+    }),
+  }),
 
   createCategorySchema: Joi.object({
     name: Joi.string().required().messages({

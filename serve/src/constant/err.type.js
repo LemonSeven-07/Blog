@@ -164,4 +164,9 @@ module.exports = {
     message: '滚动加载失败',
     data: null,
   },
+  findNoticeError: {
+    code: '10033',
+    message: '消息通知获取失败',
+    data: null,
+  },
 };

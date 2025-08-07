@@ -24,7 +24,7 @@ db.sequelize = sequelize;
 
 // // 同步所有模型到数据库;
 // sequelize.sync({ force: false }).then(() => {
-//   console.log('同步所有模型');
+//   console.log('✅ 同步所有模型');
 // });
 
 module.exports = db;

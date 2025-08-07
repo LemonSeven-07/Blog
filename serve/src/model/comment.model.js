@@ -42,13 +42,13 @@ const Comment = sequelize.define(
     },
     notice: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
-      comment: '是否站内通知, true开启，false关闭',
+      defaultValue: false,
+      comment: '未读消息, true已读，false未读',
     },
     hide: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
-      comment: '是否显示消息，true显示，false隐藏',
+      defaultValue: false,
+      comment: '消息显示状态，true隐藏，false显示',
     },
   },
   {

@@ -1,3 +1,5 @@
+const { Op } = require('sequelize');
+
 const { comment: Comment, user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class CommentService {
@@ -100,7 +102,70 @@ class CommentService {
         id,
       },
     });
+
     return res[0] > 0 ? true : false;
+  }
+
+  async findUnreadNotice(userId) {
+    const count = await Comment.count({
+      where: {
+        authorId: userId,
+        notice: false, // 未读消息
+        hide: false, // 显示状态
+      },
+    });
+
+    return count ? count : 0;
+  }
+
+  async findNotice({ userId, type, pageNum, pageSize }) {
+    const whereOpt = {
+      authorId: userId,
+      userId: {
+        [Op.ne]: userId, // 确保不是自己的评论
+      },
+      hide: false, // 显示状态
+    };
+    if (type === 'unread') {
+      whereOpt.notice = false; // 未读消息
+    } else if (type === 'read') {
+      whereOpt.notice = true; // 已读消息
+    }
+
+    const { count, rows } = await Comment.findAndCountAll({
+      where: whereOpt,
+      include: [
+        // 关联评论作者信息
+        {
+          model: User, // 关联User模型
+          as: 'author', // 使用在Comment模型中定义的关联别名
+          attributes: ['id', 'username'], // 只返回用户的id和username字段
+        },
+      ],
+      order: [['createdAt', 'DESC']], // 一级评论：新→旧
+      limit: pageSize * 1, // 每页条数，转换为整数
+      offset: (pageNum - 1) * pageSize, // 偏移量，转换为整数
+      paranoid: false,
+    });
+
+    const safeComments =
+      rows.map(comment => {
+        const plainComment = comment.get({ plain: true });
+        if (plainComment.deletedAt) {
+          return {
+            ...plainComment,
+            content: '该评论已被删除',
+          };
+        } else {
+          return plainComment;
+        }
+      }) || [];
+    return {
+      pageNum,
+      pageSize,
+      total: count,
+      list: safeComments,
+    };
   }
 }
 module.exports = new CommentService();

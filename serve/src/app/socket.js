@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 
 // 维护 WebSocket 连接集合：Map<articleId, Set<ws>>
 const articleClientsMap = new Map();
+// 维护用户连接集合：Map<userId, Set<ws>>
+const userClientsMap = new Map();
 
 function setupWebSocket(server, subClient) {
   // 1. 创建WebSocket服务器
@@ -16,31 +18,34 @@ function setupWebSocket(server, subClient) {
     const token = params.get('token')?.replace('Bearer ', '');
     const { JWT_SECRET } = process.env;
 
+    // token不存在，直接关闭连接
     if (!token) {
       ws.close(1008, 'Missing token');
       return;
     }
-
     try {
-      // 1. 验证token是否过期
+      // 验证token是否过期
       const user = jwt.verify(token, JWT_SECRET);
       ws.user = user;
     } catch (err) {
       switch (err.name) {
         case 'TokenExpiredError':
-          // 1. token过期
+          // token过期
           ws.close(1008, 'token过期');
+          break;
         case 'JsonWebTokenError':
-          // 2. token无效
+          // token无效
           ws.close(1008, 'token无效');
+          break;
         default:
           ws.close(1008, 'token验证失败');
+          break;
       }
 
       return;
     }
 
-    // 客户端连接后，需要发送所观看的文章ID
+    // 3. 接收客户端消息
     ws.on('message', msg => {
       try {
         const data = JSON.parse(msg);
@@ -64,13 +69,24 @@ function setupWebSocket(server, subClient) {
           // 给 ws 连接对象记录它关联的文章 ID，方便后续清理或操作时使用
           // 比如关闭连接时知道它属于哪个文章，从对应集合中移除
           ws.articleId = articleId;
+        } else if (data.type === 'WATCH_USER') {
+          const userId = String(data.userId);
+
+          if (!userClientsMap.has(userId)) {
+            userClientsMap.set(userId, new Set());
+            subClient.subscribe(`notify:${userId}`); // 订阅通知频道
+          }
+
+          userClientsMap.get(userId).add(ws);
+          // 保存用户 ID，断开连接时可以清理
+          ws.userId = userId;
         }
       } catch (err) {
         console.error('❌ 消息解析失败:', err);
       }
     });
 
-    // 断开连接清理 ws
+    // 4. 连接关闭处理
     ws.on('close', () => {
       // 取出之前存储在 ws 上的文章 ID
       const articleId = ws.articleId;
@@ -78,6 +94,20 @@ function setupWebSocket(server, subClient) {
       if (articleId && articleClientsMap.has(articleId)) {
         // 从该文章对应的客户端集合中删除当前关闭的 ws 连接
         articleClientsMap.get(articleId).delete(ws);
+        // 如果删除后该集合为空，说明没有客户端再监听这个文章了
+        if (set.size === 0) {
+          articleClientsMap.delete(articleId);
+          subClient.unsubscribe(`comment:${articleId}`);
+        }
+      }
+
+      const userId = ws.userId;
+      if (userId && userClientsMap.has(userId)) {
+        userClientsMap.get(userId).delete(ws);
+        if (set.size === 0) {
+          userClientsMap.delete(userId);
+          subClient.unsubscribe(`notify:${userId}`);
+        }
       }
     });
 
@@ -89,18 +119,7 @@ function setupWebSocket(server, subClient) {
     });
   });
 
-  // 3. 心跳检测定时器
-  setInterval(() => {
-    // 每30秒执行一次检查
-    wss.clients.forEach(ws => {
-      // 遍历所有活跃连接
-      if (!ws.isAlive) return ws.terminate(); // 如果标记为非活跃，强制关闭连接
-      ws.isAlive = false; // 重置为待检测状态
-      ws.ping(); // 发送ping帧（心跳包）
-    });
-  }, 30000);
-
-  // 4. 订阅 Redis 的所有以 'comment:' 开头的频道，比如 'comment:123', 'comment:456' 等
+  // 5. 订阅 Redis 的所有以 'comment:'、'notify:' 开头的频道，比如 'comment:123', 'notify:456' 等
   subClient.pSubscribe('comment:*', (message, channel) => {
     // 从频道名里提取出文章ID，比如 'comment:123' -> '123'
     const articleId = channel.split(':')[1];
@@ -119,11 +138,34 @@ function setupWebSocket(server, subClient) {
       }
     }
   });
+  subClient.pSubscribe('notify:*', (message, channel) => {
+    const userId = channel.split(':')[1];
+    const msgObj = JSON.parse(message);
 
-  // 5. 错误处理（扩展WebSocket错误）
+    if (userClientsMap.has(userId)) {
+      for (const ws of userClientsMap.get(userId)) {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'NOTIFY', ...msgObj }));
+        }
+      }
+    }
+  });
+
+  // 6. 错误处理（扩展WebSocket错误）
   wss.on('error', err => {
     console.error('❌ WebSocket Server Error:', err);
   });
+
+  // 7. 心跳检测定时器
+  setInterval(() => {
+    // 每30秒执行一次检查
+    wss.clients.forEach(ws => {
+      // 遍历所有活跃连接
+      if (!ws.isAlive) return ws.terminate(); // 如果标记为非活跃，强制关闭连接
+      ws.isAlive = false; // 重置为待检测状态
+      ws.ping(); // 发送ping帧（心跳包）
+    });
+  }, 30000);
 }
 
 module.exports = setupWebSocket;

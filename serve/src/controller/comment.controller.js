@@ -3,6 +3,8 @@ const {
   removeComment,
   findComment,
   updateNotice,
+  findUnreadNotice,
+  findNotice,
 } = require('../service/comment.service');
 
 const {
@@ -10,6 +12,7 @@ const {
   deleteCommentError,
   findCommentError,
   updateNoticeError,
+  findNoticeError,
 } = require('../constant/err.type');
 
 const { restructureComments } = require('../utils/index');
@@ -98,6 +101,39 @@ class CommentController {
       };
     } catch (error) {
       ctx.app.emit('error', updateNoticeError, ctx);
+    }
+  }
+
+  async findUnreadCount(ctx) {
+    const { userId } = ctx.state.user; // 获取当前登录用户的ID
+    try {
+      const res = await findUnreadNotice(userId);
+
+      ctx.body = {
+        code: '200',
+        data: {
+          count: res,
+        },
+        message: '查询成功',
+      };
+    } catch (error) {
+      ctx.app.emit('error', findNoticeError, ctx);
+    }
+  }
+
+  async findMessageList(ctx) {
+    const { userId } = ctx.state.user; // 获取当前登录用户的ID
+    const { type = 'all', pageNum = 1, pageSize = 10 } = ctx.query; // 获取分页参数
+    try {
+      const res = await findNotice({ userId, type, pageNum, pageSize });
+
+      ctx.body = {
+        code: '200',
+        data: res,
+        message: '查询成功',
+      };
+    } catch (error) {
+      ctx.app.emit('error', findNoticeError, ctx);
     }
   }
 }

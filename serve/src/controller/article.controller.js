@@ -326,7 +326,7 @@ class articleController {
             retryDelay: 100, // 重试间隔(ms)
           },
           err => {
-            if (err) console.error('导出临时目录删除失败:', err);
+            if (err) console.error('❌ 导出临时目录删除失败:', err);
           },
         );
       }, 5000);
@@ -368,7 +368,7 @@ class articleController {
               retryDelay: 100, // 重试间隔(ms)
             },
             err => {
-              if (err) console.error('导入临时目录删除失败:', err);
+              if (err) console.error('❌ 导入临时目录删除失败:', err);
             },
           );
         });

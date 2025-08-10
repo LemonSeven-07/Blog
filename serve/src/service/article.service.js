@@ -265,8 +265,9 @@ class ArticleService {
         },
         entityType: 'post',
       },
+      force: true, // 彻底删除评论及其回复，跳过软删除
+      paranoid: false,
       transaction,
-      force: true,
     });
     return res > 0 ? true : false;
   }

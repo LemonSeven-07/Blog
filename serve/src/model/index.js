@@ -23,7 +23,7 @@ Object.values(db).forEach(model => {
 db.sequelize = sequelize;
 
 // // 同步所有模型到数据库;
-// sequelize.sync({ force: false }).then(() => {
+// sequelize.sync({ force: true }).then(() => {
 //   console.log('✅ 同步所有模型');
 // });
 

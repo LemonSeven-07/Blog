@@ -3,7 +3,7 @@ const { Sequelize, Op } = require('sequelize');
 const { user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class UserService {
-  async getUserInfo({ id, username, password, disabledDiscuss, role }) {
+  async getUserInfo({ id, username, password, disabledDiscuss, role, paranoid = true }) {
     const whereOpt = {};
     id && Object.assign(whereOpt, { id });
     username && Object.assign(whereOpt, { username });
@@ -15,6 +15,7 @@ class UserService {
     const res = await User.findOne({
       attributes: ['id', 'username', 'password', 'disabledDiscuss', 'role'],
       where: whereOpt,
+      paranoid, // 包括软删除的数据
     });
     return res ? res.dataValues : null;
   }

@@ -14,7 +14,7 @@ const {
 
 const { register, login, remove, update, findAll } = require('../controller/user.controller.js');
 
-const router = new Router({ prefix: '/users' });
+const router = new Router({ prefix: '/user' });
 
 // 注册用户
 router.post('/register', joiValidate(registerOrLoginSchema), verifyUser, cryptPassword, register);

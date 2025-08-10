@@ -15,7 +15,7 @@ const {
 const verifyUser = async (ctx, next) => {
   const { username } = ctx.request.body;
   try {
-    const res = await getUserInfo({ username });
+    const res = await getUserInfo({ username, paranoid: false });
     if (res) {
       // 用户名已存在
       return ctx.app.emit('error', userAlreadyExists, ctx);

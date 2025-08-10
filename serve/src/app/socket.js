@@ -1,6 +1,9 @@
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 
+const { redisClient } = require('../db/redis.js');
+const { findUnreadNotice } = require('../service/comment.service.js');
+
 // 维护 WebSocket 连接集合：Map<articleId, Set<ws>>
 const articleClientsMap = new Map();
 // 维护用户连接集合：Map<userId, Set<ws>>
@@ -11,7 +14,7 @@ function setupWebSocket(server, subClient) {
   const wss = new WebSocket.Server({ server });
 
   // 2. WebSocket连接处理
-  wss.on('connection', (ws, req) => {
+  wss.on('connection', async (ws, req) => {
     const url = req.url || '';
     const queryString = url.split('?')[1];
     const params = new URLSearchParams(queryString);
@@ -46,21 +49,57 @@ function setupWebSocket(server, subClient) {
     }
 
     // 3. 接收客户端消息
-    ws.on('message', msg => {
+    ws.on('message', async msg => {
       try {
         const data = JSON.parse(msg);
 
-        if (data.type === 'WATCH_ARTICLE') {
-          const articleId = data.articleId;
+        if (data.type === 'INIT_USER') {
+          const userId = String(ws.user.userId);
+
+          if (!userClientsMap.has(userId)) {
+            userClientsMap.set(userId, new Set());
+          }
+
+          userClientsMap.get(userId).add(ws);
+          // 保存用户 ID，断开连接时可以清理
+          ws.userId = userId;
+
+          // 查询未读消息数量
+          try {
+            const count = await findUnreadNotice(userId);
+
+            // 设置键值并添加过期时间（单位：秒），默认两小时
+            const CACHE_TTL = parseInt(process.env.REDIS_CACHE_TTL) * 60 * 60 || 7200;
+            await redisClient.set(`user:unread:${userId}`, count, { EX: CACHE_TTL });
+
+            // 给当前 WebSocket 连接发送未读消息数
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  type: 'UNREAD_COUNT',
+                  count,
+                }),
+              );
+            }
+          } catch (err) {
+            console.error('❌ 获取未读消息数量失败:', err);
+            // 发送错误消息给客户端
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  type: 'UNREAD_COUNT_ERROR',
+                  message: '查询未读消息失败',
+                }),
+              );
+            }
+          }
+        } else if (data.type === 'WATCH_ARTICLE') {
+          const articleId = String(data.articleId);
 
           // 检查 Map 中是否已经有该文章 ID 的客户端集合
           if (!articleClientsMap.has(articleId)) {
             // 如果没有，则新建一个空的 Set 用来存储连接（ws）
             articleClientsMap.set(articleId, new Set());
-
-            // 只有第一次创建该文章客户端集合时，才订阅 Redis 或消息队列的对应频道
-            // 频道名格式是 `comment:${articleId}`，用于接收该文章的评论通知
-            subClient.subscribe(`comment:${articleId}`);
           }
 
           // 将当前的 WebSocket 连接 ws 添加到该文章对应的客户端集合中
@@ -69,17 +108,17 @@ function setupWebSocket(server, subClient) {
           // 给 ws 连接对象记录它关联的文章 ID，方便后续清理或操作时使用
           // 比如关闭连接时知道它属于哪个文章，从对应集合中移除
           ws.articleId = articleId;
-        } else if (data.type === 'WATCH_USER') {
-          const userId = String(data.userId);
+        } else if (data.type === 'UNWATCH_ARTICLE') {
+          // 清理 Map 中的引用
+          // 如果 articleId 存在，并且 articleClientsMap 里有对应的文章集合
+          if (ws.articleId && articleClientsMap.has(ws.articleId)) {
+            // 从该文章对应的客户端集合中删除当前关闭的 ws 连接
+            const set = articleClientsMap.get(ws.articleId);
+            set.delete(ws);
 
-          if (!userClientsMap.has(userId)) {
-            userClientsMap.set(userId, new Set());
-            subClient.subscribe(`notify:${userId}`); // 订阅通知频道
+            // 如果删除后该集合为空，说明没有客户端再监听这个文章了
+            if (set.size === 0) articleClientsMap.delete(ws.articleId);
           }
-
-          userClientsMap.get(userId).add(ws);
-          // 保存用户 ID，断开连接时可以清理
-          ws.userId = userId;
         }
       } catch (err) {
         console.error('❌ 消息解析失败:', err);
@@ -88,27 +127,8 @@ function setupWebSocket(server, subClient) {
 
     // 4. 连接关闭处理
     ws.on('close', () => {
-      // 取出之前存储在 ws 上的文章 ID
-      const articleId = ws.articleId;
-      // 如果 articleId 存在，并且 articleClientsMap 里有对应的文章集合
-      if (articleId && articleClientsMap.has(articleId)) {
-        // 从该文章对应的客户端集合中删除当前关闭的 ws 连接
-        articleClientsMap.get(articleId).delete(ws);
-        // 如果删除后该集合为空，说明没有客户端再监听这个文章了
-        if (set.size === 0) {
-          articleClientsMap.delete(articleId);
-          subClient.unsubscribe(`comment:${articleId}`);
-        }
-      }
-
-      const userId = ws.userId;
-      if (userId && userClientsMap.has(userId)) {
-        userClientsMap.get(userId).delete(ws);
-        if (set.size === 0) {
-          userClientsMap.delete(userId);
-          subClient.unsubscribe(`notify:${userId}`);
-        }
-      }
+      console.log(`🔌 用户 ${ws.user.username || '未知'} 的连接关闭`);
+      cleanupWebSocket(ws);
     });
 
     // 心跳检测
@@ -133,7 +153,7 @@ function setupWebSocket(server, subClient) {
         // 只给处于“连接打开”状态的客户端发送消息，避免报错
         if (ws.readyState === WebSocket.OPEN) {
           // 发送消息（序列化为 JSON 字符串）到客户端
-          ws.send(JSON.stringify(msgObj));
+          ws.send(JSON.stringify({ type: 'comment', ...msgObj }));
         }
       }
     }
@@ -145,7 +165,7 @@ function setupWebSocket(server, subClient) {
     if (userClientsMap.has(userId)) {
       for (const ws of userClientsMap.get(userId)) {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'NOTIFY', ...msgObj }));
+          ws.send(JSON.stringify({ type: 'notify', ...msgObj }));
         }
       }
     }
@@ -153,6 +173,7 @@ function setupWebSocket(server, subClient) {
 
   // 6. 错误处理（扩展WebSocket错误）
   wss.on('error', err => {
+    cleanupWebSocket(ws);
     console.error('❌ WebSocket Server Error:', err);
   });
 
@@ -161,11 +182,37 @@ function setupWebSocket(server, subClient) {
     // 每30秒执行一次检查
     wss.clients.forEach(ws => {
       // 遍历所有活跃连接
-      if (!ws.isAlive) return ws.terminate(); // 如果标记为非活跃，强制关闭连接
+      if (!ws.isAlive) {
+        cleanupWebSocket(ws);
+        return ws.terminate(); // 如果标记为非活跃，强制关闭连接
+      }
       ws.isAlive = false; // 重置为待检测状态
       ws.ping(); // 发送ping帧（心跳包）
     });
   }, 30000);
+}
+
+// 清理 Map 中的引用
+function cleanupWebSocket(ws) {
+  // 如果 articleId 存在，并且 articleClientsMap 里有对应的文章集合
+  if (ws.articleId && articleClientsMap.has(ws.articleId)) {
+    // 从该文章对应的客户端集合中删除当前关闭的 ws 连接
+    const set = articleClientsMap.get(ws.articleId);
+    set.delete(ws);
+
+    // 如果删除后该集合为空，说明没有客户端再监听这个文章了
+    if (set.size === 0) articleClientsMap.delete(ws.articleId);
+  }
+
+  // 如果 userId 存在，并且 userClientsMap 里有对应的用户集合
+  if (ws.userId && userClientsMap.has(ws.userId)) {
+    // 从该用户对应的客户端集合中删除当前关闭的 ws 连接
+    const set = userClientsMap.get(ws.userId);
+    set.delete(ws);
+
+    // 如果删除后该集合为空，说明没有客户端再监听这个用户了
+    if (set.size === 0) userClientsMap.delete(ws.userId);
+  }
 }
 
 module.exports = setupWebSocket;

@@ -17,7 +17,7 @@ const Comment = sequelize.define(
     },
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       comment: '发表该评论/回复的用户ID',
     },
     entityType: {
@@ -70,6 +70,7 @@ Comment.associate = models => {
   Comment.belongsTo(models.user, {
     foreignKey: 'userId',
     as: 'author',
+    onDelete: 'SET NULL',
   });
 
   Comment.belongsTo(models.user, {

@@ -122,7 +122,10 @@ class CommentService {
     const whereOpt = {
       authorId: userId,
       userId: {
-        [Op.ne]: userId, // 确保不是自己的评论
+        [Op.or]: {
+          [Op.ne]: userId,
+          [Op.is]: null,
+        }, // 确保不是自己的评论(包含已删除用户的评论)
       },
       hide: false, // 显示状态
     };
@@ -139,6 +142,7 @@ class CommentService {
         {
           model: User, // 关联User模型
           as: 'author', // 使用在Comment模型中定义的关联别名
+          required: false,
           attributes: ['id', 'username'], // 只返回用户的id和username字段
         },
       ],

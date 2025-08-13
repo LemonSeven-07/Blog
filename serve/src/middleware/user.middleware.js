@@ -66,8 +66,8 @@ const verifyLogin = async (ctx, next) => {
 
 const hadUpdatePermission = async (ctx, next) => {
   const { role } = ctx.state.user;
-  const { role: newRole, disabledDiscuss } = ctx.request.body;
-  if (role !== 1 && (disabledDiscuss !== undefined || newRole !== undefined)) {
+  const { role: newRole, banned } = ctx.request.body;
+  if (role !== 1 && (banned !== undefined || newRole !== undefined)) {
     return ctx.app.emit('error', hasNotAdminPermission, ctx);
   }
 

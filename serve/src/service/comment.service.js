@@ -1,11 +1,21 @@
-const { Op } = require('sequelize');
+const { Op, col } = require('sequelize');
 
 const { comment: Comment, user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class CommentService {
-  async sendComment({ authorId, content, userId, entityType, entityId, parentId, replyToUserId }) {
+  async sendComment({
+    authorId,
+    articleId,
+    content,
+    userId,
+    entityType,
+    entityId,
+    parentId,
+    replyToUserId,
+  }) {
     const commentData = {};
     authorId && Object.assign(commentData, { authorId });
+    articleId && Object.assign(commentData, { articleId });
     content && Object.assign(commentData, { content });
     userId && Object.assign(commentData, { userId });
     entityType && Object.assign(commentData, { entityType });
@@ -17,30 +27,16 @@ class CommentService {
     return res ? res.dataValues : null;
   }
 
-  async removeComment({ id, url }) {
-    if (url === '/comment/reply') {
-      // 删除回复评论
-      const res = await Comment.destroy({
-        where: {
-          id,
-          entityType: 'comment', // 确保是对评论的回复
-        },
-      });
-      return res > 0 ? true : false;
-    } else {
-      // 验证评论是否存在且是一级评论
-      const parentComment = await Comment.findOne({
-        where: {
-          id,
-          entityType: 'post', // 确保是文章一级评论
-        },
-      });
-      if (!parentComment) return false;
+  async removeComment(id) {
+    const comment = await Comment.findOne({
+      where: {
+        id,
+      },
+    });
+    if (!comment) return false;
 
-      // 删除一级评论
-      const res = await parentComment.destroy();
-      return res ? res.dataValues : null;
-    }
+    const res = await comment.destroy();
+    return res ? res.dataValues : null;
   }
 
   async findComment({ id, entityId, entityType }) {
@@ -91,25 +87,50 @@ class CommentService {
     return plainComments;
   }
 
-  async updateNotice({ id, notice, hide }) {
+  async updateNotice({ ids, notice, hide }) {
     const newComment = {};
 
     notice !== undefined && Object.assign(newComment, { notice });
     hide !== undefined && Object.assign(newComment, { hide });
+    // 如果未读消息数据不显示，则自动标记为已读
+    if (hide === true) newComment.notice = true;
 
+    // 当数据库里hide或notice字段与传入的值不同时，才更新
     const res = await Comment.update(newComment, {
       where: {
-        id,
+        id: ids,
+        [Op.or]: [
+          { hide: { [Op.ne]: newComment.hide } },
+          { notice: { [Op.ne]: newComment.notice } },
+        ],
       },
     });
 
-    return res[0] > 0 ? true : false;
+    return res[0] > 0 ? res[0] : false;
   }
 
   async findUnreadNotice(userId) {
     const count = await Comment.count({
       where: {
-        authorId: userId,
+        // 消息通知不显示自己评论自己和自己回复自己的通知
+        [Op.and]: [
+          { authorId: userId },
+          {
+            [Op.or]: [
+              {
+                entityType: 'post',
+                authorId: { [Op.ne]: col('userId') },
+              },
+              {
+                entityType: 'comment',
+                [Op.and]: [
+                  { replyToUserId: userId }, // 回复的目标用户是当前用户
+                  { userId: { [Op.ne]: col('replyToUserId') } },
+                ],
+              },
+            ],
+          },
+        ],
         notice: false, // 未读消息
         hide: false, // 显示状态
       },

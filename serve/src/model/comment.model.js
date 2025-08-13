@@ -10,6 +10,11 @@ const Comment = sequelize.define(
       allowNull: false,
       comment: '文章作者的ID',
     },
+    articleId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: '文章ID',
+    },
     content: {
       type: DataTypes.TEXT,
       allowNull: false,

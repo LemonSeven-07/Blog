@@ -153,19 +153,43 @@ function setupWebSocket(server, subClient) {
         // 只给处于“连接打开”状态的客户端发送消息，避免报错
         if (ws.readyState === WebSocket.OPEN) {
           // 发送消息（序列化为 JSON 字符串）到客户端
-          ws.send(JSON.stringify({ type: 'comment', ...msgObj }));
+          ws.send(JSON.stringify(msgObj));
         }
       }
     }
   });
-  subClient.pSubscribe('notify:*', (message, channel) => {
+  subClient.pSubscribe('notify:*', async (message, channel) => {
     const userId = channel.split(':')[1];
     const msgObj = JSON.parse(message);
+    const unreadKey = `unread:notice:${userId}`;
 
     if (userClientsMap.has(userId)) {
       for (const ws of userClientsMap.get(userId)) {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'notify', ...msgObj }));
+          const exists = await redisClient.exists(unreadKey);
+          if (exists) {
+            let count;
+            // 删除评论或回复时，减少未读消息数
+            if (msgObj.type === 'DELETE_NOTIFY') {
+              count = await redisClient.decr(unreadKey); // 减少未读消息数（-1）
+            } else if (msgObj.type === 'ADD_NOTIFY') {
+              count = await redisClient.incr(unreadKey); // 增加未读消息数（+1）
+            } else if (msgObj.type === 'UPDATE_NOTIFY_STATUS') {
+              count = await redisClient.incrBy(unreadKey, msgObj.step); // 增加未读消息数（+msgObj.step）
+              delete msgObj.step; // 删除 step 属性
+            }
+            if (count < 0) {
+              // 防御负值
+              await redisClient.set(unreadKey, 0);
+              count = 0;
+            }
+            msgObj.count = count; // 更新消息对象中的未读数
+          } else {
+            // key不存在，说明缓存失效，从数据库获取最新未读数并更新缓存
+            const count = await getSafeUnreadCount(userId);
+            msgObj.count = count;
+          }
+          ws.send(JSON.stringify(msgObj));
         }
       }
     }
@@ -213,6 +237,45 @@ function cleanupWebSocket(ws) {
     // 如果删除后该集合为空，说明没有客户端再监听这个用户了
     if (set.size === 0) userClientsMap.delete(ws.userId);
   }
+}
+
+/**
+ * 安全获取用户未读消息数
+ * - 优先从 Redis 读缓存
+ * - 缓存异常时，从数据库读取并修正 Redis
+ * - 控制对数据库的访问频率，避免频繁查询
+ * @param {string|number} userId 用户ID
+ * @returns {Promise<number>} 未读消息数
+ */
+async function getSafeUnreadCount(userId) {
+  const unreadKey = 'unread:' + userId;
+  const lastCheckKey = 'unread:last_check:' + userId;
+
+  // 1. 先尝试读取 Redis 缓存
+  const [cached, lastCheck] = await redisClient.mGet(unreadKey, lastCheckKey);
+  const now = Date.now();
+
+  // 2. 判断缓存是否有效（存在且为合法数字且非负）
+  if (cached && !isNaN(cached) && Number(cached) >= 0) {
+    return Number(cached); // 缓存有效，直接返回
+  }
+
+  // 3. 缓存无效，判断上次校验时间，避免频繁访问数据库
+  if (lastCheck && now - Number(lastCheck) < 5 * 60 * 1000) {
+    // 5分钟内已校验过
+    // 虽然缓存异常，但校验频率限制，直接返回缓存（可能是 null 或非法）
+    return cached ? Number(cached) : 0;
+  }
+
+  // 4. 访问数据库查询真实未读数
+  const dbCount = await findUnreadNotice(userId);
+
+  // 5. 更新 Redis 缓存和校验时间
+  const CACHE_TTL = parseInt(process.env.REDIS_CACHE_TTL) * 60 * 60 || 7200;
+  await redisClient.set(unreadKey, dbCount, { EX: CACHE_TTL }); // 默认缓存2小时
+  await redisClient.set(lastCheckKey, now.toString(), { EX: 600 }); // 10分钟内不再访问DB
+
+  return dbCount;
 }
 
 module.exports = setupWebSocket;

@@ -40,11 +40,11 @@ module.exports = {
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
     }),
-    disabledDiscuss: Joi.boolean().strict().messages({
+    banned: Joi.boolean().strict().messages({
       'boolean.base': 'disabledDiscuss必须是布尔值',
     }),
   })
-    .or('username', 'password', 'role', 'disabledDiscuss')
+    .or('username', 'password', 'role', 'banned')
     .messages({
       'object.missing': '必要字段为空',
     }),
@@ -52,11 +52,11 @@ module.exports = {
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
     }),
-    disabledDiscuss: Joi.boolean().strict().messages({
+    banned: Joi.boolean().strict().messages({
       'boolean.base': 'disabledDiscuss必须是布尔值',
     }),
   })
-    .or('role', 'disabledDiscuss')
+    .or('role', 'banned')
     .messages({
       'object.missing': '必要字段为空',
     }),
@@ -107,6 +107,10 @@ module.exports = {
       'number.empty': 'authorId不能为空',
       'number.integer': 'authorId必须是整数',
     }),
+    articleId: Joi.number().integer().required().messages({
+      'number.empty': 'articleId不能为空',
+      'number.integer': 'articleId必须是整数',
+    }),
     content: Joi.string().required().messages({
       'string.empty': '评论内容不能为空',
     }),
@@ -119,6 +123,10 @@ module.exports = {
     authorId: Joi.number().integer().required().messages({
       'number.empty': 'authorId不能为空',
       'number.integer': 'authorId必须是整数',
+    }),
+    articleId: Joi.number().integer().required().messages({
+      'number.empty': 'articleId不能为空',
+      'number.integer': 'articleId必须是整数',
     }),
     content: Joi.string().required().messages({
       'string.empty': '评论内容不能为空',
@@ -156,10 +164,17 @@ module.exports = {
     }),
   }),
   updateCommentSchema: Joi.object({
-    id: Joi.number().integer().required().messages({
-      'number.integer': 'id必须是整数',
-      'string.empty': 'id不能为空',
-    }),
+    ids: Joi.array()
+      .items(Joi.number().integer()) // 数组元素必须是整数
+      .required() // 必填字段
+      .min(1) // 数组不能为空（至少1个元素）
+      .messages({
+        'array.base': 'ids必须是数组',
+        'array.empty': 'ids数组不能为空',
+        'array.min': 'ids数组不能为空',
+        'number.base': 'ids数组元素必须是数字',
+        'number.integer': 'ids数组元素必须是整数',
+      }),
     hide: Joi.boolean().strict().messages({
       'boolean.base': 'hide必须是布尔值',
     }),
@@ -265,11 +280,11 @@ module.exports = {
       .required() // 必填字段
       .min(1) // 数组不能为空（至少1个元素）
       .messages({
-        'array.base': '参数必须是数组',
-        'array.empty': '数组不能为空',
-        'array.min': '数组不能为空',
-        'number.base': '数组元素必须是数字',
-        'number.integer': '数组元素必须是整数',
+        'array.base': 'ids必须是数组',
+        'array.empty': 'ids数组不能为空',
+        'array.min': 'ids数组不能为空',
+        'number.base': 'ids数组元素必须是数字',
+        'number.integer': 'ids数组元素必须是整数',
       }),
   }),
   outputArticlesSchema: Joi.object({

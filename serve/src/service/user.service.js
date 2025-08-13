@@ -3,17 +3,17 @@ const { Sequelize, Op } = require('sequelize');
 const { user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class UserService {
-  async getUserInfo({ id, username, password, disabledDiscuss, role, paranoid = true }) {
+  async getUserInfo({ id, username, password, banned, role, paranoid = true }) {
     const whereOpt = {};
     id && Object.assign(whereOpt, { id });
     username && Object.assign(whereOpt, { username });
     password && Object.assign(whereOpt, { password });
-    disabledDiscuss && Object.assign(whereOpt, { disabledDiscuss });
+    banned && Object.assign(whereOpt, { banned });
     role && Object.assign(whereOpt, { role });
 
     // findOne 方法查询单条数据
     const res = await User.findOne({
-      attributes: ['id', 'username', 'password', 'disabledDiscuss', 'role'],
+      attributes: ['id', 'username', 'password', 'banned', 'role'],
       where: whereOpt,
       paranoid, // 包括软删除的数据
     });
@@ -38,14 +38,14 @@ class UserService {
     return res > 0 ? true : false;
   }
 
-  async updateUer({ username, password, disabledDiscuss, role }, userId) {
+  async updateUer({ username, password, banned, role }, userId) {
     const whereOpt = { id: userId };
     const newUser = {};
 
     username && Object.assign(newUser, { username });
     password && Object.assign(newUser, { password });
     role && Object.assign(newUser, { role });
-    disabledDiscuss !== undefined && Object.assign(newUser, { disabledDiscuss });
+    banned !== undefined && Object.assign(newUser, { banned });
     const res = await User.update(newUser, {
       where: whereOpt,
     });
@@ -109,7 +109,7 @@ class UserService {
       attributes: [
         'id',
         'username',
-        'disabledDiscuss',
+        'banned',
         'createdAt',
         // 判断是否是github用户和站内用户，并根据判断结果生成虚拟字段type，type = 1 github 用户 type = 2 站内用户，默认站内用户
         [

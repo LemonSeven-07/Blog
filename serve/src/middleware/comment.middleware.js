@@ -7,7 +7,7 @@ const verifyDisabledDiscuss = async (ctx, next) => {
   try {
     const res = await getUserInfo({ id: userId });
     if (res) {
-      if (res.disabledDiscuss) return ctx.app.emit('error', commentBannedError, ctx);
+      if (res.banned) return ctx.app.emit('error', commentBannedError, ctx);
     } else {
       throw new Error();
     }

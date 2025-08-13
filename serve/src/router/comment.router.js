@@ -42,10 +42,7 @@ router.get('/unread/count', auth, findUnreadCount);
 // 获取当前用户消息通知列表（包含已读和未读）
 router.get('/notice/list', auth, joiValidate(getNoticeSchema), findMessageList);
 
-// 删除回复评论
-router.delete('/reply', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
-
-// 删除评论(一级评论以及回复)
+// 删除评论或回复
 router.delete('/', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
 
 module.exports = router;

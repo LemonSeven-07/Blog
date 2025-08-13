@@ -25,7 +25,7 @@ const User = sequelize.define(
       type: DataTypes.TEXT,
       comment: 'github登录用户',
     },
-    disabledDiscuss: {
+    banned: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       comment: '是否禁言，true禁言，false不禁言',

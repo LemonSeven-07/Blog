@@ -60,74 +60,66 @@ class blogPackagingMethod {
   }
 
   /**
-   * ✅ 一级评论 deletedAt != null：提取它的未删除子评论作为一级评论。
-      ▪️ 删除 entityId 和 replyToUser
-      ▪️ 如果该子评论也被其他评论回复（即 entityId 等于这个评论 id），将这些作为 replies
-     ✅ 一级评论 deletedAt == null：保留，但其 replies 需要：
-      ▪️ 只保留 deletedAt == null 的
-      ▪️ 若 entityId 指向已删除评论，清空其 replyToUser
-   * @param {String} comments
-   * @return {Object}
+   * @description:
+   * deletedAt 有值 → 修改 content = '该评论已删除'。
+   * 孤立一级评论：删除态且没有二级评论，或全部二级评论都是删除态 → 移除该一级评论。
+   * 孤立二级评论：删除态且没有其他评论的 entityId 指向它 → 移除。
+   * @param {*} comments
+   * @return {*}
    */
-  restructureComments(comments) {
+  transformComments(comments) {
+    const DELETED_TOP = '该评论已删除';
+    const DELETED_REPLY = '该回复已删除';
+
     const result = [];
-    const tempReplies = new Map();
 
-    for (const comment of comments) {
-      if (comment.deletedAt === null) {
-        const replies = (comment.replies || [])
-          .filter(r => r.deletedAt === null)
-          .map(r => {
-            const reply = { ...r };
-            if (reply.entityId !== comment.id) {
-              reply.replyToUser = {};
-            }
-            delete reply.entityId;
-            return reply;
-          });
+    for (const original of comments) {
+      // —— 复制一级评论，避免原地修改
+      const top = { ...original };
+      if (top.deletedAt) top.content = DELETED_TOP;
 
-        result.push({
-          ...comment,
-          replies,
-        });
-      } else {
-        for (const reply of comment.replies || []) {
-          if (reply.deletedAt === null) {
-            const newReply = { ...reply };
-            delete newReply.entityId;
-            delete newReply.replyToUser;
-            tempReplies.set(reply.id, {
-              ...newReply,
-              replies: [],
-            });
+      // —— 复制 replies，并把删除态回复的 content 改成“该回复已删除”
+      const replies = (top.replies || []).map(r => ({
+        ...r,
+        content: r.deletedAt ? DELETED_REPLY : r.content,
+      }));
+
+      // —— 建立索引：id -> 节点；以及 parentId(entityId) -> children 列表
+      const byId = new Map(replies.map(r => [r.id, r]));
+      const children = new Map();
+      // 顶层评论也作为一个“父节点键”，用于承接直接回复顶层的评论
+      children.set(top.id, []);
+
+      for (const r of replies) {
+        if (!children.has(r.entityId)) children.set(r.entityId, []);
+        children.get(r.entityId).push(r.id);
+        // 确保每个回复节点也有 children 桶（即使为空）
+        if (!children.has(r.id)) children.set(r.id, []);
+      }
+
+      // —— 递归剔除“删除态且无子”的回复（自底向上反复修剪，直到不再变化）
+      const alive = new Set(replies.map(r => r.id));
+      let changed = true;
+      while (changed) {
+        changed = false;
+        // 注意：遍历时用当前 alive 的快照，避免边遍历边修改导致跳过
+        for (const id of Array.from(alive)) {
+          const node = byId.get(id);
+          if (!node || !node.deletedAt) continue; // 只考虑删除态
+          const kids = (children.get(id) || []).filter(cid => alive.has(cid));
+          if (kids.length === 0) {
+            alive.delete(id); // 删除这个“删除叶子”
+            changed = true;
           }
         }
       }
-    }
 
-    // 处理 reply 的子 reply
-    for (const reply of comments.flatMap(c => c.replies || [])) {
-      if (reply.deletedAt === null && reply.entityId && tempReplies.has(reply.entityId)) {
-        const parent = tempReplies.get(reply.entityId);
-        parent.replies.push({
-          ...reply,
-          replyToUser: reply.replyToUser || {},
-        });
-      }
-    }
+      // —— 过滤出最终保留的 replies（保持原有顺序）
+      top.replies = replies.filter(r => alive.has(r.id));
 
-    // 去除子 reply 被提级重复
-    const childReplyIds = new Set();
-    for (const item of tempReplies.values()) {
-      for (const r of item.replies) {
-        childReplyIds.add(r.id);
-      }
-    }
-
-    for (const [id, reply] of tempReplies.entries()) {
-      if (!childReplyIds.has(id)) {
-        result.push(reply);
-      }
+      // —— 顶层评论是否保留：未删除 或（删除但仍有回复）
+      const keepTop = !top.deletedAt || top.replies.length > 0;
+      if (keepTop) result.push(top);
     }
 
     return result;

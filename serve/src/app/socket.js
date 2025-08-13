@@ -70,7 +70,7 @@ function setupWebSocket(server, subClient) {
 
             // 设置键值并添加过期时间（单位：秒），默认两小时
             const CACHE_TTL = parseInt(process.env.REDIS_CACHE_TTL) * 60 * 60 || 7200;
-            await redisClient.set(`user:unread:${userId}`, count, { EX: CACHE_TTL });
+            await redisClient.set(`unread:notice:${userId}`, count, { EX: CACHE_TTL });
 
             // 给当前 WebSocket 连接发送未读消息数
             if (ws.readyState === WebSocket.OPEN) {

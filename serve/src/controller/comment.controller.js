@@ -42,7 +42,7 @@ class CommentController {
           `notify:${res.authorId}`, // 发布到对应用户的频道
           JSON.stringify({
             ...res,
-            type: 'ADD_NOTIFY',
+            type: 'ADD_COMMENT_NOTIFY',
           }),
         );
       }
@@ -79,7 +79,7 @@ class CommentController {
           `notify:${res.replyToUserId}`, // 发布到对应用户的频道
           JSON.stringify({
             ...res,
-            type: 'ADD_NOTIFY',
+            type: 'ADD_COMMENT_NOTIFY',
           }),
         );
       }
@@ -120,7 +120,7 @@ class CommentController {
           `notify:${res.replyToUserId ? res.replyToUserId : res.authorId}`, // 发布到对应用户的频道
           JSON.stringify({
             ...res,
-            type: 'DELETE_NOTIFY',
+            type: 'DELETE_COMMENT_NOTIFY',
           }),
         );
       }
@@ -163,12 +163,19 @@ class CommentController {
 
       // 发布消息通知修改，通知当前用户更新未读消息数
       if (hide === true || notice === true) {
-        // 发布评论删除消息，通知其他服务更新评论数
         await ctx.pubClient.publish(
-          `notify:${userId}`, // 发布到对应用户的频道
+          `notify:${userId}`,
+          JSON.stringify({
+            step: res * -1,
+            type: 'UPDATE_STATUS_NOTIFY',
+          }),
+        );
+      } else if (hide === false && notice === false) {
+        await ctx.pubClient.publish(
+          `notify:${userId}`,
           JSON.stringify({
             step: res,
-            type: 'UPDATE_NOTIFY_STATUS',
+            type: 'UPDATE_STATUS_NOTIFY',
           }),
         );
       }

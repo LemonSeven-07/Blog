@@ -124,6 +124,34 @@ class blogPackagingMethod {
 
     return result;
   }
+
+  /**
+   * 合并相同key的posts和comments
+   * @param {Array} data - 原始数据
+   * @returns {Object} 结构: { [key]: Array<post|comment> }
+   */
+  optimizeGroupAndFilter(data) {
+    const result = Object.create(null);
+
+    // 单次遍历处理
+    data.forEach(item => {
+      // 确定分组key
+      let key;
+      if (item.entityType === 'post' && item.authorId !== item.userId) {
+        key = item.authorId;
+      } else if (item.entityType === 'comment' && item.replyToUserId !== item.userId) {
+        key = item.replyToUserId;
+      } else {
+        return; // 跳过不符合条件的数据
+      }
+
+      // 初始化或追加到对应分组
+      result[key] = result[key] || [];
+      result[key].push(item);
+    });
+
+    return result;
+  }
 }
 
 module.exports = new blogPackagingMethod();

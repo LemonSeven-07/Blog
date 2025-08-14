@@ -21,7 +21,7 @@ const sequelize = new Sequelize(MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, {
 //     console.log('✅ 数据库连接成功');
 //   })
 //   .catch(err => {
-//     console.log('✅ 数据库连接失败', err);
+//     console.log('❌ 数据库连接失败', err);
 //   });
 
 module.exports = sequelize;

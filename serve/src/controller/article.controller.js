@@ -7,13 +7,14 @@ const { randomUUID } = require('crypto'); // 生成UUID
 
 const { sequelize } = require('../model/index');
 
-const { restructureComments } = require('../utils/index');
+const { transformComments, optimizeGroupAndFilter } = require('../utils/index');
 
 const {
   createArticle,
   findArticle,
   findOneArticle,
   updateArticleViewCount,
+  findComment,
   removeComment,
   removeArticle,
   updateArticle,
@@ -121,8 +122,8 @@ class articleController {
         throw new Error();
       }
 
-      // 重新构建评论树结构（一级评论被删除，子评论提级；评论回复被删除不显示回复xx用户，例如：用户A：回复的评论内容）
-      const comments = restructureComments(res.comments);
+      // 重新构建评论树结构
+      const comments = transformComments(res.comments);
 
       ctx.body = {
         code: '200',
@@ -138,12 +139,27 @@ class articleController {
     const { ids } = ctx.request.body;
     const transaction = await sequelize.transaction();
     try {
+      const notices = await findComment(ids, transaction);
       await removeComment(ids, transaction);
-
       const res = await removeArticle(ids, transaction);
       if (!res) throw new Error();
-
       await transaction.commit();
+
+      // 删除文章，通知其他服务更新评论数
+      const datas = optimizeGroupAndFilter(notices);
+      if (datas && Object.keys(datas).length) {
+        await Object.keys(datas).forEach(async key => {
+          await ctx.pubClient.publish(
+            `notify:${key}`,
+            JSON.stringify({
+              step: datas[key].length,
+              articleIds: ids,
+              type: 'DELETE_ARTICLE_NOTIFY',
+            }),
+          );
+        });
+      }
+
       ctx.body = {
         code: '200',
         message: '删除成功',

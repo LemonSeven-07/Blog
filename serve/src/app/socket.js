@@ -169,14 +169,20 @@ function setupWebSocket(server, subClient) {
           const exists = await redisClient.exists(unreadKey);
           if (exists) {
             let count;
-            // 删除评论或回复时，减少未读消息数
-            if (msgObj.type === 'DELETE_NOTIFY') {
-              count = await redisClient.decr(unreadKey); // 减少未读消息数（-1）
-            } else if (msgObj.type === 'ADD_NOTIFY') {
-              count = await redisClient.incr(unreadKey); // 增加未读消息数（+1）
-            } else if (msgObj.type === 'UPDATE_NOTIFY_STATUS') {
-              count = await redisClient.incrBy(unreadKey, msgObj.step); // 增加未读消息数（+msgObj.step）
+            if (msgObj.type === 'DELETE_COMMENT_NOTIFY') {
+              // 删除评论或回复时，未读消息数 -1
+              count = await redisClient.decr(unreadKey);
+            } else if (msgObj.type === 'ADD_COMMENT_NOTIFY') {
+              // 添加评论或回复时，增加未读消息数 +1
+              count = await redisClient.incr(unreadKey);
+            } else if (msgObj.type === 'UPDATE_STATUS_NOTIFY') {
+              // 更新状态时，增加或减少未读消息数 +-msgObj.step
+              count = await redisClient.incrBy(unreadKey, msgObj.step);
               delete msgObj.step; // 删除 step 属性
+            } else if (msgObj.type === 'DELETE_ARTICLE_NOTIFY') {
+              // 删除文章时，减少未读消息数 -msgObj.step
+              count = await redisClient.incrBy(unreadKey, msgObj.step * -1);
+              delete msgObj.step;
             }
             if (count < 0) {
               // 防御负值

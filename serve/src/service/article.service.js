@@ -199,7 +199,15 @@ class ArticleService {
         {
           model: Comment, // 关联 Comment 模型
           as: 'comments', // 使用在 Article 模型中定义的关联别名
-          attributes: ['id', 'content', 'createdAt', 'deletedAt'], // 只返回必要字段
+          attributes: [
+            'id',
+            'authorId',
+            'articleId',
+            'content',
+            'userId',
+            'createdAt',
+            'deletedAt',
+          ], // 只返回必要字段
           separate: true, // 单独查询嵌套数据并排序
           paranoid: false,
           where: {
@@ -210,7 +218,16 @@ class ArticleService {
             {
               model: Comment, // 自关联，获取回复评论
               as: 'replies', // 使用在 Comment 模型中定义的关联别名
-              attributes: ['id', 'content', 'entityId', 'createdAt', 'deletedAt'],
+              attributes: [
+                'id',
+                'authorId',
+                'articleId',
+                'content',
+                'userId',
+                'entityId',
+                'createdAt',
+                'deletedAt',
+              ],
               separate: true, // 单独查询嵌套数据并排序
               paranoid: false,
               include: [
@@ -257,6 +274,23 @@ class ArticleService {
     return res[0] > 0 ? true : false;
   }
 
+  async findComment(ids, transaction) {
+    const res = await Comment.findAll({
+      where: {
+        articleId: ids,
+        [Op.or]: {
+          notice: false, // 只查询未读评论
+          hide: false, // 只查询未隐藏的评论
+        },
+      },
+      raw: true, // 返回纯JavaScript对象
+      lock: true, // 锁定表，防止其他事务修改
+      transaction,
+    });
+
+    return res;
+  }
+
   async removeComment(ids, transaction) {
     const res = await Comment.destroy({
       where: {
@@ -266,10 +300,11 @@ class ArticleService {
         entityType: 'post',
       },
       force: true, // 彻底删除评论及其回复，跳过软删除
-      paranoid: false,
+      paranoid: false, // 忽略软删除过滤规则（即使已被软删除也能删除）
+      lock: true, // 锁定表，防止其他事务修改
       transaction,
     });
-    return res > 0 ? true : false;
+    return res > 0 ? res : false;
   }
 
   async removeArticle(ids, transaction) {
@@ -277,6 +312,7 @@ class ArticleService {
       where: {
         id: ids,
       },
+      lock: true, // 锁定表，防止其他事务修改
       transaction,
     });
     return res > 0 ? true : false;
@@ -288,6 +324,7 @@ class ArticleService {
       { title, content, categoryId },
       {
         where: { id },
+        lock: true, // 锁定表，防止其他事务修改
         transaction,
       },
     );
@@ -295,6 +332,7 @@ class ArticleService {
     await Tag.destroy({ where: { articleId: id }, transaction });
     tags.length &&
       (await Tag.bulkCreate(tags, {
+        lock: true, // 锁定表，防止其他事务修改
         transaction,
       }));
 
@@ -346,6 +384,7 @@ class ArticleService {
       where: {
         name: category[0],
       },
+      lock: true, // 锁定表，防止其他事务修改
       transaction,
     });
     let createData = {
@@ -374,7 +413,10 @@ class ArticleService {
     // 通过文章标题查找是否已存在该文章，如果有就更新表数据，没有就创建表数据
     const articleData = await this.getArticleInfo(
       { userId, title: createData.title },
-      { transaction },
+      {
+        lock: true, // 锁定表，防止其他事务修改
+        transaction,
+      },
     );
 
     if (articleData) {
@@ -397,6 +439,7 @@ class ArticleService {
       // 创建表数据
       const res = await Article.create(createData, {
         include: [Tag],
+        lock: true, // 锁定表，防止其他事务修改
         transaction,
       });
 

@@ -50,7 +50,7 @@ async function connectRedis() {
     await subClient.connect();
     console.log('✅ Redis 订阅客户端连接成功');
   } catch (err) {
-    console.log(err);
+    console.log('❌', err);
   }
 
   return { pubClient, subClient };

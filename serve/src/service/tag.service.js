@@ -3,6 +3,12 @@ const { Sequelize } = require('sequelize');
 const { tag: Tag } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class tagService {
+  /**
+   * @description: 按条件查询标签
+   * @param {*} articleId 文章id
+   * @param {*} categoryId 文章分类id
+   * @return {*}
+   */
   async findTags({ articleId, categoryId }) {
     const whereOpt = {};
     articleId && Object.assign(whereOpt, { articleId });

@@ -34,6 +34,11 @@ const {
 } = require('../constant/err.type');
 
 class articleController {
+  /**
+   * @description: 创建文章
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async create(ctx) {
     const { userId } = ctx.state.user;
     try {
@@ -41,14 +46,19 @@ class articleController {
       if (!res) throw new Error();
       ctx.body = {
         code: '200',
-        message: '文章创建成功',
         data: res,
+        message: '文章创建成功',
       };
     } catch (err) {
       ctx.app.emit('error', createArticleError, ctx);
     }
   }
 
+  /**
+   * @description: 按条件分页查询文章列表
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findAll(ctx) {
     const {
       categoryId,
@@ -73,14 +83,19 @@ class articleController {
       });
       ctx.body = {
         code: '200',
-        message: '获取文章列表成功',
         data: res,
+        message: '获取文章列表成功',
       };
     } catch (err) {
       ctx.app.emit('error', findArticleError, ctx);
     }
   }
 
+  /**
+   * @description: 按条件滚动查询文章列表
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async loadMore(ctx) {
     const {
       keyword,
@@ -104,20 +119,26 @@ class articleController {
       });
       ctx.body = {
         code: '200',
-        message: '获取文章列表成功',
         data: res,
+        message: '获取文章列表成功',
       };
     } catch (err) {
       ctx.app.emit('error', loadMoreError, ctx);
     }
   }
 
+  /**
+   * @description: 获取单篇文章详情包括文章内容、分类、标签、评论、浏览量
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findById(ctx) {
     const { id } = ctx.params;
     const { type = 1 } = ctx.query;
     try {
       const res = await findOneArticle(id);
       if (!res) throw new Error();
+      // 更新文章浏览量
       if (type === 1 && (await !updateArticleViewCount({ id, viewCount: res.viewCount }))) {
         throw new Error();
       }
@@ -127,22 +148,32 @@ class articleController {
 
       ctx.body = {
         code: '200',
-        message: '获取文章详情成功',
         data: { ...res, comments },
+        message: '获取文章详情成功',
       };
     } catch (err) {
       ctx.app.emit('error', findArticleError, ctx);
     }
   }
 
+  /**
+   * @description: 单个或批量删除文章
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async remove(ctx) {
     const { ids } = ctx.request.body;
+    // 确保多个数据库操作作为一个原子单元执行，要么全部成功提交，要么全部失败回滚，从而维护数据的一致性。
     const transaction = await sequelize.transaction();
     try {
+      // 查询文章下的评论
       const notices = await findComment(ids, transaction);
+      // 删除文章下的评论
       await removeComment(ids, transaction);
+      // 删除文章
       const res = await removeArticle(ids, transaction);
       if (!res) throw new Error();
+      // 提交事务
       await transaction.commit();
 
       // 删除文章，通知其他服务更新评论数
@@ -162,8 +193,8 @@ class articleController {
 
       ctx.body = {
         code: '200',
-        message: '删除成功',
         data: null,
+        message: '删除成功',
       };
     } catch (err) {
       await transaction.rollback();
@@ -171,6 +202,11 @@ class articleController {
     }
   }
 
+  /**
+   * @description: 编辑文章
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async update(ctx) {
     const { id } = ctx.params;
     const { categoryId, content, tagList, title } = ctx.request.body;
@@ -191,6 +227,11 @@ class articleController {
     }
   }
 
+  /**
+   * @description: 文章导出（支持单个和批量导出）
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async output(ctx) {
     const { ids } = ctx.query;
     const { userId } = ctx.state.user;
@@ -258,6 +299,7 @@ class articleController {
             fs.writeFileSync(filePath, markdownContent, 'utf8');
           });
         } else {
+          // 导出全部文章，根据文章分类名分类后以压缩的文件导出
           articleGrouped = res.reduce((acc, item) => {
             (acc[item.categoryId] = acc[item.categoryId] || []).push(item);
             return acc;
@@ -349,6 +391,11 @@ class articleController {
     }
   }
 
+  /**
+   * @description: 文章上传（支持单个和批量上传）
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async upload(ctx) {
     const { userId } = ctx.state.user;
     let files = ctx.request.files.files; // 获取上传文件

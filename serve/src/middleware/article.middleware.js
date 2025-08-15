@@ -2,6 +2,12 @@ const { createArticleError, articleAlreadyExists } = require('../constant/err.ty
 
 const { getArticleInfo } = require('../service/article.service');
 
+/**
+ * @description: 校验文章标题，文章标题唯一
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const verifyArticleTitle = async (ctx, next) => {
   const { title } = ctx.request.body;
   const { userId } = ctx.state.user;

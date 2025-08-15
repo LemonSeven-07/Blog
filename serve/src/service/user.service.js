@@ -3,6 +3,16 @@ const { Sequelize, Op } = require('sequelize');
 const { user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class UserService {
+  /**
+   * @description: 查询用户信息
+   * @param {*} id 用户id
+   * @param {*} username 用户名
+   * @param {*} password 用户密码
+   * @param {*} banned 是否禁言，true禁言，false不禁言
+   * @param {*} role 用户权限，1：admin, 2：普通用户
+   * @param {*} paranoid true 查询操作会自动忽略已被软删除的用户记录；false 已被软删除的用户记录也会被查出来
+   * @return {*}
+   */
   async getUserInfo({ id, username, password, banned, role, paranoid = true }) {
     const whereOpt = {};
     id && Object.assign(whereOpt, { id });
@@ -15,11 +25,17 @@ class UserService {
     const res = await User.findOne({
       attributes: ['id', 'username', 'password', 'banned', 'role'],
       where: whereOpt,
-      paranoid, // 包括软删除的数据
+      paranoid,
     });
     return res ? res.dataValues : null;
   }
 
+  /**
+   * @description: 创建用户
+   * @param {*} username 用户名
+   * @param {*} password 用户密码
+   * @return {*}
+   */
   async createUser({ username, password }) {
     // 创建用户
     let res = await User.create({
@@ -29,6 +45,11 @@ class UserService {
     return res ? res.dataValues : null;
   }
 
+  /**
+   * @description: 删除用户
+   * @param {*} userId 用户id
+   * @return {*}
+   */
   async removeUser(userId) {
     const res = await User.destroy({
       where: {
@@ -38,6 +59,15 @@ class UserService {
     return res > 0 ? true : false;
   }
 
+  /**
+   * @description: 修改用户信息
+   * @param {*} username 用户名
+   * @param {*} password 用户密码
+   * @param {*} banned 是否禁言，true禁言，false不禁言
+   * @param {*} role 用户权限，1：admin, 2：普通用户
+   * @param {*} userId 用户id
+   * @return {*}
+   */
   async updateUer({ username, password, banned, role }, userId) {
     const whereOpt = { id: userId };
     const newUser = {};
@@ -52,6 +82,16 @@ class UserService {
     return res[0] > 0 ? true : false;
   }
 
+  /**
+   * @description: 按条件分页查询用户列表
+   * @param {*} pageNum 页数
+   * @param {*} pageSize 每页数据量
+   * @param {*} username 用户名
+   * @param {*} type 1 github用户；2 站内用户
+   * @param {*} rangeDate 用户注册日期范围，起止日期以逗号分隔
+   * @param {*} userId 用户id
+   * @return {*}
+   */
   async findUsers({ pageNum, pageSize, username, type, rangeDate }, userId) {
     const whereOpt = {
       // 查询id不为登录用户id的用户数据

@@ -2,6 +2,11 @@ const { createCategory, findCategory } = require('../service/category.service');
 const { findCategoriesError, createCategoryError } = require('../constant/err.type');
 
 class CategoryController {
+  /**
+   * @description: 创建文章分类名称
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async create(ctx) {
     const { name } = ctx.request.body;
     try {
@@ -19,6 +24,11 @@ class CategoryController {
     }
   }
 
+  /**
+   * @description: 查询文章分类列表
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findAll(ctx) {
     try {
       const res = await findCategory();

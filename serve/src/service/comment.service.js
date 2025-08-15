@@ -3,6 +3,18 @@ const { Op, col } = require('sequelize');
 const { comment: Comment, user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class CommentService {
+  /**
+   * @description: 发表评论
+   * @param {*} authorId 创建文章的用户id
+   * @param {*} articleId 文章id
+   * @param {*} content 一级/二级评论内容
+   * @param {*} userId 当前用户id
+   * @param {*} entityType post 一级评论：对文章的评论；comment 二级评论：对评论的回复
+   * @param {*} entityId 文章评论时为文章ID，对评论的回复时为评论ID
+   * @param {*} parentId 一级评论时为null；二级评论时为一级评论的评论id
+   * @param {*} replyToUserId 一级评论时为null；二级评论时为回复评论对象的用户id
+   * @return {*}
+   */
   async sendComment({
     authorId,
     articleId,
@@ -27,7 +39,13 @@ class CommentService {
     return res ? res.dataValues : null;
   }
 
+  /**
+   * @description: 删除一级/二级评论
+   * @param {*} id 评论id
+   * @return {*}
+   */
   async removeComment(id) {
+    // 该处多了一次查询是为了方便获取删除评论的信息以通知用户，单纯的删除操作不会返回具体的评论信息
     const comment = await Comment.findOne({
       where: {
         id,
@@ -39,6 +57,13 @@ class CommentService {
     return res ? res.dataValues : null;
   }
 
+  /**
+   * @description: 查询评论
+   * @param {*} id 评论id
+   * @param {*} entityId 文章评论时为文章ID，对评论的回复时为评论ID
+   * @param {*} entityType post 一级评论：对文章的评论；comment 二级评论：对评论的回复
+   * @return {*}
+   */
   async findComment({ id, entityId, entityType }) {
     const whereOpt = { entityId, entityType };
     if (id) whereOpt.id = id; // 如果有传入id，则查询特定评论
@@ -82,14 +107,20 @@ class CommentService {
       order: [['createdAt', 'DESC']], // // 一级评论：新→旧
     });
 
-    // 将每个实例转换为纯对象
+    // 将每个sequelize实例转换为纯js对象
     const plainComments = res.map(comment => comment.get({ plain: true })) || [];
     return plainComments;
   }
 
+  /**
+   * @description: 更新站内消息数据（支持多条消息更新）
+   * @param {*} ids 评论id 数组
+   * @param {*} notice 未读消息, true已读，false未读
+   * @param {*} hide 消息显示状态，true隐藏，false显示
+   * @return {*}
+   */
   async updateNotice({ ids, notice, hide }) {
     const newComment = {};
-
     notice !== undefined && Object.assign(newComment, { notice });
     hide !== undefined && Object.assign(newComment, { hide });
     // 如果未读消息数据不显示，则自动标记为已读
@@ -109,6 +140,11 @@ class CommentService {
     return res[0] > 0 ? res[0] : false;
   }
 
+  /**
+   * @description: 查询未读消息数量
+   * @param {*} userId 当前用户id
+   * @return {*}
+   */
   async findUnreadNotice(userId) {
     const count = await Comment.count({
       where: {
@@ -139,6 +175,14 @@ class CommentService {
     return count ? count : 0;
   }
 
+  /**
+   * @description: 分页查询站内消息
+   * @param {*} userId 当前用户id
+   * @param {*} type 查询类型  all 查询所有消息；unread 查询未读消息；read 查询已读消息
+   * @param {*} pageNum 页数
+   * @param {*} pageSize 每页数据量
+   * @return {*}
+   */
   async findNotice({ userId, type, pageNum, pageSize }) {
     const whereOpt = {
       authorId: userId,

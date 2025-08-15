@@ -11,7 +11,7 @@ const {
 
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 const { joiValidate } = require('../middleware/validator.middleware.js');
-const { verifyDisabledDiscuss } = require('../middleware/comment.middleware.js');
+const { verifyBanned } = require('../middleware/comment.middleware.js');
 const {
   create,
   reply,
@@ -25,10 +25,10 @@ const {
 const router = new Router({ prefix: '/comment' });
 
 // 添加评论
-router.post('/create', auth, joiValidate(createCommentSchema), verifyDisabledDiscuss, create);
+router.post('/create', auth, joiValidate(createCommentSchema), verifyBanned, create);
 
 // 回复评论
-router.post('/reply', auth, joiValidate(replyCommentSchema), verifyDisabledDiscuss, reply);
+router.post('/reply', auth, joiValidate(replyCommentSchema), verifyBanned, reply);
 
 // 获取当前文章的所有评论和回复或者一级评论下的回复
 router.get('/list', auth, joiValidate(getCommentSchema), findAll);

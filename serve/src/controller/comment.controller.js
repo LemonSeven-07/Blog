@@ -20,6 +20,11 @@ const {
 const { transformComments } = require('../utils/index');
 
 class CommentController {
+  /**
+   * @description: 创建一级评论
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async create(ctx) {
     ctx.request.body.entityType = 'post'; // 评论类型为文章一级评论
     ctx.request.body.userId = ctx.state.user.userId; // 获取当前登录用户的ID
@@ -57,6 +62,11 @@ class CommentController {
     }
   }
 
+  /**
+   * @description: 创建二级评论
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async reply(ctx) {
     ctx.request.body.entityType = 'comment'; // 评论类型为评论回复
     ctx.request.body.userId = ctx.state.user.userId; // 获取当前登录用户的ID
@@ -94,6 +104,11 @@ class CommentController {
     }
   }
 
+  /**
+   * @description: 删除一级评论或二级评论
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async remove(ctx) {
     const { id } = ctx.request.body; // 获取要删除的评论ID
     try {
@@ -102,7 +117,7 @@ class CommentController {
 
       // 删除评论，通知其他服务更新评论区
       await ctx.pubClient.publish(
-        `comment:${res.articleId}`, // 发布到对应用户的频道
+        `comment:${res.articleId}`,
         JSON.stringify({
           ...res,
           type: 'DELETE_COMMENT',
@@ -117,7 +132,7 @@ class CommentController {
       ) {
         // 发布评论删除消息，通知其他服务更新评论数
         await ctx.pubClient.publish(
-          `notify:${res.replyToUserId ? res.replyToUserId : res.authorId}`, // 发布到对应用户的频道
+          `notify:${res.replyToUserId ? res.replyToUserId : res.authorId}`,
           JSON.stringify({
             ...res,
             type: 'DELETE_COMMENT_NOTIFY',
@@ -135,6 +150,11 @@ class CommentController {
     }
   }
 
+  /**
+   * @description: 查询评论
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findAll(ctx) {
     const { id, entityId, entityType } = ctx.query; // 获取文章ID和评论类型
     try {
@@ -154,6 +174,11 @@ class CommentController {
     }
   }
 
+  /**
+   * @description: 修改未读消息通知状态/消息通知显示状态
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async update(ctx) {
     const { ids, notice, hide } = ctx.request.body; // 获取要查看通知消息id
     const { userId } = ctx.state.user; // 获取当前登录用户的ID
@@ -163,6 +188,7 @@ class CommentController {
 
       // 发布消息通知修改，通知当前用户更新未读消息数
       if (hide === true || notice === true) {
+        // 未读 --》已读
         await ctx.pubClient.publish(
           `notify:${userId}`,
           JSON.stringify({
@@ -171,6 +197,7 @@ class CommentController {
           }),
         );
       } else if (hide === false && notice === false) {
+        // 已读 --》未读
         await ctx.pubClient.publish(
           `notify:${userId}`,
           JSON.stringify({
@@ -190,6 +217,11 @@ class CommentController {
     }
   }
 
+  /**
+   * @description: 获取未读消息数量
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findUnreadCount(ctx) {
     const { userId } = ctx.state.user; // 获取当前登录用户的ID
     try {
@@ -207,6 +239,11 @@ class CommentController {
     }
   }
 
+  /**
+   * @description: 查询站内消息列表
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findMessageList(ctx) {
     const { userId } = ctx.state.user; // 获取当前登录用户的ID
     const { type = 'all', pageNum = 1, pageSize = 10 } = ctx.query; // 获取分页参数

@@ -12,6 +12,12 @@ const {
   hasNotAdminPermission,
 } = require('../constant/err.type');
 
+/**
+ * @description: 校验用户名，用户名唯一
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const verifyUser = async (ctx, next) => {
   const { username } = ctx.request.body;
   try {
@@ -27,6 +33,12 @@ const verifyUser = async (ctx, next) => {
   await next();
 };
 
+/**
+ * @description: 密码加密处理
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const cryptPassword = async (ctx, next) => {
   const { password } = ctx.request.body;
   // const regex = /^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/;
@@ -44,6 +56,12 @@ const cryptPassword = async (ctx, next) => {
   await next();
 };
 
+/**
+ * @description: 校验用户登录信息
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const verifyLogin = async (ctx, next) => {
   const { username, password } = ctx.request.body;
   try {
@@ -64,6 +82,12 @@ const verifyLogin = async (ctx, next) => {
   await next();
 };
 
+/**
+ * @description: 校验用户权限
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const hadUpdatePermission = async (ctx, next) => {
   const { role } = ctx.state.user;
   const { role: newRole, banned } = ctx.request.body;

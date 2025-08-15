@@ -18,6 +18,11 @@ const {
 } = require('../service/user.service.js');
 
 class UserController {
+  /**
+   * @description: 注册用户
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async register(ctx) {
     // 1、获取数据
     const { username, password } = ctx.request.body;
@@ -37,6 +42,11 @@ class UserController {
     }
   }
 
+  /**
+   * @description: 用户登录
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async login(ctx) {
     // 1、获取数据
     const { username } = ctx.request.body;
@@ -50,13 +60,13 @@ class UserController {
         role,
       };
 
-      const { JWT_SECRET, EXPIRESIN } = process.env;
+      const { JWT_SECRET, ACCESS_EXPIRE } = process.env;
       // 3、返回结果
       ctx.body = {
         code: '200',
         data: {
           ...userInfo,
-          token: jwt.sign(userInfo, JWT_SECRET, { expiresIn: EXPIRESIN }),
+          token: jwt.sign(userInfo, JWT_SECRET, { expiresIn: ACCESS_EXPIRE }),
         },
         message: '登录成功',
       };
@@ -65,6 +75,11 @@ class UserController {
     }
   }
 
+  /**
+   * @description: 用户注销
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async remove(ctx) {
     const { userId } = ctx.request.params;
     try {
@@ -82,6 +97,11 @@ class UserController {
     }
   }
 
+  /**
+   * @description: 修改用户信息
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async update(ctx) {
     const { userId } = ctx.request.params;
     try {
@@ -98,6 +118,11 @@ class UserController {
     }
   }
 
+  /**
+   * @description: 查询用户列表（不显示当前用户）
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async findAll(ctx) {
     const { pageNum = 1, pageSize = 10, username, type, rangeDate } = ctx.query;
     const { userId } = ctx.state.user;

@@ -5,6 +5,12 @@ const { koaBody } = require('koa-body');
 
 const { uploadFileTypeError, fileSizeExceededError } = require('../constant/err.type');
 
+/**
+ * @description: 文件上传
+ * @param {*} allowedTypes 上传文件类型
+ * @param {*} options 自定义上传配置
+ * @return {*}
+ */
 const uploadMiddleware = (allowedTypes, options = {}) => {
   const bodyParser = koaBody({
     multipart: true, // 支持文件上传
@@ -16,6 +22,7 @@ const uploadMiddleware = (allowedTypes, options = {}) => {
       keepExtensions: true, // 保留文件扩展名
       maxFileSize: 10 * 1024 * 1024, // 设置上传文件大小最大限制，默认10M
       onFileBegin: (name, file) => {
+        // 校验并拦截文件
         if (!allowedTypes.includes(file.mimetype)) {
           throw new Error('FILE_TYPE_NOT_ALLOWED');
         }

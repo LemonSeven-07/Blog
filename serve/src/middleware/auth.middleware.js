@@ -7,6 +7,12 @@ const {
   hasNotAdminPermission,
 } = require('../constant/err.type.js');
 
+/**
+ * @description: 校验token
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const auth = async (ctx, next) => {
   const { authorization = '' } = ctx.request.headers;
   const token = authorization.replace('Bearer ', '');
@@ -31,6 +37,12 @@ const auth = async (ctx, next) => {
   await next();
 };
 
+/**
+ * @description: 校验用户权限
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
 const hadAdminPermission = async (ctx, next) => {
   const { role } = ctx.state.user;
   if (role !== 1) {

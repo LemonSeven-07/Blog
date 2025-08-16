@@ -2,7 +2,7 @@ const http = require('http');
 
 require('./config/config.default.js');
 const app = require('./app/app.js');
-const setupWebSocket = require('./app/socket.js');
+const { setupWebSocket } = require('./app/socket.js');
 const db = require('./model/index.js');
 const { connectRedis } = require('./db/redis.js');
 

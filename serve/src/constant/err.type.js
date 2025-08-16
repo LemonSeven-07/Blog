@@ -44,6 +44,11 @@ module.exports = {
     message: 'token验证失败',
     data: null,
   },
+  userOfflineError: {
+    code: '401',
+    message: '用户已被踢下线',
+    data: null,
+  },
   hasNotAdminPermission: {
     code: '10009',
     message: '没有管理员权限',

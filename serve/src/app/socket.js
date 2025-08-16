@@ -59,8 +59,8 @@ function setupWebSocket(server, subClient) {
           if (!userClientsMap.has(userId)) {
             userClientsMap.set(userId, new Set());
           }
-
           userClientsMap.get(userId).add(ws);
+
           // 保存用户 ID，断开连接时可以清理
           ws.userId = userId;
 
@@ -69,7 +69,7 @@ function setupWebSocket(server, subClient) {
             const count = await findUnreadNotice(userId);
 
             // 设置键值并添加过期时间（单位：秒），默认两小时
-            const CACHE_TTL = parseInt(process.env.REDIS_CACHE_TTL) * 60 * 60 || 7200;
+            const CACHE_TTL = parseInt(process.env.REDIS_NOTICE_CACHE_TTL) * 60 * 60 || 7200;
             await redisClient.set(`unread:notice:${userId}`, count, { EX: CACHE_TTL });
 
             // 给当前 WebSocket 连接发送未读消息数
@@ -277,11 +277,36 @@ async function getSafeUnreadCount(userId) {
   const dbCount = await findUnreadNotice(userId);
 
   // 5. 更新 Redis 缓存和校验时间
-  const CACHE_TTL = parseInt(process.env.REDIS_CACHE_TTL) * 60 * 60 || 7200;
+  const CACHE_TTL = parseInt(process.env.REDIS_NOTICE_CACHE_TTL) * 60 * 60 || 7200;
   await redisClient.set(unreadKey, dbCount, { EX: CACHE_TTL }); // 默认缓存2小时
   await redisClient.set(lastCheckKey, now.toString(), { EX: 600 }); // 10分钟内不再访问DB
 
   return dbCount;
 }
 
-module.exports = setupWebSocket;
+/**
+ * @description: 用户强制离线或token失效断开 ws 连接
+ * @return {*}
+ */
+async function disconnectWs(userId, message = 'token失效') {
+  userId = String(userId);
+  for (const ws of userClientsMap.get(userId)) {
+    if (ws.readyState === WebSocket.OPEN) {
+      // 1. 先发送通知消息
+      await ws.send(
+        JSON.stringify({
+          type: 'FORCE_LOGOUT',
+          message,
+        }),
+      );
+
+      // 2. 主动关闭连接
+      await ws.close(4001, message);
+    }
+  }
+}
+
+module.exports = {
+  setupWebSocket,
+  disconnectWs,
+};

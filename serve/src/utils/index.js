@@ -1,6 +1,38 @@
-const fs = require('fs'); // 原生路径处理模块（用于安全拼接路径）
+const jwt = require('jsonwebtoken');
+const { randomUUID } = require('crypto');
+
+const { redisClient } = require('../db/redis.js');
 
 class blogPackagingMethod {
+  /**
+   * @description: 生成 accessToken 和 refreshToken
+   * @param {*} userInfo 登录用户关键信息 包含：用户id、用户名、用户权限、禁言
+   * @return {*} { accessToken, refreshToken }
+   */
+  issueTokens(userInfo) {
+    const { ACCESS_EXPIRE, REFRESH_EXPIRE, JWT_SECRET, REDIS_TOKEN_CACHE_TTL } = process.env;
+    const jti = randomUUID();
+
+    // 生成 AccessToken（短时）
+    const accessToken = jwt.sign({ ...userInfo }, JWT_SECRET, {
+      expiresIn: ACCESS_EXPIRE,
+    });
+
+    // 生成 RefreshToken（长时 + jti）
+    const refreshToken = jwt.sign({ ...userInfo, jti }, JWT_SECRET, {
+      expiresIn: REFRESH_EXPIRE,
+    });
+
+    // 存到 Redis（key: refresh:jti）
+    redisClient.set(
+      `refresh_token:user:${userInfo.userId}`,
+      JSON.stringify({ ...userInfo, jti }),
+      'EX',
+      60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL,
+    );
+
+    return { accessToken, refreshToken };
+  }
   /**
    * 解析上传的文件的前缀
    * @param {String} fileData

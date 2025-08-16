@@ -17,6 +17,8 @@ const {
   findUsers,
 } = require('../service/user.service.js');
 
+const { issueTokens } = require('../utils/index.js');
+
 class UserController {
   /**
    * @description: 注册用户
@@ -53,21 +55,29 @@ class UserController {
     try {
       // 2、操作数据库
       const { password, ...res } = await getUserInfo({ username });
-      const { role, id: userId } = res;
+      const { role, id: userId, banned } = res;
       const userInfo = {
         userId,
         username,
         role,
+        banned,
       };
 
-      const { JWT_SECRET, ACCESS_EXPIRE } = process.env;
+      const { NODE_ENV, REDIS_TOKEN_CACHE_TTL } = process.env;
+      const { accessToken, refreshToken } = issueTokens(userInfo);
+      ctx.cookies.set('refresh_token', refreshToken, {
+        httpOnly: true, // 前端 JS 无法读取
+        secure: NODE_ENV === 'production', // 开发环境 http = false；生产 https = true
+        sameSite: NODE_ENV === 'production' ? 'None' : 'Lax', // 防 CSRF，生产可用 'None'
+        path: '/', // Cookie 对整个域名有效
+        maxAge: 1000 * 60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL, // 过期时间
+      });
+      ctx.set('x-access-token', accessToken);
+
       // 3、返回结果
       ctx.body = {
         code: '200',
-        data: {
-          ...userInfo,
-          token: jwt.sign(userInfo, JWT_SECRET, { expiresIn: ACCESS_EXPIRE }),
-        },
+        data: null,
         message: '登录成功',
       };
     } catch (error) {
@@ -87,6 +97,10 @@ class UserController {
       if (!res) {
         return ctx.app.emit('error', userDoesNotExist, ctx);
       }
+
+      await redisClient.del(`refresh_token:user:${userId}`);
+      await redisClient.set(`user_status:${userId}`, 'deleted');
+
       ctx.body = {
         code: '200',
         data: null,

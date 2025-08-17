@@ -8,6 +8,7 @@ const {
   jsonWebTokenError,
   tokenFormatError,
   userOfflineError,
+  userKickedError,
   hasNotAdminPermission,
 } = require('../constant/err.type.js');
 
@@ -26,17 +27,27 @@ const auth = async (ctx, next) => {
     const user = jwt.verify(accessToken, JWT_SECRET);
     ctx.state.user = user;
 
-    // 2. 查询 Redis 看用户是否被踢
+    // 2. 查询 Redis 看用户账号是否已在其他设备登录
+    const jtiInRedis = await redisClient.get(`refresh_token:user:${user.userId}`);
+    if (!jtiInRedis || jtiInRedis !== user.jti) {
+      // 断开ws连接
+      await disconnectWs(user.userId, user.seesionId, 'userKicked');
+      throw new Error('userKickedError');
+    }
+
+    // 3. 查询 Redis 看用户账号是否被删除
     const status = await redisClient.get(`user_status:${user.userId}`);
     if (status && status === 'deleted') {
       // 断开ws连接
-      await disconnectWs(user.userId, '您已被强制下线');
+      await disconnectWs(user.userId, user.seesionId, 'userDeleted');
       throw new Error('userOfflineError');
     }
   } catch (err) {
-    // 删除用户强制离线
+    // 用户退出登录
     if (err.message === 'userOfflineError') {
       return ctx.app.emit('error', userOfflineError, ctx);
+    } else if (err.message === 'userKickedError') {
+      return ctx.app.emit('error', userKickedError, ctx);
     }
 
     switch (err.name) {
@@ -45,13 +56,15 @@ const auth = async (ctx, next) => {
         const refreshToken = ctx.cookies.get('refresh_token');
         try {
           // 1.1. 校验 refreshToken 是否有效
-          const { userId, username, role, banned, jti } = jwt.verify(refreshToken, JWT_SECRET);
-
+          const { userId, username, role, banned, jti, seesionId } = jwt.verify(
+            refreshToken,
+            JWT_SECRET,
+          );
           // 1.2. 确认 refreshToken 是否在 Redis 存活
-          const session = await redisClient.get(`refresh_token:user:${userId}`);
-          if (!session || jti !== JSON.parse(session).jti) {
+          const redisJTI = await redisClient.get(`refresh_token:user:${userId}`);
+          if (!redisJTI || jti !== redisJTI) {
             // 断开ws连接
-            await disconnectWs(userId);
+            await disconnectWs(userId, seesionId);
             return ctx.app.emit('error', tokenExpiredError, ctx);
           }
 
@@ -61,6 +74,7 @@ const auth = async (ctx, next) => {
             username,
             role,
             banned,
+            seesionId,
           });
 
           // 1.4. 更新 Cookie

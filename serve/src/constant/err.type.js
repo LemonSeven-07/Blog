@@ -31,22 +31,27 @@ module.exports = {
   },
   tokenExpiredError: {
     code: '401',
-    message: 'token过期',
+    message: '登录状态失效，请重新登录',
     data: null,
   },
   jsonWebTokenError: {
     code: '401',
-    message: 'token无效',
+    message: '登录状态无效，请重新登录',
     data: null,
   },
   tokenFormatError: {
     code: '401',
-    message: 'token验证失败',
+    message: '登录状态验证失败，请重新登录',
     data: null,
   },
   userOfflineError: {
     code: '401',
-    message: '用户已被踢下线',
+    message: '账号已被删除，无法继续使用',
+    data: null,
+  },
+  userKickedError: {
+    code: '401',
+    message: '账号已在其他设备登录，请重新登录',
     data: null,
   },
   hasNotAdminPermission: {

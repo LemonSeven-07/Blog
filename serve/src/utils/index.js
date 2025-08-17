@@ -12,21 +12,23 @@ class blogPackagingMethod {
   issueTokens(userInfo) {
     const { ACCESS_EXPIRE, REFRESH_EXPIRE, JWT_SECRET, REDIS_TOKEN_CACHE_TTL } = process.env;
     const jti = randomUUID();
+    let seesionId = randomUUID();
+    if (userInfo.seesionId) seesionId = userInfo.seesionId;
 
     // 生成 AccessToken（短时）
-    const accessToken = jwt.sign({ ...userInfo }, JWT_SECRET, {
+    const accessToken = jwt.sign({ ...userInfo, jti, seesionId }, JWT_SECRET, {
       expiresIn: ACCESS_EXPIRE,
     });
 
     // 生成 RefreshToken（长时 + jti）
-    const refreshToken = jwt.sign({ ...userInfo, jti }, JWT_SECRET, {
+    const refreshToken = jwt.sign({ ...userInfo, jti, seesionId }, JWT_SECRET, {
       expiresIn: REFRESH_EXPIRE,
     });
 
     // 存到 Redis（key: refresh:jti）
     redisClient.set(
       `refresh_token:user:${userInfo.userId}`,
-      JSON.stringify({ ...userInfo, jti }),
+      jti,
       'EX',
       60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL,
     );

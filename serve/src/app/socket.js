@@ -34,14 +34,14 @@ function setupWebSocket(server, subClient) {
       switch (err.name) {
         case 'TokenExpiredError':
           // token过期
-          ws.close(1008, 'token过期');
+          ws.close(1008, '登录状态失效，请重新登录');
           break;
         case 'JsonWebTokenError':
           // token无效
-          ws.close(1008, 'token无效');
+          ws.close(1008, '登录状态无效，请重新登录');
           break;
         default:
-          ws.close(1008, 'token验证失败');
+          ws.close(1008, '登录状态验证失败，请重新登录');
           break;
       }
 
@@ -286,22 +286,46 @@ async function getSafeUnreadCount(userId) {
 
 /**
  * @description: 用户强制离线或token失效断开 ws 连接
+ * @param {String} userId 登录用户id
+ * @param {String} seesionId 登录成功后的会话id，登录成功后会话id为一个恒定制。用来解决同一个用户多次登录，旧的登录在被踢下线后，ws还没有主动断开的问题
+ * @param {String} type 消息类型
  * @return {*}
  */
-async function disconnectWs(userId, message = 'token失效') {
+async function disconnectWs(userId, seesionId, type = 'tokenInvalid') {
   userId = String(userId);
+  const message = {
+    tokenInvalid: '登录状态失效，请重新登录',
+    userDeleted: '账号已被删除，无法继续使用',
+    userKicked: '账号已在其他设备登录',
+  }[type];
+
   for (const ws of userClientsMap.get(userId)) {
     if (ws.readyState === WebSocket.OPEN) {
-      // 1. 先发送通知消息
-      await ws.send(
-        JSON.stringify({
-          type: 'FORCE_LOGOUT',
-          message,
-        }),
-      );
+      if (type === 'userDeleted') {
+        // 1. 先发送通知消息
+        await ws.send(
+          JSON.stringify({
+            type: 'LOGOUT',
+            message,
+          }),
+        );
 
-      // 2. 主动关闭连接
-      await ws.close(4001, message);
+        // 2. 主动关闭连接
+        await ws.close(4001, message);
+      } else {
+        if (ws.user.seesionId === seesionId) {
+          // 1. 先发送通知消息
+          await ws.send(
+            JSON.stringify({
+              type: 'LOGOUT',
+              message,
+            }),
+          );
+
+          // 2. 主动关闭连接
+          await ws.close(4001, message);
+        }
+      }
     }
   }
 }

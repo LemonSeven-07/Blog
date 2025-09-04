@@ -1,0 +1,38 @@
+# 依赖包
+node_modules
+
+# 构建输出
+dist
+build
+
+# 静态资源
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.md
+
+# 锁文件（一般不需要 prettier 格式化）
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+
+# Vite 缓存
+.vite
+.cache
+
+# IDE/编辑器相关
+.vscode
+.idea
+
+# Git
+.git
+
+# 代码相关配置
+.editorconfig
+.gitignore
+.prettierignore
+.prettierrc

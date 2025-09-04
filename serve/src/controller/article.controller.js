@@ -357,8 +357,11 @@ class articleController {
       }
 
       // 设置Content-Disposition头，触发浏览器下载
-      ctx.attachment(res.length === 1 ? safeFileName : zipName); // 等效于：
-      // ctx.set('Content-Disposition', `attachment; filename="${safeFileName}"`);
+      ctx.attachment(res.length === 1 ? safeFileName : zipName);
+      ctx.set(
+        'Content-Disposition',
+        'attachment; filename=' + encodeURIComponent(res.length === 1 ? safeFileName : zipName),
+      );
 
       // 使用koa-send发送文件
       await send(ctx, res.length === 1 ? safeFileName : zipName, {

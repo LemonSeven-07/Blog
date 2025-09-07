@@ -1,12 +1,31 @@
+import { Outlet, useNavigate } from 'react-router-dom';
+
 import api from '@/api';
+import { useAppSelector } from '@/store/hooks';
+import { useLocalLoading } from '@/hooks/useLocalLoading';
+import { useAutoCancelRequests } from '@/hooks/useAutoCancelRequests';
+
 function App() {
+  useAutoCancelRequests();
+  const globalLoading = useAppSelector((state) => state.loading.globalLoading);
+  const [loading, withLoading] = useLocalLoading();
+
+  const navigate = useNavigate();
+
   const login = async () => {
     const params = {
       username: 'yolo',
       password: '123456'
     };
-    const res = await api.userApi.login(params);
-    console.log('登录', res);
+
+    withLoading(api.userApi.login(params)).then((res) => {
+      if (res.code === '200') {
+        console.log('登录', res);
+      } else {
+        console.log('报错了', res);
+      }
+    });
+    // const res = await api.userApi.login(params);
   };
 
   const getUsers = async () => {
@@ -43,12 +62,19 @@ function App() {
       console.log('导出文章失败', err);
     }
   };
+  const toPage = () => {
+    navigate('/login');
+  };
   return (
     <>
+      <Outlet />
+      <div>{globalLoading ? '全局加载中...' : '全局内容已加载'}</div>
+      <div>{loading ? '局部加载中...' : '局部内容已加载'}</div>
       <h1>Vite + React</h1>
       <button onClick={login}>登录</button>
       <button onClick={getUsers}>查询用户列表</button>
       <button onClick={output}>导出文章</button>
+      <button onClick={toPage}>路由跳转</button>
     </>
   );
 }

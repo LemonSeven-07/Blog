@@ -1,4 +1,4 @@
-import { http } from '@/utils/request';
+import { http } from '@/utils/http';
 import type { OutputArticle } from './article.types';
 
 export const outputArticle = (params: OutputArticle['Request'], config: OutputArticle['Config']) =>

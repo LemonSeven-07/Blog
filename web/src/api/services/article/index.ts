@@ -1,5 +1,5 @@
-import { http } from '@/utils/http';
-import type { OutputArticle } from './article.types';
+import { http } from '@/api/http';
+import type { OutputArticle } from './types';
 
 export const outputArticle = (params: OutputArticle['Request'], config: OutputArticle['Config']) =>
   http.get<OutputArticle['Response'], OutputArticle['Response'], OutputArticle['Request'], true>(

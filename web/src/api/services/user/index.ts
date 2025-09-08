@@ -1,5 +1,5 @@
-import { http } from '@/utils/http';
-import type { AuthAction, UpdateUser, GetUsers } from './user.types';
+import { http } from '@/api/http';
+import type { AuthAction, UpdateUser, GetUsers } from './types';
 
 export const login = (params: AuthAction['Request']) => http.post<AuthAction['Response']>('/user/login', params);
 

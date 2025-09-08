@@ -1,8 +1,8 @@
-import * as articleApi from './article';
-import * as categoryApi from './category';
-import * as commentApi from './comment';
-import * as tagApi from './tag';
-import * as userApi from './user';
+import * as articleApi from './services/article';
+import * as categoryApi from './services/category';
+import * as commentApi from './services/comment';
+import * as tagApi from './services/tag';
+import * as userApi from './services/user';
 
 export default {
   articleApi,

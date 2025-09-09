@@ -6,7 +6,6 @@ import type { MyAxiosRequestConfig } from './types';
 import { store } from '@/store';
 import { startLoading, stopLoading } from '@/store/modules/loading/slice';
 import { getMthod, postMthod, putMthod, deleteMthod, patchMthod } from './request';
-import { routeChangeRequests } from './cancel';
 
 /* 创建 axios 实例 */
 export const httpInstance: AxiosInstance = axios.create({
@@ -92,14 +91,6 @@ httpInstance.interceptors.response.use(
   }
 );
 
-/**
- * @description: ✅ 性能优化：切换页面路由取消上个页面所有 Pending 中的请求
- */
-function cancelPendingRequests() {
-  routeChangeRequests.forEach((controller) => controller.abort());
-  routeChangeRequests.clear();
-}
-
 export const http = {
   get: getMthod,
   post: postMthod,
@@ -107,5 +98,3 @@ export const http = {
   delete: deleteMthod,
   patch: patchMthod
 };
-
-export { cancelPendingRequests };

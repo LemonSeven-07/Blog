@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { cancelPendingRequests } from '../api/http';
+import { cancelRequest } from '../api/http/cancel';
 
 /**
  * @description: 取消上一个页面的接口请求
@@ -10,7 +10,7 @@ export function useAutoCancelRequests() {
 
   useEffect(() => {
     return () => {
-      cancelPendingRequests();
+      cancelRequest.cancelPendingRequests();
     };
   }, [location]);
 }

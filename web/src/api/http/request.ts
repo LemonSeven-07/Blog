@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:32
  * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-08 23:54:09
+ * @LastEditTime: 2025-09-09 14:54:05
  * @FilePath: /Blog/web/src/api/http/request.ts
  * @Description: axios 请求核心封装
  */
@@ -12,8 +12,8 @@ import { message } from 'antd';
 
 import { httpInstance } from './index';
 import type { CommonResponse, HttpMethod, MyAxiosRequestConfig, CustomizeOpt, CacheOptions, service } from './types';
-import { getRequestKey, cancelPreviousRequest, addCurrentRequest, removeCurrentRequest } from './cancel';
-import { cache } from './cache';
+import { cancelRequest } from './cancel';
+import { cacheRequest } from './cache';
 
 /**
  * @description: HTTP 请求封装方法
@@ -67,10 +67,10 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
   }
 
   // 生成当前路由页面请求唯一 key
-  const cKey = getRequestKey(axiosConfig);
+  const cKey = cancelRequest.getRequestKey(axiosConfig);
   // ✅ 性能优化：请求缓存处理
   let rule: CacheOptions | null = null;
-  const { newRule, cacheData } = cache.resolveCache<Full extends true ? AxiosResponse : P>(
+  const { newRule, cacheData } = cacheRequest.resolveCache<Full extends true ? AxiosResponse : P>(
     axiosConfig,
     strategy,
     ttl,
@@ -86,18 +86,18 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
   rule = newRule;
 
   // ✅ 性能优化： 同一页面重复请求上一个接口未响应取消上一个
-  cancelPreviousRequest(cKey, controller);
+  cancelRequest.cancelPreviousRequest(cKey, controller);
 
   // ✅ 性能优化：切换页面路由取消请求
   const rKey = `${url}_${Date.now()}`; // 每次路由切换请求 key 都不一样，保证每次路由切换都取消上一个路由的请求
-  addCurrentRequest(autoCancelRequests, rKey, controller);
+  cancelRequest.addCurrentRequest(autoCancelRequests, rKey, controller);
 
   return httpInstance
     .request<P>(axiosConfig)
     .then(async (res) => {
       if (res.status === 304) {
         // ✅ 性能优化：http 协商缓存返回 304，即使本地缓存的数据过期但后台内容未变更，仍可直接使用缓存数据
-        return cache.applyRemoteCache<Full extends true ? AxiosResponse : P>(
+        return cacheRequest.applyRemoteCache<Full extends true ? AxiosResponse : P>(
           cKey,
           rule?.strategy as 'memoryHttpCache' | 'localHttpCache' | 'sessionHttpCache'
         );
@@ -125,7 +125,7 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
 
       if ((data as P & { code?: string }).code === '200') {
         // ✅ 性能优化四：请求成功后缓存数据
-        cache.applyLocalCache<P>(cKey, rule as CacheOptions, res.headers as AxiosHeaders, data);
+        cacheRequest.applyLocalCache<P>(cKey, rule as CacheOptions, res.headers as AxiosHeaders, data);
         // 🏷️ 业务逻辑处理成功直接返回 data
         return data as Full extends true ? never : P;
       } else {
@@ -136,7 +136,7 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
       }
     })
     .finally(() => {
-      removeCurrentRequest(rKey);
+      cancelRequest.removeCurrentRequest(rKey);
     });
 }
 

@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:53
  * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-08 23:28:25
+ * @LastEditTime: 2025-09-09 14:45:51
  * @FilePath: /Blog/web/src/api/http/cache.ts
  * @Description: ✅ 性能优化：请求缓存处理
  */
@@ -13,7 +13,7 @@ import type { CacheValue, CacheOptions, MyAxiosRequestConfig, Strategy } from '.
 import { cacheRules } from './cacheRules';
 
 // 缓存处理类
-class Cache {
+class CacheRequest {
   // 存储每个接口请求的缓存
   private memory = new Map<string, CacheValue>();
 
@@ -180,4 +180,4 @@ class Cache {
   }
 }
 
-export const cache = new Cache();
+export const cacheRequest = new CacheRequest();

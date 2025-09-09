@@ -10,7 +10,7 @@ import { getMthod, postMthod, putMthod, deleteMthod, patchMthod } from './reques
 /* 创建 axios 实例 */
 export const httpInstance: AxiosInstance = axios.create({
   baseURL: '/yolo',
-  timeout: 3000
+  timeout: 2000
 });
 
 // 接口异常响应 code 以及异常原因
@@ -75,16 +75,25 @@ httpInstance.interceptors.response.use(
     }
 
     // 处理请求失败
-    const status = (error as AxiosError).response?.status;
-    if (status && httpExceptionCode[status]) {
-      if (status === 401) {
-        localStorage.removeItem('token');
-        message.warning(httpExceptionCode[status]);
+    if ((error as AxiosError).response) {
+      const status = (error as AxiosError).response?.status;
+      if (status && httpExceptionCode[status]) {
+        if (status === 401) {
+          localStorage.removeItem('token');
+          message.warning(httpExceptionCode[status]);
+        } else {
+          message.error(httpExceptionCode[status]);
+        }
       } else {
-        message.error(httpExceptionCode[status]);
+        message.error('请求错误' + `(${status})`);
       }
     } else {
-      message.error('请求错误' + status ? `(${status})` : '');
+      const { message: msg } = error;
+      if (msg) {
+        message.error(msg);
+      } else {
+        message.error('请求错误');
+      }
     }
 
     return Promise.reject(error);

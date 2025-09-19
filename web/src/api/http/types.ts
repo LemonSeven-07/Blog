@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:52:20
  * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-08 23:49:07
+ * @LastEditTime: 2025-09-09 17:38:50
  * @FilePath: /Blog/web/src/api/http/types.ts
  * @Description: axios 相关类型定义
  */
@@ -32,7 +32,7 @@ export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
  *
  * @returns 当 Full 为 true 时，返回 AxiosResponse；否则返回业务数据 P
  */
-export type service = <T, P = CommonResponse<T>, R = unknown, Full extends boolean = false>(
+export type Service = <T, P = CommonResponse<T>, R = unknown, Full extends boolean = false>(
   url: string,
   params?: R,
   config?: MyAxiosRequestConfig,

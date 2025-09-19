@@ -1,11 +1,12 @@
 /*
  * @Author: chenshijie
  * @Date: 2025-09-08 15:53:36
- * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-08 23:49:49
+ * @LastEditors: yolo
+ * @LastEditTime: 2025-09-12 10:24:24
  * @FilePath: /Blog/web/src/api/http/cacheRules.ts
  * @Description: ✅ 性能优化：缓存规则配置
  */
+
 import type { CacheOptions } from './types';
 
 // ‼️ 缓存规则数据为所有get请求，key 为请求 method + url 组成。数据排列顺序优先级静态路由优先，动态路由其次（其他特殊请求方法的请求走自定义）

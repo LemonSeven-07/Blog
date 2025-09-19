@@ -1,8 +1,8 @@
 /*
  * @Author: yolo
  * @Date: 2025-09-08 15:51:53
- * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-09 14:45:51
+ * @LastEditors: yolo
+ * @LastEditTime: 2025-09-11 10:52:16
  * @FilePath: /Blog/web/src/api/http/cache.ts
  * @Description: ✅ 性能优化：请求缓存处理
  */
@@ -100,7 +100,10 @@ class CacheRequest {
     let rule: CacheOptions | null = null;
     let cacheData: T | null = null;
     // 判断请求头是否设置了 http 强缓存
-    if (!headers || (headers && (headers['Cache-Control'] === 'no-cache' || !headers['Cache-Control']))) {
+    if (
+      !headers ||
+      (headers && (headers['Cache-Control'] === 'no-cache' || !headers['Cache-Control']))
+    ) {
       // 没有设置 http 强缓存，则判断是否有缓存规则(优先自定义配置，其次是预设规则)
       if (strategy !== 'none') rule = { strategy, ttl };
       if (!rule) rule = this.matchCacheRule((method as string) + url);
@@ -145,7 +148,10 @@ class CacheRequest {
    * @param {'memoryHttpCache' | 'localHttpCache' | 'sessionHttpCache'} type 缓存类型
    * @return {CacheValue} 缓存数据类型
    */
-  applyRemoteCache<T>(key: string, type: 'memoryHttpCache' | 'localHttpCache' | 'sessionHttpCache'): T {
+  applyRemoteCache<T>(
+    key: string,
+    type: 'memoryHttpCache' | 'localHttpCache' | 'sessionHttpCache'
+  ): T {
     return this.get(key, type)?.data as T;
   }
 

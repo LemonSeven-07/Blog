@@ -31,8 +31,16 @@ yarn.lock
 # Git
 .git
 
+# svn
+.svn
+
+.scss
+
 # 代码相关配置
 .editorconfig
 .gitignore
 .prettierignore
 .prettierrc
+
+# 阿里图标库
+src/assets/iconfont/

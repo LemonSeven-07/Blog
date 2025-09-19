@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:32
  * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-09 14:54:05
+ * @LastEditTime: 2025-09-09 17:39:03
  * @FilePath: /Blog/web/src/api/http/request.ts
  * @Description: axios 请求核心封装
  */
@@ -11,7 +11,14 @@ import type { AxiosResponse, AxiosHeaders } from 'axios';
 import { message } from 'antd';
 
 import { httpInstance } from './index';
-import type { CommonResponse, HttpMethod, MyAxiosRequestConfig, CustomizeOpt, CacheOptions, service } from './types';
+import type {
+  CommonResponse,
+  HttpMethod,
+  MyAxiosRequestConfig,
+  CustomizeOpt,
+  CacheOptions,
+  Service
+} from './types';
 import { cancelRequest } from './cancel';
 import { cacheRequest } from './cache';
 
@@ -125,7 +132,12 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
 
       if ((data as P & { code?: string }).code === '200') {
         // ✅ 性能优化四：请求成功后缓存数据
-        cacheRequest.applyLocalCache<P>(cKey, rule as CacheOptions, res.headers as AxiosHeaders, data);
+        cacheRequest.applyLocalCache<P>(
+          cKey,
+          rule as CacheOptions,
+          res.headers as AxiosHeaders,
+          data
+        );
         // 🏷️ 业务逻辑处理成功直接返回 data
         return data as Full extends true ? never : P;
       } else {
@@ -155,18 +167,18 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
     🟩 Promise<P>: 如果 fullResponseData = false（默认），返回接口实际数据结构（默认 CommonResponse<T>）
     🟩 Promise<AxiosResponse>: 如果 fullResponseData = true, 返回完整的 Axios 响应对象，包括：data、status、headers、config、statusText
 */
-export const getMthod: service = (url, params, config, customizeOpt) => {
+export const getMthod: Service = (url, params, config, customizeOpt) => {
   return request('get', url, params, config, customizeOpt);
 };
-export const postMthod: service = (url, params, config, customizeOpt) => {
+export const postMthod: Service = (url, params, config, customizeOpt) => {
   return request('post', url, params, config, customizeOpt);
 };
-export const putMthod: service = (url, params, config, customizeOpt) => {
+export const putMthod: Service = (url, params, config, customizeOpt) => {
   return request('put', url, params, config, customizeOpt);
 };
-export const deleteMthod: service = (url, params, config, customizeOpt) => {
+export const deleteMthod: Service = (url, params, config, customizeOpt) => {
   return request('delete', url, params, config, customizeOpt);
 };
-export const patchMthod: service = (url, params, config, customizeOpt) => {
+export const patchMthod: Service = (url, params, config, customizeOpt) => {
   return request('patch', url, params, config, customizeOpt);
 };

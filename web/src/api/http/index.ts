@@ -1,16 +1,26 @@
+/*
+ * @Author: yolo
+ * @Date: 2025-09-08 15:51:21
+ * @LastEditors: yolo
+ * @LastEditTime: 2025-09-18 10:39:29
+ * @FilePath: /Blog/web/src/api/http/index.ts
+ * @Description: 对外统一导出方法。axios 封装包含：自动添加 token、更新 token、取消不必要的请求、缓存接口请求、页面 loading
+ */
+
 import axios from 'axios';
 import type { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { message } from 'antd';
 
 import type { MyAxiosRequestConfig } from './types';
 import { store } from '@/store';
-import { startLoading, stopLoading } from '@/store/modules/loading/slice';
+import { startLoading, stopLoading } from '@/store/modules/loading';
 import { getMthod, postMthod, putMthod, deleteMthod, patchMthod } from './request';
+import { config } from '@/config';
 
 /* 创建 axios 实例 */
 export const httpInstance: AxiosInstance = axios.create({
-  baseURL: '/yolo',
-  timeout: 2000
+  baseURL: config.AXIOS_BASE_URL,
+  timeout: config.AXIOS_TIMEOUT
 });
 
 // 接口异常响应 code 以及异常原因
@@ -53,7 +63,9 @@ httpInstance.interceptors.request.use(
 
 // 响应拦截
 httpInstance.interceptors.response.use(
-  (response: AxiosResponse & { config: MyAxiosRequestConfig }): AxiosResponse & { config: MyAxiosRequestConfig } => {
+  (
+    response: AxiosResponse & { config: MyAxiosRequestConfig }
+  ): AxiosResponse & { config: MyAxiosRequestConfig } => {
     if (!response.config.ignoreLoading) {
       store.dispatch(stopLoading());
     }
@@ -107,3 +119,6 @@ export const http = {
   delete: deleteMthod,
   patch: patchMthod
 };
+
+export * from './cancel';
+export * from './useAutoCancelRequests';

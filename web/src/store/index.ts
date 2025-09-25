@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import loadingReducer from './modules/loading';
+import configReducer from './modules/config';
 
 export const store = configureStore({
   reducer: {
-    loading: loadingReducer
+    loading: loadingReducer,
+    config: configReducer
   }
 });
 

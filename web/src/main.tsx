@@ -7,11 +7,12 @@ import 'intersection-observer';
 import store from '@/store';
 import router from '@/router';
 import '@/assets/styles/global.scss';
-import '@/assets/iconfont/iconfont.css';
+import FloatingBlock from '@/components/FloatingBlock';
 
 createRoot(document.getElementById('root')!).render(
   // <StrictMode>
   <Provider store={store}>
+    <FloatingBlock />
     <RouterProvider router={router} />
   </Provider>
   // </StrictMode>

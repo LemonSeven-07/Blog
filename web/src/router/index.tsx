@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { Skeleton } from 'antd';
 import ErrorPage from '@/components/ErrorPage';
-import ClientLayout from '@/layout/client/ClientLayout';
+import ClientMainLayout from '@/layout/client/ClientMainLayout';
+import ClientSimpleLayout from '@/layout/client/ClientSimpleLayout';
 import AdminLayout from '@/layout/admin/AdminLayout';
 
 // 前台页面
@@ -25,18 +27,18 @@ const RequireAuth = ({ children }: { children: JSX.Element }) => {
 
 // 解决闪屏问题
 const withLoadingComponent = (component: JSX.Element) => (
-  <Suspense fallback={<div>Loading...</div>}>{component}</Suspense>
+  <Suspense fallback={<Skeleton active />}>{component}</Suspense>
 );
 
 const router = createBrowserRouter([
   // 前台路由
   {
-    path: '/', // 首页
-    element: <ClientLayout />,
+    path: '/',
+    element: <ClientMainLayout />,
     errorElement: <ErrorPage />,
     children: [
       {
-        index: true,
+        index: true, // 首页
         element: withLoadingComponent(<ArticleExplorer slug="" />)
       },
       {
@@ -70,7 +72,14 @@ const router = createBrowserRouter([
       {
         path: 'other', // 其他类文章查询
         element: withLoadingComponent(<ArticleExplorer slug="other" />)
-      },
+      }
+    ]
+  },
+  {
+    path: '/',
+    element: <ClientSimpleLayout />, // 文章详情用 ArticleLayout
+    children: [
+      { path: 'article/:id', element: withLoadingComponent(<ArticleDetail />) },
       {
         path: 'search', // 文章检索
         element: withLoadingComponent(<Search />)
@@ -78,10 +87,6 @@ const router = createBrowserRouter([
       {
         path: 'notify', // 站内通知
         element: withLoadingComponent(<Notify />)
-      },
-      {
-        path: 'article/:id', // 文章查看
-        element: withLoadingComponent(<ArticleDetail />)
       }
     ]
   },

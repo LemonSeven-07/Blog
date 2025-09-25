@@ -1,0 +1,161 @@
+@use 'sass:map';
+@use 'sass:string';
+
+$themes: (
+  light: (
+    --yolo-bg: #f2f3f5,
+    --yolo-card-bg: #fff,
+    --yolo-text: #000,
+    --yolo-header-shadow: 0 2px 8px #f0f1f2,
+    --yolo-search: rgb(85 85 85 / 60%),
+    --yolo-notify-icon: rgb(0 0 0 / 40%),
+    --yolo-has-unread-icon: rgb(0 0 0 / 88%),
+    --yolo-main-header-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%),
+    --yolo-main-header-text: #515767,
+    --yolo-main-header-text-select: #1e80ff,
+    --yolo-sidebar-nav-text: rgb(107 114 128 / 100%),
+    --yolo-sidebar-nav-bg: #f2f3f5,
+    --yolo-category-text: #1e80ff,
+    --yolo-category-bg-click: rgb(220 234 255 / 100%),
+    --yolo-sort-text: #7c808c,
+    --yolo-sort-text-click: #000,
+    --yolo-select-bg: #fff,
+    --yolo-select-border: #d9d9d9,
+    --yolo-select-text: #000,
+    --yolo-select-placeholder: #8c8c8c,
+    --yolo-select-border-hover: #1e80ff,
+    --yolo-select-item-bg-hover: #f5f5f5,
+    --yolo-select-selected-bg: #e6f7ff,
+    --yolo-select-selected-text: #000,
+    --yolo-signature-text: #686868,
+    --yolo-social-bg: #6366f10d,
+    --yolo-github-icon-text: #000,
+    --yolo-gitee-icon-text: #ee3434,
+    --yolo-hot-item-bg-hover: #f7f8fa,
+    --yolo-article-box-shadow: 0 4px 6px #0000001a,
+    --yolo-md-body-text: #dcdcdc,
+    --yolo-md-img-filter: brightness(1),
+    --yolo-md-hr-border: 1px solid #e5e7eb,
+    --yolo-md-code-bg: rgb(13 110 253 / 10%),
+    --yolo-md-ol-li-border-before: 1px solid #11181c,
+    --yolo-md-blockquote-border-left: 0.375rem solid #409eff,
+    --yolo-md-blockquote-bg: rgb(64 158 255 / 10%),
+    --yolo-md-mark-bg: #dbfdad,
+    --yolo-md-th-bg: #f1f7fd
+  ),
+  dark: (
+    --yolo-bg: #232931,
+    --yolo-card-bg: #354149,
+    --yolo-text: #e0e0e0,
+    --yolo-header-shadow: string.unquote(
+        '0 1px 3px rgb(0 0 0 / 30%),' + '0 2px 6px rgb(0 0 0 / 20%)'
+      ),
+    --yolo-search: rgb(255 255 255 / 60%),
+    --yolo-notify-icon: rgb(255 255 255 / 55%),
+    --yolo-has-unread-icon: rgb(255 255 255 / 85%),
+    --yolo-main-header-shadow: 0 1px 2px 0 rgb(255 255 255 / 8%),
+    --yolo-main-header-text: #b0b0b0,
+    --yolo-main-header-text-select: #1e80ff,
+    --yolo-sidebar-nav-text: rgb(255 255 255 / 80%),
+    --yolo-sidebar-nav-bg: #42515e,
+    --yolo-category-text: #2d3840,
+    --yolo-category-bg-click: rgb(255 255 255 / 10%),
+    --yolo-sort-text: #a0a4b0,
+    --yolo-sort-text-click: #1e80ff,
+    --yolo-select-bg: #2c2f36,
+    --yolo-select-border: #3a3d46,
+    --yolo-select-text: #e5e7eb,
+    --yolo-select-placeholder: #9ca3af,
+    --yolo-select-border-hover: #1e80ff,
+    --yolo-select-item-bg-hover: #3a3d46,
+    --yolo-select-selected-bg: #1e80ff1a,
+    --yolo-select-selected-text: #fff,
+    --yolo-signature-text: #a8a8a8,
+    --yolo-social-bg: #6366f11a,
+    --yolo-github-icon-text: #e0e0e0,
+    --yolo-gitee-icon-text: #e55,
+    --yolo-hot-item-bg-hover: #ffffff0c,
+    --yolo-article-box-shadow: string.unquote(
+        '0 4px 6px rgba(255, 255, 255, 0.03),' + '0 2px 4px rgba(255, 255, 255, 0.02)'
+      ),
+    --yolo-md-body-text: #9ca3af,
+    --yolo-md-img-filter: brightness(0.9),
+    --yolo-md-hr-border: 1px solid #4e5969,
+    --yolo-md-code-bg: #334052,
+    --yolo-md-ol-li-border-before: 1px solid #9ca3af,
+    --yolo-md-blockquote-border-left: 0.375rem solid #6b7280,
+    --yolo-md-blockquote-bg: rgb(246 248 250 / 10%),
+    --yolo-md-mark-bg: #9db47e,
+    --yolo-md-th-bg: #334052
+  )
+);
+$curTheme: light;
+
+@mixin use-html-theme() {
+  @each $key, $value in $themes {
+    $curTheme: $key !global;
+    html[data-theme='#{$key}'] {
+      // color: map.get($value, '--yolo-text');
+      // background: map.get($value, '--yolo-bg');
+      @content;
+    }
+  }
+}
+
+@mixin use-theme() {
+  @each $key, $value in $themes {
+    $curTheme: $key !global;
+    html[data-theme='#{$key}'] & {
+      @content;
+    }
+  }
+}
+
+@function get-var($key) {
+  $themeMap: map.get($themes, $curTheme);
+
+  @return map.get($themeMap, $key);
+}
+
+// 响应式布局
+$breakpoints: (
+  'phone': (
+    0,
+    767px
+  ),
+  'pad': (
+    768px,
+    991px
+  ),
+  'desktop': (
+    992px,
+    1199px
+  ),
+  'tv': 1200px
+);
+
+@mixin respond-to($breakname) {
+  $bp: map.get($breakpoints, $breakname);
+
+  @if meta.type-of($bp) == 'list' {
+    $min: list.nth($bp, 1);
+    $max: list.nth($bp, 2);
+
+    @media (min-width: $min) and (max-width: $max) {
+      @content;
+    }
+  } @else {
+    @media (min-width: $bp) {
+      @content;
+    }
+  }
+}
+
+// .header {
+//   @include resond-to('pad') {
+//     heigth: 60px;
+//   }
+
+//   display: flex;
+//   width: 100%;
+// }

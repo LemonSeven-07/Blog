@@ -1,30 +1,51 @@
+@use './themes.scss' as *;
+
 .app-container {
+  @include use-theme {
+    color: get-var('--yolo-text');
+    background: get-var('--yolo-bg');
+  }
+
   display: flex;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   flex-direction: column;
 
   .app-header {
+    @include use-theme {
+      color: get-var('--yolo-text');
+      background: get-var('--yolo-card-bg');
+      box-shadow: get-var('--yolo-header-shadow');
+    }
+
     position: sticky;
     top: 0;
     right: 0;
     left: 0;
-    z-index: 250;
+    z-index: 40;
     width: 100%;
-    height: 60px;
-    background: #fff;
-    transition: transform 0.2s;
+    height: 3.75rem;
+    transition:
+      transform 0.3s ease,
+      background-color 0.3s ease;
     transform: translateZ(0);
     flex: 0 0 auto;
-    -webkit-box-shadow: 0 2px 8px #f0f1f2;
-    box-shadow: 0 2px 8px #f0f1f2;
+
+    &.header-hidden {
+      transform: translateY(-100%);
+    }
 
     .header-container {
+      @include use-theme {
+        color: get-var('--yolo-text');
+        background: get-var('--yolo-card-bg');
+      }
+
       display: flex;
-      max-width: 1440px;
-      height: 60px;
+      max-width: 90rem;
+      height: 3.75rem;
       margin: auto;
-      padding: 0 24px;
+      padding: 0 1.5rem;
 
       .header-left {
         flex: 0 0 auto;
@@ -33,7 +54,7 @@
         a {
           display: flex;
           height: 100%;
-          line-height: 60px;
+          line-height: 3.75rem;
           text-decoration: none;
           color: inherit;
           align-items: center;
@@ -45,9 +66,13 @@
           }
 
           .blog-name {
-            padding: 0 12px;
-            font-size: 20px;
+            padding: 0 0.75rem;
+            font-size: 1.25rem;
             font-weight: bold;
+
+            @media screen and (width <= 45.625rem) {
+              display: none;
+            }
           }
         }
       }
@@ -57,18 +82,25 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 12px;
+        margin: 0 0.75rem;
 
         .search-icon {
+          @include use-theme {
+            color: get-var('--yolo-search');
+          }
+
           flex: 0 0 auto;
           width: 20px;
           padding: 0 5px;
-          color: rgb(85 85 85 / 60%);
         }
 
         .search-input {
-          max-width: 600px;
-          height: 40px;
+          @include use-theme {
+            color: get-var('--yolo-search');
+          }
+
+          max-width: 37.5rem;
+          height: 2.5rem;
           border: 0;
           background: transparent;
           flex: 1;
@@ -84,39 +116,48 @@
       .header-right {
         flex: 0 0 auto;
         display: flex;
-        line-height: 60px;
+        line-height: 3.75rem;
 
         .ant-menu {
-          font-size: 18px;
+          @include use-theme {
+            background: get-var('--yolo-card-bg');
+          }
+
+          font-size: 1.125rem;
 
           li {
-            line-height: 60px;
+            @include use-theme {
+              color: get-var('--yolo-text');
+            }
+
+            line-height: 3.75rem;
           }
         }
 
         .header-notify {
           padding-top: 4px;
-          margin: 0 16px;
+          margin: 0 1rem;
 
           .ant-badge {
             cursor: pointer;
 
             .anticon-bell {
-              font-size: 24px;
+              @include use-theme {
+                color: get-var('--yolo-notify-icon');
+              }
+
+              font-size: 1.5rem;
+
+              &.has-unread {
+                @include use-theme {
+                  color: get-var('--yolo-has-unread-icon');
+                }
+              }
             }
 
             sup {
               top: -4px;
             }
-          }
-        }
-
-        .header-github {
-          margin: 0 16px;
-          font-size: 34px;
-
-          .anticon-github {
-            cursor: pointer;
           }
         }
       }
@@ -126,185 +167,339 @@
   .app-main {
     display: flex;
     width: 100%;
-    max-width: 1200px;
+    max-width: 75rem;
     margin: 0 auto;
     flex: 1;
     flex-direction: column;
 
     .main-header {
+      @include use-theme {
+        background-color: get-var('--yolo-card-bg');
+        box-shadow: get-var('--yolo-main-header-shadow');
+      }
+
       display: none;
       position: sticky;
-      top: 60px;
+      top: 3.75rem;
       left: 0;
-      z-index: 100;
+      z-index: 30;
       width: 100vw;
-      height: 46px;
+      height: 2.875rem;
       text-align: center; // 内容少时居中
-      background-color: #fff;
       transition: all 0.2s;
       transition: top 0.3s ease;
       transform: translateY(0);
       flex: 0 0 auto;
       margin-left: calc(50% - 50vw) !important;
       margin-right: calc(50% - 50vw) !important;
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
       overflow-x: auto;
       white-space: nowrap;
 
+      @media screen and (width <= 75rem) {
+        display: block !important;
+      }
+
       .horizontal-category-nav {
-        display: inline-block; // 必须 inline-block 才能受 text-align 控制
+        display: inline-block;
         height: 100%;
-        white-space: nowrap; // 防止换行
+        white-space: nowrap;
+
         a {
+          @include use-theme {
+            color: get-var('--yolo-main-header-text');
+          }
+
           display: inline-block;
           height: 100%;
-          padding: 0 12px;
-          font-size: 14px;
-          line-height: 46px;
+          padding: 0 0.75rem;
+          font-size: 0.875rem;
+          line-height: 2.875rem;
           text-decoration: none;
-          color: #515767;
           cursor: pointer;
 
           &:hover {
-            color: #1e80ff;
+            @include use-theme {
+              color: get-var('--yolo-main-header-text-select');
+            }
           }
         }
 
         .active-category {
-          color: #1e80ff;
+          @include use-theme {
+            color: get-var('--yolo-main-header-text-select');
+          }
         }
+      }
+
+      &.sticky {
+        top: 0;
+        transition: top 0.05s ease;
       }
     }
 
-    .main-header-top {
-      top: 0;
-      transition: top 0.1s ease;
-    }
-
     .main-content {
-      margin-top: 20px;
+      margin-top: 1.25rem;
       display: flex;
       flex: 1;
       align-items: flex-start;
 
-      .category-sidebar-nav {
+      .sidebar-left {
+        @include use-theme {
+          background: get-var('--yolo-card-bg');
+        }
+
         position: sticky;
-        top: 80px;
-        width: 180px;
-        max-height: calc(100vh - 101px);
+        top: 5rem;
+        width: 11.25rem;
+        max-height: calc(100vh - 6.3125rem);
         padding: 8px;
         border-radius: 4px;
-        background-color: #fff;
         transition: top 0.3s ease;
         flex: 0 0 auto;
-        margin-left: 20px;
+        margin-left: 1.25rem;
         overflow-x: hidden;
+
+        @media screen and (width <= 75rem) {
+          display: none;
+        }
 
         .vertical-category-nav {
           a {
+            @include use-theme {
+              color: get-var('--yolo-sidebar-nav-text');
+            }
+
             display: flex;
             z-index: 10;
-            padding: 10px 17px;
+            padding: 0.625rem 1.0625rem;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 1rem;
             font-weight: 500;
             text-decoration: none;
-            color: #6b7280;
             align-items: center;
             cursor: pointer;
 
             i {
-              margin-right: 12px;
+              margin-right: 0.75rem;
             }
 
             &:hover {
-              color: #1e80ff;
-              background-color: #f2f3f5;
+              @include use-theme {
+                color: get-var('--yolo-category-text');
+                background-color: get-var('--yolo-sidebar-nav-bg');
+              }
             }
           }
 
           .active-category {
-            color: #1e80ff;
-            background-color: #dceaff;
+            @include use-theme {
+              color: get-var('--yolo-category-text');
+              background-color: get-var('--yolo-category-bg-click');
+            }
           }
         }
-      }
 
-      .category-sidebar-nav-top {
-        top: 20px;
-        max-height: calc(100vh - 40px);
-        transition: top 0.3s ease;
+        &.sticky {
+          top: 1.25rem;
+          max-height: calc(100vh - 2.5rem);
+          transition: top 0.3s ease;
+        }
       }
 
       .entry-list-content {
         flex: 1;
-        margin: 0 20px;
+        margin: 0 1.25rem;
         overflow-x: hidden;
 
         header {
+          @include use-theme {
+            background-color: get-var('--yolo-card-bg');
+          }
+
           display: flex;
-          padding: 8px 20px;
+          padding: 0.5rem 1.25rem;
           border-radius: 4px;
           line-height: normal;
-          background-color: #fff;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 10px;
+          margin-bottom: 0.625rem;
 
           .list-nav {
-            line-height: 28px;
+            line-height: 1.75rem;
 
             .new-sort-btn,
             .hot-sort-btn {
-              padding: 0 14px;
-              color: #7c808c;
+              @include use-theme {
+                color: get-var('--yolo-sort-text');
+              }
+
+              padding: 0 0.875rem;
               cursor: pointer;
             }
 
             .new-sort-btn {
-              margin-left: -20px;
+              margin-left: -1.25rem;
             }
 
             .active-sort {
+              @include use-theme {
+                color: get-var('--yolo-sort-text-click');
+              }
+
               font-weight: 500;
-              color: black;
             }
           }
 
           .sub-tags {
-            width: 150px;
-            height: 28px;
+            width: 9.375rem;
+            height: 1.75rem;
 
             .ant-select-selector {
               cursor: pointer;
 
               .ant-select-selection-wrap {
-                font-size: 12px;
+                font-size: 0.75rem;
               }
             }
           }
         }
+
+        > div {
+          a {
+            text-decoration: none;
+            color: inherit;
+          }
+        }
       }
 
-      .hot-list {
+      .sidebar-right {
         position: sticky;
-        top: 80px;
-        width: 260px;
-        max-height: calc(100vh - 101px);
-        padding: 12px 8px;
-        border-radius: 4px;
-        background-color: #fff;
+        top: 5rem;
+        width: 15rem;
+        max-height: calc(100vh - 6.3125rem);
         transition: top 0.3s ease;
         flex: 0 0 auto;
-        flex-direction: column;
-        margin-right: 20px;
+        margin-right: 1.25rem;
         overflow: hidden;
 
-        .hot-list-item {
+        @media screen and (width <= 75rem) {
+          &.sticky {
+            top: 4rem !important;
+            max-height: calc(100vh - 5.25rem) !important;
+            transition: top 0.3s ease;
+          }
+
+          &:not(.sticky) {
+            top: 7.875rem !important;
+            max-height: calc(100vh - 9.125rem) !important;
+            transition: top 0.3s ease;
+          }
+        }
+
+        @media screen and (width <= 62.5rem) {
+          display: none;
+        }
+
+        .author-info {
+          @include use-theme {
+            color: get-var('--yolo-text');
+            background-color: get-var('--yolo-card-bg');
+          }
+
+          padding: 1.75rem 0.5rem 0.75rem;
+          border-radius: 4px;
+          text-align: center;
+          margin-bottom: 1.25rem;
+
+          .author-avatar {
+            img {
+              width: 90px;
+              height: 90px;
+              border-radius: 50%;
+              transition: transform 0.3s ease;
+
+              &:hover {
+                transform: scale(1.1);
+              }
+            }
+          }
+
+          .author-name {
+            margin: 0.875rem 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+          }
+
+          .personal-signature {
+            @include use-theme {
+              color: get-var('--yolo-signature-text');
+            }
+
+            font-size: 0.75rem;
+            line-height: 1.25rem;
+            margin-bottom: 0.75rem;
+          }
+
+          .social-links {
+            a {
+              @include use-theme {
+                background-color: get-var('--yolo-social-bg');
+              }
+
+              display: inline-flex;
+              width: 2.25rem;
+              height: 2.25rem;
+              border-radius: 12px;
+              font-size: 1.375rem;
+              text-decoration: none;
+              color: inherit;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+
+              &:nth-child(n + 2) {
+                margin-left: 0.625rem;
+              }
+
+              &.icon-github {
+                @include use-theme {
+                  color: get-var('--yolo-github-icon-text');
+
+                  &:hover {
+                    color: #fff;
+                    background: #000;
+                  }
+                }
+              }
+
+              &.icon-gitee {
+                @include use-theme {
+                  color: get-var('--yolo-gitee-icon-text');
+
+                  &:hover {
+                    color: #fff;
+                    background: #da3535;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        .hot-list {
+          // background: #fff;
+          @include use-theme {
+            color: get-var('--yolo-text');
+            background-color: get-var('--yolo-card-bg');
+          }
+
+          padding: 0.75rem 0.5rem;
+          border-radius: 4px;
+
           .hot-item-header {
             display: flex;
-            padding: 0 8px;
-            margin-bottom: 12px;
+            padding: 0 0.5rem;
+            margin-bottom: 0.75rem;
             justify-content: space-between;
             align-items: center;
 
@@ -314,15 +509,15 @@
               }
 
               .title-text {
-                font-size: 16px;
+                font-size: 1rem;
                 font-weight: 500;
-                margin-left: 8px;
+                margin-left: 0.5rem;
               }
             }
 
             .item-header-button {
               cursor: pointer;
-              font-size: 12px;
+              font-size: 0.75rem;
               color: #8a919f;
 
               &:hover {
@@ -343,7 +538,7 @@
 
             .content {
               height: 100%;
-              margin: 0 8px;
+              margin: 0 0.5rem;
               background: rgb(228 230 235 / 50%);
             }
           }
@@ -356,19 +551,21 @@
 
               li {
                 display: flex;
-                height: 22px;
-                padding: 8px;
+                height: 1.375rem;
+                padding: 0.5rem;
                 border-radius: 4px;
-                font-size: 14px;
+                font-size: 0.875rem;
                 align-items: center;
 
                 &:hover {
-                  background-color: #f7f8fa;
+                  @include use-theme {
+                    background-color: get-var('--yolo-hot-item-bg-hover');
+                  }
                 }
 
                 .body-index {
-                  width: 25px;
-                  line-height: 38px;
+                  width: 1.5635rem;
+                  line-height: 2.375rem;
                   text-align: left;
                   flex: 0 0 auto;
                 }
@@ -380,7 +577,7 @@
 
                   a {
                     display: block;
-                    line-height: 38px;
+                    line-height: 2.375rem;
                     text-decoration: none;
                     color: inherit;
                     overflow: hidden;
@@ -393,60 +590,13 @@
             }
           }
         }
+
+        &.sticky {
+          top: 1.25rem;
+          max-height: calc(100vh - 2.5rem);
+          transition: top 0.3s ease;
+        }
       }
-
-      .hot-list-top {
-        top: 20px;
-        max-height: calc(100vh - 40px);
-        transition: top 0.3s ease;
-      }
-    }
-  }
-}
-
-// 响应式
-@media screen and (width <= 1200px) {
-  .app-main {
-    .main-header {
-      display: block !important;
-    }
-
-    .category-sidebar-nav {
-      display: none;
-    }
-
-    .hot-list {
-      &.hot-list-top {
-        top: 64px !important;
-        max-height: calc(100vh - 84px) !important;
-        transition: top 0.3s ease;
-      }
-
-      &:not(.hot-list-top) {
-        top: 126px !important;
-        max-height: calc(100vh - 146px) !important;
-        transition: top 0.3s ease;
-      }
-    }
-  }
-}
-
-@media screen and (width <= 1000px) {
-  .app-main {
-    .hot-list {
-      display: none;
-    }
-  }
-}
-
-@media screen and (width <= 730px) {
-  .header-container {
-    .blog-name {
-      display: none;
-    }
-
-    .header-github {
-      display: none;
     }
   }
 }

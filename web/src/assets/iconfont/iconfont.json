@@ -6,6 +6,62 @@
   "description": "个人博客网站 Icon 图标",
   "glyphs": [
     {
+      "icon_id": "1668855",
+      "name": "文章作者",
+      "font_class": "author",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "2594454",
+      "name": "分类",
+      "font_class": "category",
+      "unicode": "e603",
+      "unicode_decimal": 58883
+    },
+    {
+      "icon_id": "5266089",
+      "name": "浏览量",
+      "font_class": "views",
+      "unicode": "e629",
+      "unicode_decimal": 58921
+    },
+    {
+      "icon_id": "17620219",
+      "name": "发布时间",
+      "font_class": "release-time",
+      "unicode": "ea46",
+      "unicode_decimal": 59974
+    },
+    {
+      "icon_id": "30178396",
+      "name": "标签",
+      "font_class": "tag",
+      "unicode": "100da",
+      "unicode_decimal": 65754
+    },
+    {
+      "icon_id": "44276698",
+      "name": "评论量",
+      "font_class": "comments",
+      "unicode": "e650",
+      "unicode_decimal": 58960
+    },
+    {
+      "icon_id": "8760187",
+      "name": "github",
+      "font_class": "github",
+      "unicode": "e64c",
+      "unicode_decimal": 58956
+    },
+    {
+      "icon_id": "26307878",
+      "name": "gitee",
+      "font_class": "gitee",
+      "unicode": "e675",
+      "unicode_decimal": 58997
+    },
+    {
       "icon_id": "35255356",
       "name": "hot-article",
       "font_class": "hot-article",

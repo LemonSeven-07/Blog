@@ -9,7 +9,8 @@ export default {
   ],
   plugins: [
     'stylelint-order', // 控制属性顺序
-    'stylelint-prettier'
+    'stylelint-prettier',
+    'stylelint-scss'
   ],
   overrides: [
     {
@@ -31,12 +32,17 @@ export default {
           'screen',
           'function',
           'if',
+          'else',
           'each',
           'include',
-          'mixin'
+          'mixin',
+          'use',
+          'forward',
+          'return'
         ]
       }
     ],
+    'scss/at-rule-no-unknown': true,
     // 禁用空文件警告
     'no-empty-source': null,
     // 检查选择器优先级是否从高到低

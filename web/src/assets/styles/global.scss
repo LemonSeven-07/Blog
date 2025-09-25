@@ -1,25 +1,29 @@
-html,
+@use './themes.scss' as *;
+@import '../iconfont/iconfont.css';
+
+html {
+  width: 100%;
+  height: 100%;
+}
+
+@include use-html-theme {
+  color: get-var('--yolo-text');
+  background: get-var('--yolo-bg');
+}
+
 body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f2f3f5;
   font-family:
-    'Chinese Quote',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    'PingFang SC',
-    'Hiragino Sans GB',
-    'Microsoft YaHei',
-    'Helvetica Neue',
-    Helvetica,
-    Arial,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol';
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+::view-transition-new(root),
+::view-transition-old(root) {
+  animation: none;
 }
 
 /* stylelint-disable selector-max-id */
@@ -32,4 +36,73 @@ body {
 .sub-tags-popup .ant-select-item-option-content {
   font-size: 12px;
   line-height: 20px;
+}
+
+@include use-html-theme {
+  .sub-tags-popup {
+    color: get-var('--yolo-select-selected-text');
+    background-color: get-var('--yolo-select-bg');
+
+    .ant-select-item-option {
+      color: get-var('--yolo-select-selected-text');
+
+      &:hover,
+      &.ant-select-item-option-active {
+        background-color: get-var('--yolo-select-item-bg-hover');
+      }
+
+      &.ant-select-item-option-selected {
+        color: get-var('--yolo-select-selected-text');
+        background-color: get-var('--yolo-select-selected-bg');
+      }
+    }
+  }
+}
+
+@include use-html-theme {
+  .ant-select {
+    border: 1px solid get-var('--yolo-select-border');
+    border-radius: 6px;
+    color: get-var('--yolo-select-text');
+    background-color: get-var('--yolo-select-bg');
+
+    &:hover {
+      border-color: get-var('--yolo-select-border-hover');
+    }
+
+    &.ant-select-focused {
+      border-color: get-var('--yolo-select-border-hover');
+      box-shadow: 0 0 0 2px rgb(30 128 255 / 20%);
+    }
+
+    .ant-select-selector {
+      border: none;
+      border-radius: 6px;
+      color: get-var('--yolo-select-text');
+      background-color: get-var('--yolo-select-bg');
+    }
+
+    .ant-select-selection-placeholder {
+      color: get-var('--yolo-select-placeholder');
+    }
+
+    .ant-select-arrow {
+      color: get-var('--yolo-select-text');
+    }
+
+    // 下拉列表
+    .ant-select-dropdown {
+      background-color: get-var('--yolo-select-bg');
+
+      .ant-select-item-option {
+        color: get-var('--yolo-select-text');
+
+        &:hover,
+        &.ant-select-item-option-active,
+        &.ant-select-item-option-selected {
+          background-color: get-var('--yolo-select-item-bg-hover');
+        }
+      }
+    }
+  }
 }

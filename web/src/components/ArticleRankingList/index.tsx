@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-15 16:18:26
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-16 11:44:07
- * @FilePath: /Blog/web/src/components/ArticleRankingList/index.tsx
+ * @LastEditTime: 2025-09-22 17:13:20
+ * @FilePath: /web/src/components/ArticleRankingList/index.tsx
  * @Description: 热门文章
  */
 
@@ -15,7 +15,7 @@ const ArticleRankingList = () => {
   console.log('文章榜渲染');
   return (
     <>
-      <div className="hot-list-item">
+      <div className="hot-list">
         <div className="hot-item-header">
           <div className="hot-title">
             <i className="iconfont icon-hot-article" />

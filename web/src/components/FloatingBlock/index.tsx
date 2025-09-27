@@ -17,7 +17,7 @@ const FloatingBlock = () => {
   const [isDragging, setIsDragging] = useState(false); // 拖拽状态
   const constraintsRef = useRef(null); // 拖拽约束参考
 
-  const [isDark, toggleTheme] = useTheme();
+  const { isDark, toggleThemeByEvent } = useTheme();
 
   const toggleExpanded = () => {
     // 如果正在拖拽，不触发展开/收起
@@ -50,7 +50,7 @@ const FloatingBlock = () => {
       icon: isDark ? SunOutlined : MoonOutlined,
       id: 'theme',
       label: isDark ? '切换到亮色模式' : '切换到暗色模式',
-      onClick: toggleTheme
+      onClick: toggleThemeByEvent
     },
     {
       icon: ArrowUpOutlined,

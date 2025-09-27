@@ -341,6 +341,7 @@
 
     blockquote {
       @include use-theme {
+        color: get-var('--yolo-md-blockquote-text');
         background: get-var('--yolo-md-blockquote-bg');
         border-left: get-var('--yolo-md-blockquote-border-left');
       }
@@ -349,7 +350,6 @@
       padding: 0.75rem;
       border-radius: 4px;
       line-height: 1.25rem;
-      color: #666;
 
       p {
         margin: 0;

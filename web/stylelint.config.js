@@ -38,7 +38,8 @@ export default {
           'mixin',
           'use',
           'forward',
-          'return'
+          'return',
+          'debug'
         ]
       }
     ],

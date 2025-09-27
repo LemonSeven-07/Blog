@@ -1,8 +1,8 @@
-import { useEffect, type MouseEventHandler } from 'react';
+import { useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { setIsDark } from '@/store/modules/config';
 
-export function useTheme(): [boolean, MouseEventHandler] {
+export function useTheme() {
   const isDark = useAppSelector((state) => state.config.isDark);
   const dispatch = useAppDispatch();
 
@@ -38,14 +38,20 @@ export function useTheme(): [boolean, MouseEventHandler] {
     dispatch(setIsDark(isDark));
   }, [isDark]);
 
+  // 处理事件触发
+  const toggleThemeByEvent = (e: React.MouseEvent<HTMLDivElement>) => {
+    toggleTheme(e.clientX, e.clientY);
+  };
+  // 处理 DOM 节点调用
+  const toggleThemeByNode = (node: HTMLDivElement | null) => {
+    toggleTheme(node?.offsetLeft as number, node?.offsetTop as number);
+  };
+
   // 切换主题的方法
-  const toggleTheme: MouseEventHandler = (e) => {
+  const toggleTheme = (x: number, y: number) => {
     const transition = document.startViewTransition(() => {
       dispatch(setIsDark(!isDark));
     });
-
-    const x = e.clientX;
-    const y = e.clientY;
 
     const tragetRadius = Math.hypot(
       Math.max(x, window.innerWidth - x),
@@ -65,5 +71,5 @@ export function useTheme(): [boolean, MouseEventHandler] {
     });
   };
 
-  return [isDark, toggleTheme];
+  return { isDark, toggleThemeByEvent, toggleThemeByNode };
 }

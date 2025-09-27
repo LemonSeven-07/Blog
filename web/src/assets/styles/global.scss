@@ -6,11 +6,6 @@ html {
   height: 100%;
 }
 
-@include use-html-theme {
-  color: get-var('--yolo-text');
-  background: get-var('--yolo-bg');
-}
-
 body {
   width: 100%;
   height: 100%;
@@ -38,8 +33,90 @@ body {
   line-height: 20px;
 }
 
+.menu-drawer-collapsed {
+  .ant-drawer-body {
+    @include use-theme {
+      color: get-var('--yolo-text');
+      background: get-var('--yolo-drawer-bg');
+    }
+
+    padding: 0 0 0.75rem;
+
+    .drawer-header {
+      @include use-theme {
+        background: get-var('--yolo-card-bg');
+        box-shadow: get-var('--yolo-header-shadow');
+      }
+
+      position: sticky;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 40;
+      width: 100%;
+      text-align: center;
+
+      a {
+        width: auto;
+        line-height: 2.25rem;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+
+        .blog-logo {
+          width: 24px;
+          height: 24px;
+          vertical-align: middle;
+        }
+
+        .blog-name {
+          padding-left: 0.75rem;
+          font-size: 1rem;
+          font-weight: bold;
+        }
+      }
+    }
+
+    .drawer-nav {
+      padding: 0.75rem;
+
+      .ant-menu {
+        @include use-theme {
+          background: get-var('--yolo-drawer-bg');
+        }
+
+        border-inline-end: none;
+
+        .ant-menu-item,
+        .ant-menu-submenu .ant-menu-submenu-title {
+          @include use-theme {
+            color: get-var('--yolo-sidebar-nav-text');
+          }
+
+          &:hover {
+            @include use-theme {
+              color: get-var('--yolo-category-text');
+              background-color: get-var('--yolo-sidebar-nav-bg');
+            }
+          }
+        }
+
+        .ant-menu-item-selected {
+          @include use-theme {
+            color: get-var('--yolo-category-text');
+            background-color: get-var('--yolo-category-bg-click');
+          }
+        }
+      }
+    }
+  }
+}
+
 @include use-html-theme {
-  .sub-tags-popup {
+  color: get-var('--yolo-text');
+  background: get-var('--yolo-bg');
+
+  .ant-select-dropdown {
     color: get-var('--yolo-select-selected-text');
     background-color: get-var('--yolo-select-bg');
 
@@ -57,9 +134,7 @@ body {
       }
     }
   }
-}
 
-@include use-html-theme {
   .ant-select {
     border: 1px solid get-var('--yolo-select-border');
     border-radius: 6px;
@@ -102,6 +177,61 @@ body {
         &.ant-select-item-option-selected {
           background-color: get-var('--yolo-select-item-bg-hover');
         }
+      }
+    }
+  }
+
+  .ant-menu-submenu-popup .ant-menu-sub.ant-menu-vertical {
+    background-color: get-var('--yolo-select-bg');
+
+    .ant-menu-item {
+      a:hover {
+        color: get-var('--yolo-select-selected-text');
+      }
+
+      &:hover,
+      &.ant-menu-item-active {
+        background-color: get-var('--yolo-select-item-bg-hover');
+      }
+
+      &.ant-menu-item-selected {
+        color: get-var('--yolo-select-selected-text');
+        background-color: get-var('--yolo-select-selected-bg');
+      }
+    }
+  }
+
+  .ant-dropdown {
+    .ant-dropdown-arrow {
+      &::after,
+      &::before {
+        border: 1px solid get-var('--yolo-dropdown-border');
+        background: get-var('--yolo-dropdown-bg');
+      }
+    }
+
+    .ant-dropdown-menu {
+      border: 1px solid get-var('--yolo-dropdown-border');
+      background: get-var('--yolo-dropdown-bg');
+
+      .ant-dropdown-menu-item {
+        color: get-var('--yolo-dropdown-text');
+
+        &:hover {
+          background: get-var('--yolo-dropdown-bg-hover');
+        }
+
+        &-selected {
+          background: get-var('--yolo-dropdown-bg-active');
+        }
+
+        &-disabled {
+          color: get-var('--yolo-dropdown-text-disabled');
+        }
+      }
+
+      .ant-dropdown-menu-item-divider {
+        border-color: get-var('--yolo-dropdown-driver');
       }
     }
   }

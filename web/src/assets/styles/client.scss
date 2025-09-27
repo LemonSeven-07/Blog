@@ -45,11 +45,36 @@
       max-width: 90rem;
       height: 3.75rem;
       margin: auto;
-      padding: 0 1.5rem;
+      padding: 0 0.75rem;
+
+      @media screen and (width <= 52rem) {
+        justify-content: space-between;
+      }
 
       .header-left {
         flex: 0 0 auto;
+        display: flex;
+        align-items: center;
         height: 100%;
+
+        > .ant-btn {
+          @include use-theme {
+            color: get-var('--yolo-header-btn-text');
+            background: get-var('--yolo-header-btn-bg');
+            border-color: get-var('--yolo-header-btn-border');
+
+            &:hover {
+              border-color: get-var('--yolo-header-btn-border-hover');
+            }
+          }
+
+          display: none;
+          margin-right: 0.75rem;
+
+          @media screen and (width <= 52rem) {
+            display: block;
+          }
+        }
 
         a {
           display: flex;
@@ -59,71 +84,42 @@
           color: inherit;
           align-items: center;
           cursor: pointer;
+          margin-right: 0.75rem;
 
           .blog-logo {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
           }
 
           .blog-name {
-            padding: 0 0.75rem;
+            padding-left: 0.75rem;
             font-size: 1.25rem;
             font-weight: bold;
 
-            @media screen and (width <= 45.625rem) {
+            @media screen and (width <= 34rem) {
               display: none;
             }
           }
         }
       }
 
-      .header-middle {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .header-nav {
         margin: 0 0.75rem;
+        flex: 1;
 
-        .search-icon {
-          @include use-theme {
-            color: get-var('--yolo-search');
-          }
-
-          flex: 0 0 auto;
-          width: 20px;
-          padding: 0 5px;
+        @media screen and (width <= 52rem) {
+          display: none;
         }
-
-        .search-input {
-          @include use-theme {
-            color: get-var('--yolo-search');
-          }
-
-          max-width: 37.5rem;
-          height: 2.5rem;
-          border: 0;
-          background: transparent;
-          flex: 1;
-          -webkit-box-shadow: none;
-          box-shadow: none;
-
-          &::placeholder {
-            color: #a3b1bf;
-          }
-        }
-      }
-
-      .header-right {
-        flex: 0 0 auto;
-        display: flex;
-        line-height: 3.75rem;
 
         .ant-menu {
           @include use-theme {
             background: get-var('--yolo-card-bg');
           }
 
+          display: flex;
+          width: 100%;
           font-size: 1.125rem;
+          border-bottom: none;
 
           li {
             @include use-theme {
@@ -131,34 +127,91 @@
             }
 
             line-height: 3.75rem;
+
+            .ant-menu-submenu-title {
+              @include use-theme {
+                color: get-var('--yolo-text');
+              }
+            }
+          }
+        }
+      }
+
+      .header-right {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        line-height: 3.75rem;
+
+        .ant-btn:nth-child(-n + 2),
+        .ant-avatar {
+          margin: 0 0.75rem;
+        }
+
+        .ant-flex,
+        .ant-badge {
+          margin-right: 0.75rem;
+        }
+
+        > .ant-btn:first-child,
+        > .ant-btn:nth-child(2) {
+          @include use-theme {
+            color: get-var('--yolo-header-btn-text');
+            background: get-var('--yolo-header-btn-bg');
+            border-color: get-var('--yolo-header-btn-border');
+
+            &:hover {
+              border-color: get-var('--yolo-header-btn-border-hover');
+            }
           }
         }
 
-        .header-notify {
-          padding-top: 4px;
-          margin: 0 1rem;
+        > .ant-btn:first-child {
+          width: 150px;
+          padding: 0 0.5rem;
+          justify-content: start;
 
-          .ant-badge {
-            cursor: pointer;
+          @media screen and (width <= 60rem) {
+            display: none;
+          }
 
-            .anticon-bell {
-              @include use-theme {
-                color: get-var('--yolo-notify-icon');
-              }
+          > span {
+            font-size: 0.75rem;
+          }
+        }
 
-              font-size: 1.5rem;
+        > .ant-btn:nth-child(2) {
+          display: none;
 
-              &.has-unread {
-                @include use-theme {
-                  color: get-var('--yolo-has-unread-icon');
-                }
-              }
+          @media screen and (width <= 60rem) {
+            display: block;
+          }
+        }
+
+        .ant-badge {
+          cursor: pointer;
+
+          .anticon-bell {
+            @include use-theme {
+              color: get-var('--yolo-notify-icon');
             }
 
-            sup {
-              top: -4px;
+            font-size: 1.5rem;
+
+            &.has-unread {
+              @include use-theme {
+                color: get-var('--yolo-has-unread-icon');
+              }
             }
           }
+
+          sup {
+            top: -4px;
+          }
+        }
+
+        .ant-avatar {
+          cursor: pointer;
         }
       }
     }
@@ -185,7 +238,7 @@
       z-index: 30;
       width: 100vw;
       height: 2.875rem;
-      text-align: center; // 内容少时居中
+      text-align: center;
       transition: all 0.2s;
       transition: top 0.3s ease;
       transform: translateY(0);

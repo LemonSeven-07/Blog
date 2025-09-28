@@ -2,18 +2,19 @@
  * @Author: yolo
  * @Date: 2025-09-13 19:10:24
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-27 20:39:59
+ * @LastEditTime: 2025-09-28 18:11:26
  * @FilePath: /web/src/layout/client/Header/Left.tsx
  * @Description: Header 子组件（系统 logo）
  */
 
 import { memo, useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { Button, Drawer, Menu, type MenuProps } from 'antd';
+import { Button, Menu, type MenuProps } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
 
 import logo from '@/assets/images/logo.png';
 import { config } from '@/config';
+import SidebarDrawer from '@/components/SidebarDrawer';
 
 type MenuItem = Required<MenuProps>['items'][number];
 const menuItems: MenuItem[] = [
@@ -33,7 +34,7 @@ const menuItems: MenuItem[] = [
   }
 ];
 
-const Left = () => {
+const HeaderLeft = () => {
   console.log('header 左子组件渲染');
   const [open, setOpen] = useState(false);
 
@@ -46,55 +47,27 @@ const Left = () => {
         <span className="blog-name">{config.CLIENT_SYSTEM_NAME}</span>
       </NavLink>
 
-      <Drawer
-        placement="left"
-        width="15rem"
-        closable={false}
-        onClose={() => setOpen(false)}
-        open={open}
-        maskClosable={true}
-        styles={{
-          body: {
-            padding: 0,
-            height: '100vh',
-            overflowY: 'auto'
-          },
-          mask: {
-            backgroundColor: 'rgba(0,0,0,0.45)'
-          }
-        }}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '15rem',
-          height: '100vh'
-        }}
-        getContainer={() => document.body}
-        afterOpenChange={(open) => {
-          if (open) document.body.style.overflow = 'auto';
-          else document.body.style.overflow = '';
-        }}
-        className="menu-drawer-collapsed"
-      >
-        <div className="drawer-header">
-          <NavLink to="/">
-            <img src={logo} alt="yolo's blog" className="blog-logo" />
-            <span className="blog-name">{config.CLIENT_SYSTEM_NAME}</span>
-          </NavLink>
-        </div>
+      <SidebarDrawer placement="left" open={open} handleClose={() => setOpen(false)}>
+        <div className="menu-nav-drawer">
+          <div className="drawer-header">
+            <NavLink to="/">
+              <img src={logo} alt="yolo's blog" className="blog-logo" />
+              <span className="blog-name">{config.CLIENT_SYSTEM_NAME}</span>
+            </NavLink>
+          </div>
 
-        <nav className="drawer-nav">
-          <Menu
-            selectedKeys={[location.pathname]}
-            mode="inline"
-            defaultOpenKeys={['/article']}
-            items={menuItems}
-          />
-        </nav>
-      </Drawer>
+          <nav className="drawer-main">
+            <Menu
+              selectedKeys={[location.pathname]}
+              mode="inline"
+              defaultOpenKeys={['/article']}
+              items={menuItems}
+            />
+          </nav>
+        </div>
+      </SidebarDrawer>
     </div>
   );
 };
 
-export default memo(Left);
+export default memo(HeaderLeft);

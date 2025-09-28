@@ -33,7 +33,7 @@ body {
   line-height: 20px;
 }
 
-.menu-drawer-collapsed {
+.sidebar-drawer-collapsed {
   .ant-drawer-body {
     @include use-theme {
       color: get-var('--yolo-text');
@@ -42,70 +42,129 @@ body {
 
     padding: 0 0 0.75rem;
 
-    .drawer-header {
-      @include use-theme {
-        background: get-var('--yolo-card-bg');
-        box-shadow: get-var('--yolo-header-shadow');
-      }
+    .menu-nav-drawer {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
 
-      position: sticky;
-      top: 0;
-      right: 0;
-      left: 0;
-      z-index: 40;
-      width: 100%;
-      text-align: center;
-
-      a {
-        width: auto;
-        line-height: 2.25rem;
-        text-decoration: none;
-        color: inherit;
-        cursor: pointer;
-
-        .blog-logo {
-          width: 24px;
-          height: 24px;
-          vertical-align: middle;
+      .drawer-header {
+        @include use-theme {
+          background: get-var('--yolo-card-bg');
+          box-shadow: get-var('--yolo-header-shadow');
         }
 
-        .blog-name {
-          padding-left: 0.75rem;
-          font-size: 1rem;
-          font-weight: bold;
+        position: sticky;
+        top: 0;
+        right: 0;
+        left: 0;
+        z-index: 40;
+        width: 100%;
+        text-align: center;
+
+        a {
+          width: auto;
+          line-height: 2.25rem;
+          text-decoration: none;
+          color: inherit;
+          cursor: pointer;
+
+          .blog-logo {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+          }
+
+          .blog-name {
+            padding-left: 0.75rem;
+            font-size: 1rem;
+            font-weight: bold;
+          }
+        }
+      }
+
+      .drawer-main {
+        padding: 0.75rem;
+        overflow-y: auto;
+
+        .ant-menu {
+          @include use-theme {
+            background: get-var('--yolo-drawer-bg');
+          }
+
+          border-inline-end: none;
+
+          .ant-menu-item,
+          .ant-menu-submenu .ant-menu-submenu-title {
+            @include use-theme {
+              color: get-var('--yolo-sidebar-nav-text');
+            }
+
+            &:hover {
+              @include use-theme {
+                color: get-var('--yolo-category-text');
+                background-color: get-var('--yolo-sidebar-nav-bg');
+              }
+            }
+          }
+
+          .ant-menu-item-selected {
+            @include use-theme {
+              color: get-var('--yolo-category-text');
+              background-color: get-var('--yolo-category-bg-click');
+            }
+          }
         }
       }
     }
 
-    .drawer-nav {
-      padding: 0.75rem;
+    .article-outline-drawer {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
 
-      .ant-menu {
+      .drawer-header {
         @include use-theme {
-          background: get-var('--yolo-drawer-bg');
+          background: get-var('--yolo-card-bg');
+          box-shadow: get-var('--yolo-header-shadow');
         }
 
-        border-inline-end: none;
+        position: sticky;
+        top: 0;
+        right: 0;
+        left: 0;
+        z-index: 40;
+        width: 100%;
+        font-size: 1rem;
+        font-weight: bold;
+        line-height: 3rem;
+        text-align: center;
+      }
 
-        .ant-menu-item,
-        .ant-menu-submenu .ant-menu-submenu-title {
-          @include use-theme {
-            color: get-var('--yolo-sidebar-nav-text');
-          }
+      .drawer-main {
+        overflow-y: auto;
 
-          &:hover {
-            @include use-theme {
-              color: get-var('--yolo-category-text');
-              background-color: get-var('--yolo-sidebar-nav-bg');
+        .ant-anchor-fixed {
+          padding: 1rem 0.75rem 1rem 0;
+
+          .ant-anchor-link-title {
+            &:not(.ant-anchor-link-title-active) {
+              @include use-theme {
+                color: get-var('--yolo-sidebar-nav-text');
+
+                &:hover {
+                  color: #1677ff;
+                }
+              }
             }
           }
+
+          .ant-anchor-link-title-active {
+            color: #1677ff;
+          }
         }
 
-        .ant-menu-item-selected {
-          @include use-theme {
-            color: get-var('--yolo-category-text');
-            background-color: get-var('--yolo-category-bg-click');
-          }
+        .ant-anchor .ant-anchor-ink {
+          width: 5px;
         }
       }
     }
@@ -185,6 +244,8 @@ body {
     background-color: get-var('--yolo-select-bg');
 
     .ant-menu-item {
+      color: get-var('--yolo-select-selected-text');
+
       a:hover {
         color: get-var('--yolo-select-selected-text');
       }

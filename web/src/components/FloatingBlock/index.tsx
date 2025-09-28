@@ -63,7 +63,7 @@ const FloatingBlock = () => {
   // 计算每个项目的位置（圆形分布）
   const getItemPosition = (index: number, total: number) => {
     const angle = (index * 360) / total - 90; // 从顶部开始
-    const radius = 55; // 半径 [距离按钮的距离]
+    const radius = 52; // 半径 [距离按钮的距离]
     const x = Math.cos((angle * Math.PI) / 180) * radius;
     const y = Math.sin((angle * Math.PI) / 180) * radius;
     return { x, y };
@@ -73,7 +73,7 @@ const FloatingBlock = () => {
     <div ref={constraintsRef} className="floating-box">
       <motion.div
         className="floating-buttons"
-        initial={{ bottom: 180, right: 60 }}
+        initial={{ bottom: '14rem', right: '3.75rem' }}
         drag
         dragConstraints={constraintsRef}
         dragElastic={0.1}

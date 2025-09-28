@@ -472,4 +472,28 @@
       white-space: pre;
     }
   }
+
+  .article-drawer-btn {
+    @include use-theme {
+      color: get-var('--yolo-text');
+      background-color: get-var('--yolo-card-bg');
+      border-color: get-var('--yoloy-btn-border');
+
+      &:hover {
+        color: get-var('--yolo-btn-text-hover');
+        background-color: get-var('--yolo-card-bg');
+        border-color: get-var('--yolo-btn-border-hover');
+      }
+    }
+
+    position: fixed;
+    right: 3.75rem;
+    bottom: 7.5rem;
+    width: 3rem;
+    height: 3rem;
+
+    &::before {
+      font-size: 1.75rem;
+    }
+  }
 }

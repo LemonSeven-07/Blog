@@ -54,8 +54,12 @@ $themes: (
     --yolo-dropdown-text-disabled: rgb(0 0 0 / 25%),
     --yolo-dropdown-bg-hover: #f5f5f5,
     --yolo-dropdown-bg-active: #e6f7ff,
+    --yolo-drawer-bg: #fff,
 
-    --yolo-drawer-bg: #fff
+    --yolo-btn-text-hover: #4096ff,
+    --yolo-btn-bg-hover: #fff,
+    --yoloy-btn-border: #d9d9d9,
+    --yolo-btn-border-hover: #4096ff
   ),
   dark: (
     --yolo-bg: #232931,
@@ -112,8 +116,12 @@ $themes: (
     --yolo-dropdown-text-disabled: rgb(255 255 255 / 35%),
     --yolo-dropdown-bg-hover: #3a4654,
     --yolo-dropdown-bg-active: #177ddc33,
+    --yolo-drawer-bg: #232931,
 
-    --yolo-drawer-bg: #232931
+    --yolo-btn-text-hover: #97a1aa,
+    --yolo-btn-bg-hover: rgb(255 255 255 / 10%),
+    --yoloy-btn-border: #3a3d46,
+    --yolo-btn-border-hover: #50565f
   )
 );
 $curTheme: light;

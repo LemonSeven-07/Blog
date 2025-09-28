@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:05:16
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-25 09:26:03
+ * @LastEditTime: 2025-09-29 01:41:37
  * @FilePath: /web/src/pages/client/ArticleDetail/index.tsx
  * @Description: 文章查看页面
  */
@@ -10,9 +10,9 @@
 import { memo, useRef, useEffect, useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeSlug from 'rehype-slug';
+import { visit } from 'unist-util-visit';
 import hljs from 'highlight.js';
-import { message, Tag } from 'antd';
+import { message, Tag, Button, Anchor } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
@@ -25,7 +25,7 @@ import rehypeCallouts from 'rehype-callouts';
 import 'rehype-callouts/theme/obsidian';
 import rehypeSemanticBlockquotes from 'rehype-semantic-blockquotes';
 import 'highlight.js/styles/atom-one-dark.css';
-import type { Element } from 'hast';
+import type { Root, Element, Properties } from 'hast';
 import '@/assets/styles/markdown.scss';
 import authorSvg from '@/assets/svg/author.svg';
 import releaseTimeSvg from '@/assets/svg/release-time.svg';
@@ -33,6 +33,7 @@ import categorySvg from '@/assets/svg/category.svg';
 import tagSvg from '@/assets/svg/tag.svg';
 import viewsSvg from '@/assets/svg/views.svg';
 import commentsSvg from '@/assets/svg/comments.svg';
+import SidebarDrawer from '@/components/SidebarDrawer';
 
 interface CodeRendererProps {
   node?: Element & { value?: string };
@@ -49,6 +50,14 @@ interface Article {
   id: number;
   title: string;
   content: string;
+}
+
+interface TocItem {
+  key: string;
+  href: string;
+  title: string;
+  depth: number;
+  children: TocItem[];
 }
 
 const articles: Article[] = [
@@ -68,6 +77,15 @@ const articles: Article[] = [
 
 const ArticleDetail = () => {
   console.log('ArticleDetail 渲染');
+  const flatToc = useRef<TocItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [tocTree, setTocTree] = useState<TocItem[]>([]);
+
+  useEffect(() => {
+    const tree = buildTocTree(flatToc.current);
+    setTocTree(tree);
+  }, []); // content 改变时重新生成 TOC
+
   // 代码块组件，带行号、折叠、复制
   const CodeBlock = ({ language, value }: { language: string; value: string }) => {
     const [expanded, setExpanded] = useState(false);
@@ -148,75 +166,158 @@ const ArticleDetail = () => {
   };
 
   // 图片渲染支持懒加载和点击大图预览
-  const renderers = {
-    img: ({ alt, src }: ImgProps) => {
-      const imgRef = useRef<HTMLImageElement>(null);
+  const renderers = useMemo(
+    () => ({
+      img: ({ alt, src }: ImgProps) => {
+        const imgRef = useRef<HTMLImageElement>(null);
 
-      useEffect(() => {
-        const img = imgRef.current;
-        if (!img) return;
+        useEffect(() => {
+          const img = imgRef.current;
+          if (!img) return;
 
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                setTimeout(() => {
-                  img.style.filter = 'blur(0px)';
-                }, 400);
-                observer.unobserve(img);
-              }
-            });
-          },
-          { threshold: 0.1 }
-        );
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  setTimeout(() => {
+                    img.style.filter = 'blur(0px)';
+                  }, 400);
+                  observer.unobserve(img);
+                }
+              });
+            },
+            { threshold: 0.1 }
+          );
 
-        observer.observe(img);
+          observer.observe(img);
 
-        return () => {
-          observer.unobserve(img);
-        };
-      }, []);
+          return () => {
+            observer.unobserve(img);
+          };
+        }, []);
 
-      return (
-        <PhotoView src={src || ''}>
-          <span className="image-container">
-            <img ref={imgRef} alt={alt} src={src} className="image" />
-          </span>
-        </PhotoView>
-      );
-    },
-    a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
-      if (children === 'douyin-video' && href) {
-        const videoId = href.split('/').pop();
         return (
-          <div className="video-container">
-            <iframe
-              src={`https://open.douyin.com/player/video?vid=${videoId}&autoplay=0`}
-              referrerPolicy="unsafe-url"
-              allowFullScreen
-              className="douyin"
-            />
-          </div>
+          <PhotoView src={src || ''}>
+            <span className="image-container">
+              <img ref={imgRef} alt={alt} src={src} className="image" />
+            </span>
+          </PhotoView>
         );
+      },
+      a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
+        if (children === 'douyin-video' && href) {
+          const videoId = href.split('/').pop();
+          return (
+            <div className="video-container">
+              <iframe
+                src={`https://open.douyin.com/player/video?vid=${videoId}&autoplay=0`}
+                referrerPolicy="unsafe-url"
+                allowFullScreen
+                className="douyin"
+              />
+            </div>
+          );
+        }
+        return <a href={href}>{children}</a>;
+      },
+      code: ({ node, inline, className = '', children, ...props }: CodeRendererProps) => {
+        const match = /language-(\w+)/.exec(className || '');
+        if (inline || !match) {
+          return (
+            <code className={className} {...props}>
+              {children}
+            </code>
+          );
+        }
+
+        const language = match[1].toLowerCase();
+        const codeString = node?.value ?? String(children);
+
+        return <CodeBlock language={language} value={codeString} />;
       }
-      return <a href={href}>{children}</a>;
+    }),
+    []
+  );
+
+  // 生成标题锚点
+  const rehypeCustomSlug = useMemo(
+    () => () => {
+      return (tree: Root) => {
+        let counter = 0;
+        visit(tree, 'element', (node: Element) => {
+          if (/^h[1-6]$/.test(node.tagName)) {
+            counter += 1;
+            node.properties = node.properties || {};
+            node.properties.id = `toc-${counter}`;
+          }
+        });
+      };
     },
-    code: ({ node, inline, className = '', children, ...props }: CodeRendererProps) => {
-      const match = /language-(\w+)/.exec(className || '');
-      if (inline || !match) {
-        return (
-          <code className={className} {...props}>
-            {children}
-          </code>
-        );
+    []
+  );
+
+  // rehype 插件：收集平铺 TOC
+  const rehypeCollectToc = useMemo(
+    () => (option: { toc: TocItem[] }) => {
+      return function transformer(tree: Root) {
+        let counter = 0;
+        visit(tree, 'element', (node: Element) => {
+          if (/^h[1-6]$/.test(node.tagName)) {
+            counter++;
+            const depth = Number(node.tagName[1]);
+            const id = `toc-${counter}`;
+
+            // 确保 properties 有类型，使用 hast 的 Properties 类型
+            const props: Properties = (node.properties ?? {}) as Properties;
+            props.id = id;
+            node.properties = props;
+
+            const text = node.children
+              .filter((c): c is { type: 'text'; value: string } => c.type === 'text')
+              .map((c) => c.value)
+              .join(' ');
+
+            option.toc.push({ key: id, title: text, href: '#' + id, depth, children: [] });
+          }
+        });
+      };
+    },
+    []
+  );
+
+  // 将平铺 TOC 转为嵌套树
+  const buildTocTree = (flatToc: TocItem[]): TocItem[] => {
+    const root: TocItem[] = [];
+    const stack: TocItem[] = [];
+
+    for (const item of flatToc) {
+      while (stack.length && stack[stack.length - 1].depth >= item.depth) {
+        stack.pop();
       }
 
-      const language = match[1].toLowerCase();
-      const codeString = node?.value ?? String(children);
+      if (stack.length === 0) {
+        root.push(item);
+      } else {
+        stack[stack.length - 1].children.push(item);
+      }
 
-      return <CodeBlock language={language} value={codeString} />;
+      stack.push(item);
     }
+
+    return root;
   };
+
+  const rehypePlugins = useMemo(
+    () => [
+      rehypeCustomSlug,
+      rehypeRaw,
+      rehypeKatex,
+      rehypeCallouts,
+      rehypeSemanticBlockquotes,
+      [rehypeCollectToc, { toc: flatToc.current }] as [typeof rehypeCollectToc, { toc: TocItem[] }]
+    ],
+    []
+  );
 
   return (
     <div className="article-main">
@@ -262,19 +363,29 @@ const ArticleDetail = () => {
             <ReactMarkdown
               components={renderers}
               remarkPlugins={[[remarkGfm, { singleTilde: false }], remarkMath, remarkMark]}
-              rehypePlugins={[
-                rehypeSlug,
-                rehypeRaw,
-                rehypeKatex,
-                rehypeCallouts,
-                rehypeSemanticBlockquotes
-              ]}
+              rehypePlugins={rehypePlugins}
             >
               {articles[0].content}
             </ReactMarkdown>
           </div>
         </PhotoProvider>
       </article>
+
+      <Button
+        className="article-drawer-btn iconfont icon-catalogs"
+        title="大纲"
+        onClick={() => setOpen(true)}
+      />
+
+      <SidebarDrawer placement="right" open={open} handleClose={() => setOpen(false)}>
+        <div className="article-outline-drawer">
+          <div className="drawer-header">大纲</div>
+
+          <div className="drawer-main">
+            <Anchor affix={false} items={tocTree}></Anchor>
+          </div>
+        </div>
+      </SidebarDrawer>
     </div>
   );
 };

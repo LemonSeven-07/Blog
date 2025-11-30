@@ -14,6 +14,11 @@ const sequelize = new Sequelize(MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, {
     dateStrings: true, // 将日期字段转换为字符串
     typeCast: true, // 允许将日期字段转换为 JavaScript Date 对象
   },
+  define: {
+    underscored: true, // ✅ 全局启用下划线命名
+    timestamps: true, // ✅ 自动创建 created_at / updated_at
+    paranoid: true, // ✅ 默认启用软删除 deleted_at
+  },
   logging:
     NODE_ENV !== 'development'
       ? false // 生产环境关闭日志

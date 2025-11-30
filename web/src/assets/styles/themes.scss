@@ -14,7 +14,7 @@ $themes: (
     --yolo-header-btn-border-hover: #b6bec6,
     --yolo-notify-icon: rgb(0 0 0 / 40%),
     --yolo-has-unread-icon: rgb(0 0 0 / 88%),
-    --yolo-main-header-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%),
+    --yolo-main-header-shadow: rgb(0 0 0 / 5%),
     --yolo-main-header-text: #515767,
     --yolo-main-header-text-select: #1e80ff,
     --yolo-sidebar-nav-text: rgb(107 114 128 / 100%),
@@ -39,10 +39,10 @@ $themes: (
     --yolo-article-box-shadow: 0 4px 6px #0000001a,
     --yolo-md-body-text: #dcdcdc,
     --yolo-md-img-filter: brightness(1),
-    --yolo-md-hr-border: 1px solid #e5e7eb,
+    --yolo-md-hr-border: #e5e7eb,
     --yolo-md-code-bg: rgb(13 110 253 / 10%),
-    --yolo-md-ol-li-border-before: 1px solid #11181c,
-    --yolo-md-blockquote-border-left: 0.375rem solid #409eff,
+    --yolo-md-ol-li-border-before: #11181c,
+    --yolo-md-blockquote-border-left: #409eff,
     --yolo-md-blockquote-text: #666,
     --yolo-md-blockquote-bg: rgb(64 158 255 / 10%),
     --yolo-md-mark-bg: #dbfdad,
@@ -55,11 +55,14 @@ $themes: (
     --yolo-dropdown-bg-hover: #f5f5f5,
     --yolo-dropdown-bg-active: #e6f7ff,
     --yolo-drawer-bg: #fff,
-
     --yolo-btn-text-hover: #4096ff,
     --yolo-btn-bg-hover: #fff,
     --yoloy-btn-border: #d9d9d9,
-    --yolo-btn-border-hover: #4096ff
+    --yolo-btn-border-hover: #4096ff,
+    --yolo-comment-input-border: #d9d9d9,
+    --yolo-comment-input-shadow: rgb(5 145 255 / 10%),
+    --yolo-comment-input-tip: #aaa,
+    --yolo-skeleton-bg: #f2f2f2
   ),
   dark: (
     --yolo-bg: #232931,
@@ -74,7 +77,7 @@ $themes: (
     --yolo-header-btn-border-hover: #666,
     --yolo-notify-icon: rgb(255 255 255 / 55%),
     --yolo-has-unread-icon: rgb(255 255 255 / 85%),
-    --yolo-main-header-shadow: 0 1px 2px 0 rgb(255 255 255 / 8%),
+    --yolo-main-header-shadow: rgb(255 255 255 / 8%),
     --yolo-main-header-text: #b0b0b0,
     --yolo-main-header-text-select: #1e80ff,
     --yolo-sidebar-nav-text: rgb(255 255 255 / 80%),
@@ -101,10 +104,10 @@ $themes: (
       ),
     --yolo-md-body-text: #9ca3af,
     --yolo-md-img-filter: brightness(0.9),
-    --yolo-md-hr-border: 1px solid #4e5969,
+    --yolo-md-hr-border: #4e5969,
     --yolo-md-code-bg: #334052,
-    --yolo-md-ol-li-border-before: 1px solid #9ca3af,
-    --yolo-md-blockquote-border-left: 0.375rem solid #6b7280,
+    --yolo-md-ol-li-border-before: #9ca3af,
+    --yolo-md-blockquote-border-left: #6b7280,
     --yolo-md-blockquote-text: #9ca3af,
     --yolo-md-blockquote-bg: rgb(246 248 250 / 10%),
     --yolo-md-mark-bg: #9db47e,
@@ -117,11 +120,14 @@ $themes: (
     --yolo-dropdown-bg-hover: #3a4654,
     --yolo-dropdown-bg-active: #177ddc33,
     --yolo-drawer-bg: #232931,
-
     --yolo-btn-text-hover: #97a1aa,
     --yolo-btn-bg-hover: rgb(255 255 255 / 10%),
     --yoloy-btn-border: #3a3d46,
-    --yolo-btn-border-hover: #50565f
+    --yolo-btn-border-hover: #50565f,
+    --yolo-comment-input-border: #666,
+    --yolo-comment-input-shadow: rgb(64 150 255 / 50%),
+    --yolo-comment-input-tip: #666,
+    --yolo-skeleton-bg: #3a3a3a
   )
 );
 $curTheme: light;

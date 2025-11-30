@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 
 const { tag: Tag } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
-class tagService {
+class TagService {
   /**
    * @description: 按条件查询标签
    * @param {*} articleId 文章id
@@ -39,4 +39,4 @@ class tagService {
   }
 }
 
-module.exports = new tagService();
+module.exports = new TagService();

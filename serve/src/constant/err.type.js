@@ -9,14 +9,34 @@ module.exports = {
     message: '用户名已存在',
     data: null,
   },
-  passwordFormatError: {
-    code: '10005',
-    message: '密码不合法',
+  SendError: {
+    code: '10004',
+    message: '发送过于频繁，请稍后再试',
     data: null,
   },
-  invalidPassword: {
+  emailAlreadyExists: {
+    code: '10005',
+    message: '该邮箱已被注册，请直接登录',
+    data: null,
+  },
+  emailNotRegistered: {
+    code: '10028',
+    message: '该邮箱未注册账号',
+    data: null,
+  },
+  invalidEmailCode: {
+    code: '10035',
+    message: '验证码错误，请重新获取',
+    data: null,
+  },
+  resetPasswordError: {
+    code: '10036',
+    message: '密码重置失败',
+    data: null,
+  },
+  invalidCredentials: {
     code: '10006',
-    message: '密码错误',
+    message: '账号或密码错误',
     data: null,
   },
   userLoginError: {
@@ -29,19 +49,14 @@ module.exports = {
     message: '用户不存在',
     data: null,
   },
-  tokenExpiredError: {
-    code: '401',
-    message: '登录状态失效，请重新登录',
+  emailDoesNotExist: {
+    code: '10038',
+    message: '邮箱不存在',
     data: null,
   },
-  jsonWebTokenError: {
+  tokenInvalidError: {
     code: '401',
-    message: '登录状态无效，请重新登录',
-    data: null,
-  },
-  tokenFormatError: {
-    code: '401',
-    message: '登录状态验证失败，请重新登录',
+    message: '登录状态已失效，请重新登录',
     data: null,
   },
   userOfflineError: {
@@ -56,7 +71,7 @@ module.exports = {
   },
   hasNotAdminPermission: {
     code: '10009',
-    message: '没有管理员权限',
+    message: '没有操作权限',
     data: null,
   },
   userDeleteError: {
@@ -149,8 +164,13 @@ module.exports = {
     message: '导出失败',
     data: null,
   },
+  categoryEnAlreadyExists: {
+    code: '10034',
+    message: '分类英文名已存在',
+    data: null,
+  },
   categoryAlreadyExists: {
-    code: '10028',
+    code: '10004',
     message: '分类名已存在',
     data: null,
   },
@@ -177,6 +197,16 @@ module.exports = {
   findNoticeError: {
     code: '10033',
     message: '消息通知获取失败',
+    data: null,
+  },
+  createRouteError: {
+    code: '10037',
+    message: '页面路由创建失败',
+    data: null,
+  },
+  logoutError: {
+    code: '10039',
+    message: '登出失败',
     data: null,
   },
 };

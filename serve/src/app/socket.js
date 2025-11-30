@@ -18,7 +18,7 @@ function setupWebSocket(server, subClient) {
     const url = req.url || '';
     const queryString = url.split('?')[1];
     const params = new URLSearchParams(queryString);
-    const token = params.get('token')?.replace('Bearer ', '');
+    const token = params.get('token');
     const { JWT_SECRET } = process.env;
 
     // token不存在，直接关闭连接
@@ -31,23 +31,9 @@ function setupWebSocket(server, subClient) {
       const user = jwt.verify(token, JWT_SECRET);
       ws.user = user;
     } catch (err) {
-      switch (err.name) {
-        case 'TokenExpiredError':
-          // token过期
-          ws.close(1008, '登录状态失效，请重新登录');
-          break;
-        case 'JsonWebTokenError':
-          // token无效
-          ws.close(1008, '登录状态无效，请重新登录');
-          break;
-        default:
-          ws.close(1008, '登录状态验证失败，请重新登录');
-          break;
-      }
-
+      ws.close(1008, '登录状态已失效，请重新登录');
       return;
     }
-
     // 3. 接收客户端消息
     ws.on('message', async msg => {
       try {
@@ -297,23 +283,13 @@ async function disconnectWs(userId, seesionId, type = 'tokenInvalid') {
     tokenInvalid: '登录状态失效，请重新登录',
     userDeleted: '账号已被删除，无法继续使用',
     userKicked: '账号已在其他设备登录',
+    userLogout: '用户已登出',
   }[type];
 
-  for (const ws of userClientsMap.get(userId)) {
-    if (ws.readyState === WebSocket.OPEN) {
-      if (type === 'userDeleted') {
-        // 1. 先发送通知消息
-        await ws.send(
-          JSON.stringify({
-            type: 'LOGOUT',
-            message,
-          }),
-        );
-
-        // 2. 主动关闭连接
-        await ws.close(4001, message);
-      } else {
-        if (ws.user.seesionId === seesionId) {
+  if (userClientsMap.get(userId)) {
+    for (const ws of userClientsMap.get(userId)) {
+      if (ws.readyState === WebSocket.OPEN) {
+        if (type === 'userDeleted') {
           // 1. 先发送通知消息
           await ws.send(
             JSON.stringify({
@@ -324,6 +300,19 @@ async function disconnectWs(userId, seesionId, type = 'tokenInvalid') {
 
           // 2. 主动关闭连接
           await ws.close(4001, message);
+        } else {
+          if (ws.user.seesionId === seesionId) {
+            // 1. 先发送通知消息
+            await ws.send(
+              JSON.stringify({
+                type: 'LOGOUT',
+                message,
+              }),
+            );
+
+            // 2. 主动关闭连接
+            await ws.close(4001, message);
+          }
         }
       }
     }

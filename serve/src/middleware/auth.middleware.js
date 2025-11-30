@@ -4,9 +4,7 @@ const { issueTokens } = require('../utils/index.js');
 const { redisClient } = require('../db/redis.js');
 const { disconnectWs } = require('../app/socket.js');
 const {
-  tokenExpiredError,
-  jsonWebTokenError,
-  tokenFormatError,
+  tokenInvalidError,
   userOfflineError,
   userKickedError,
   hasNotAdminPermission,
@@ -42,6 +40,10 @@ const auth = async (ctx, next) => {
       await disconnectWs(user.userId, user.seesionId, 'userDeleted');
       throw new Error('userOfflineError');
     }
+
+    // 4. 检查 jti 是否在黑名单中，若在黑名单禁止非法请求操作
+    const value = await redisClient.get(`blacklist:${user.userId}:${user.jti}`);
+    if (value && value === 'invalid') throw new Error('tokenInvalidError');
   } catch (err) {
     // 用户退出登录
     if (err.message === 'userOfflineError') {
@@ -52,7 +54,8 @@ const auth = async (ctx, next) => {
 
     switch (err.name) {
       case 'TokenExpiredError':
-        // 1. accessToken过期
+      case 'JsonWebTokenError':
+        // 1. accessToken无效或过期
         const refreshToken = ctx.cookies.get('refresh_token');
         try {
           // 1.1. 校验 refreshToken 是否有效
@@ -65,7 +68,7 @@ const auth = async (ctx, next) => {
           if (!redisJTI || jti !== redisJTI) {
             // 断开ws连接
             await disconnectWs(userId, seesionId);
-            return ctx.app.emit('error', tokenExpiredError, ctx);
+            throw new Error();
           }
 
           // 1.3. 颁发新 Token
@@ -98,16 +101,12 @@ const auth = async (ctx, next) => {
           };
           return await next();
         } catch (refreshErr) {
-          return ctx.app.emit('error', tokenExpiredError, ctx);
+          if (ctx.path !== '/app/init') return ctx.app.emit('error', tokenInvalidError, ctx);
         }
-      case 'JsonWebTokenError':
-        // 2. accessToken无效
-        return ctx.app.emit('error', jsonWebTokenError, ctx);
       default:
-        return ctx.app.emit('error', tokenFormatError, ctx);
+        if (ctx.path !== '/app/init') return ctx.app.emit('error', tokenInvalidError, ctx);
     }
   }
-
   await next();
 };
 

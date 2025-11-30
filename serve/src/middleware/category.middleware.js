@@ -1,6 +1,10 @@
 const { getCategoryInfo } = require('../service/category.service');
 
-const { categoryAlreadyExists, createCategoryError } = require('../constant/err.type');
+const {
+  categoryAlreadyExists,
+  categoryEnAlreadyExists,
+  createCategoryError,
+} = require('../constant/err.type');
 
 /**
  * @description: 校验分类名，文章分类名唯一
@@ -23,6 +27,4 @@ const verifyName = async (ctx, next) => {
   await next();
 };
 
-module.exports = {
-  verifyName,
-};
+module.exports = { verifyName };

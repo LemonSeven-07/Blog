@@ -18,7 +18,7 @@ const httpExceptionCode = {
   505: 505, // 服务器不支持请求中使用的 HTTP 协议版本
 };
 module.exports = (err, ctx) => {
-  let status = 500;
+  let status = 200;
   if (err.code && httpExceptionCode[err.code]) status = httpExceptionCode[err.code];
   ctx.status = status;
   ctx.body = err;

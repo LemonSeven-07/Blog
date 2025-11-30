@@ -1,5 +1,7 @@
 const { createCategory, findCategory } = require('../service/category.service');
 const { findCategoriesError, createCategoryError } = require('../constant/err.type');
+const { createRoute } = require('../service/route.service');
+const { sequelize } = require('../model/index');
 
 class CategoryController {
   /**
@@ -8,18 +10,32 @@ class CategoryController {
    * @return {*}
    */
   async create(ctx) {
-    const { name } = ctx.request.body;
+    const { name, route } = ctx.request.body;
+    // 确保多个数据库操作作为一个原子单元执行，要么全部成功提交，要么全部失败回滚，从而维护数据的一致性。
+    const transaction = await sequelize.transaction();
     try {
-      const res = await createCategory(name);
+      const res = await createCategory(name, transaction);
       if (!res) throw new Error();
 
+      route.component = 'ArticleExplorer';
+      route.meta.title = name;
+      route.meta.type = 'category';
+      route.meta.categoryId = res.id;
+      route.role = 4;
+
+      const routeInfo = await createRoute(route, transaction);
+      if (!routeInfo) throw new Error();
+
+      // 提交事务
+      await transaction.commit();
       // 返回查询结果
       ctx.body = {
         code: '200',
         data: null,
-        message: '操作成功',
+        message: '创建成功',
       };
     } catch (err) {
+      await transaction.rollback();
       ctx.app.emit('error', createCategoryError, ctx);
     }
   }

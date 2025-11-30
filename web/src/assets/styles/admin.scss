@@ -1,0 +1,111 @@
+@use './themes.scss' as *;
+
+.admin-app-container {
+  position: relative;
+  z-index: 60;
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+
+  .admin-header-container {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 100;
+    background: #fff;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+    justify-content: space-between;
+    align-items: center;
+
+    .header-left {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      height: 100%;
+
+      > .ant-btn {
+        display: none;
+        color: rgb(85 85 85 / 60%);
+        background: #f6f8fa;
+        border-color: #d0d7de;
+        margin-right: 0.75rem;
+
+        @media screen and (width <= 54rem) {
+          display: block;
+        }
+
+        &:hover {
+          border-color: #b6bec6;
+        }
+      }
+
+      a {
+        display: flex;
+        height: 100%;
+        line-height: 3.75rem;
+        text-decoration: none;
+        color: inherit;
+        align-items: center;
+        cursor: pointer;
+        margin-right: 0.75rem;
+
+        .blog-logo {
+          width: 40px;
+          height: 40px;
+        }
+
+        .blog-name {
+          padding-left: 0.75rem;
+          font-size: 1.25rem;
+          font-weight: bold;
+
+          @media screen and (width <= 34rem) {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+
+  .admin-app-main {
+    .admin-app-sider {
+      position: fixed;
+      top: 64px;
+      bottom: 0;
+      left: 0;
+      z-index: 99;
+      overflow: auto;
+
+      @media screen and (width <= 54rem) {
+        display: none;
+      }
+
+      .ant-layout-sider-children {
+        overflow-y: auto;
+      }
+    }
+
+    .article-manage-container {
+      .article-management-main {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fff;
+
+        .article-function-buttons {
+          margin-bottom: 1rem;
+
+          .ant-btn:first-child,
+          .ant-btn:nth-child(2) {
+            margin-right: 0.75rem;
+          }
+
+          .ant-btn:last-child {
+            float: right;
+          }
+        }
+      }
+    }
+  }
+}

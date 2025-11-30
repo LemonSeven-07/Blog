@@ -8,8 +8,8 @@ const AuthorCard = () => {
       <div className="author-avatar">
         <img src={avatar} alt="作者头像" />
       </div>
-      <div className="author-name">yolo</div>
-      <div className="personal-signature">生活本身就是一种无法逃避的孤独。</div>
+      <div className="author-name">{config.AUTHOR}</div>
+      <div className="personal-signature">{config.SIGNATURE}</div>
       <div className="social-links">
         <a
           className="iconfont icon-github"

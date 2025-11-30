@@ -1,12 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import loadingReducer from './modules/loading';
-import configReducer from './modules/config';
+import configReducer from './modules/theme';
+import userReducer from './modules/user';
+import navigationReducer from './modules/navigation';
 
 export const store = configureStore({
   reducer: {
     loading: loadingReducer,
-    config: configReducer
+    theme: configReducer,
+    userInfo: userReducer,
+    navigation: navigationReducer
   }
 });
 

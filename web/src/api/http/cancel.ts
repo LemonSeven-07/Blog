@@ -1,9 +1,9 @@
 /*
  * @Author: yolo
  * @Date: 2025-09-08 15:52:04
- * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-09 14:52:27
- * @FilePath: /Blog/web/src/api/http/cancel.ts
+ * @LastEditors: yolo
+ * @LastEditTime: 2025-10-23 01:32:42
+ * @FilePath: /web/src/api/http/cancel.ts
  * @Description: ✅ 性能优化：取消不必要的请求
  */
 

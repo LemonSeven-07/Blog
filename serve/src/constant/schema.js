@@ -2,36 +2,67 @@ const Joi = require('joi');
 const moment = require('moment');
 
 module.exports = {
-  registerOrLoginSchema: Joi.object({
+  registerSchema: Joi.object({
     username: Joi.string()
       .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
       .required()
       .messages({
         'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
       }),
-    // password: Joi.string()
-    //   .pattern(/^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/)
-    //   .messages({
-    //     'string.pattern.base': '密码由字母、数字和符号组成，长度8-16位',
-    //   }),
-    password: Joi.string()
-      .pattern(/^[a-zA-Z0-9!@#*,]{6,16}$/)
-      .required()
-      .messages({
-        'string.pattern.base': '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
-      }),
+    email: Joi.string().email().required().messages({
+      'string.empty': '邮箱不能为空',
+      'string.email': '邮箱格式不正确',
+    }),
+    code: Joi.string().length(6).required().messages({
+      'string.empty': '验证码不能为空',
+      'string.length': '验证码错误',
+    }),
+    password: Joi.string().required().messages({
+      'string.empty': '密码不能为空',
+    }),
   }),
+  emailCodeSchema: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.empty': '邮箱不能为空',
+      'string.email': '邮箱格式不正确',
+    }),
+    type: Joi.string().valid('register', 'reset').required().messages({
+      'string.empty': 'type不能为空',
+      'any.only': 'type必须是register或reset',
+    }),
+  }),
+  resetPasswordSchema: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.empty': '邮箱不能为空',
+      'string.email': '邮箱格式不正确',
+    }),
+    code: Joi.string().length(6).required().messages({
+      'string.empty': '验证码不能为空',
+      'string.length': '验证码错误',
+    }),
+    password: Joi.string().required().messages({
+      'string.empty': '密码不能为空',
+    }),
+  }),
+  loginSchema: Joi.object({
+    username: Joi.string()
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .messages({
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+      }),
+    email: Joi.string().email().messages({
+      'string.email': '邮箱格式不正确',
+    }),
+    password: Joi.string().required().messages({
+      'string.empty': '密码不能为空',
+    }),
+  }).xor('username', 'email'),
   updateUserSchema: Joi.object({
     username: Joi.string()
       .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
       .messages({
         'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
       }),
-    // password: Joi.string()
-    //   .pattern(/^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/)
-    //   .messages({
-    //     'string.pattern.base': '密码由字母、数字和符号组成，长度8-16位',
-    //   }),
     password: Joi.string()
       .pattern(/^[a-zA-Z0-9!@#*,]{6,16}$/)
       .messages({
@@ -201,6 +232,17 @@ module.exports = {
     name: Joi.string().required().messages({
       'string.empty': '分类名不能为空',
     }),
+    route: Joi.object({
+      path: Joi.string().required().messages({
+        'string.empty': 'path 不能为空',
+      }),
+      name: Joi.string().required().messages({
+        'string.empty': 'name 不能为空',
+      }),
+      meta: Joi.object({
+        icon: Joi.string().allow('').optional(),
+      }).required(),
+    }),
   }),
 
   getTagsSchema: Joi.object({
@@ -342,5 +384,23 @@ module.exports = {
       'number.empty': 'userId不能为空',
       'number.integer': 'userId必须是整数',
     }),
+  }),
+  createRouteSchema: Joi.object({
+    path: Joi.string().required().messages({
+      'string.empty': 'path 不能为空',
+    }),
+    name: Joi.string().required().messages({
+      'string.empty': 'name 不能为空',
+    }),
+    component: Joi.string().required().messages({
+      'string.empty': 'component 不能为空',
+    }),
+    meta: Joi.object({
+      title: Joi.string().required(),
+      icon: Joi.string().allow('').optional(),
+      type: Joi.string().valid('category', 'header', 'normal', 'admin').required(),
+      categoryId: Joi.number().integer().optional(),
+    }).required(),
+    role: Joi.number().integer().optional(),
   }),
 };

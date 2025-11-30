@@ -9,21 +9,19 @@ class UserService {
    * @param {*} username 用户名
    * @param {*} password 用户密码
    * @param {*} banned 是否禁言，true禁言，false不禁言
-   * @param {*} role 用户权限，1：admin, 2：普通用户
+   * @param {*} role 用户权限，1：超级管理员, 2：普通管理员, 3：普通用户
    * @param {*} paranoid true 查询操作会自动忽略已被软删除的用户记录；false 已被软删除的用户记录也会被查出来
    * @return {*}
    */
-  async getUserInfo({ id, username, password, banned, role, paranoid = true }) {
+  async getUserInfo({ id, username, email, paranoid = true }) {
     const whereOpt = {};
     id && Object.assign(whereOpt, { id });
     username && Object.assign(whereOpt, { username });
-    password && Object.assign(whereOpt, { password });
-    banned && Object.assign(whereOpt, { banned });
-    role && Object.assign(whereOpt, { role });
+    email && Object.assign(whereOpt, { email });
 
     // findOne 方法查询单条数据
     const res = await User.findOne({
-      attributes: ['id', 'username', 'password', 'banned', 'role'],
+      attributes: ['id', 'username', 'email', 'password', 'avatar', 'banned', 'role', 'createdAt'],
       where: whereOpt,
       paranoid,
     });
@@ -33,14 +31,16 @@ class UserService {
   /**
    * @description: 创建用户
    * @param {*} username 用户名
+   * @param {*} email 邮箱
    * @param {*} password 用户密码
    * @return {*}
    */
-  async createUser({ username, password }) {
+  async createUser({ username, email, password }) {
     // 创建用户
     let res = await User.create({
       username,
       password,
+      email,
     });
     return res ? res.dataValues : null;
   }
@@ -62,18 +62,27 @@ class UserService {
   /**
    * @description: 修改用户信息
    * @param {*} username 用户名
+   * @param {*} email 邮箱
    * @param {*} password 用户密码
+   * @param {*} avatar 头像
    * @param {*} banned 是否禁言，true禁言，false不禁言
    * @param {*} role 用户权限，1：admin, 2：普通用户
    * @param {*} userId 用户id
    * @return {*}
    */
-  async updateUer({ username, password, banned, role }, userId) {
-    const whereOpt = { id: userId };
-    const newUser = {};
+  async updateUer({ username, email, password, avatar, banned, role }, userId) {
+    let whereOpt = {};
+    if (userId) {
+      Object.assign(whereOpt, { id: userId });
+    } else {
+      Object.assign(whereOpt, { email });
+    }
 
+    const newUser = {};
     username && Object.assign(newUser, { username });
+    email && Object.assign(newUser, { email });
     password && Object.assign(newUser, { password });
+    avatar && Object.assign(newUser, { avatar });
     role && Object.assign(newUser, { role });
     banned !== undefined && Object.assign(newUser, { banned });
     const res = await User.update(newUser, {

@@ -4,7 +4,7 @@ import type { ConfigState } from './types';
 // 从 localStorage 读取整个对象
 function loadConfigState(): ConfigState {
   try {
-    const data = localStorage.getItem('config_state');
+    const data = localStorage.getItem('theme_config');
     if (data) return JSON.parse(data) as ConfigState;
   } catch {
     console.error('parse error');
@@ -17,7 +17,7 @@ function loadConfigState(): ConfigState {
 
 // 保存整个对象
 function saveConfigState(state: ConfigState) {
-  localStorage.setItem('config_state', JSON.stringify(state));
+  localStorage.setItem('theme_config', JSON.stringify(state));
 }
 
 // 初始化 state

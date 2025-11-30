@@ -1,15 +1,16 @@
 const bcrypt = require('bcryptjs');
 
 const { getUserInfo } = require('../service/user.service');
+const { redisClient } = require('../db/redis');
 
 const {
   userRegisterError,
   userAlreadyExists,
-  passwordFormatError,
-  userLoginError,
-  userDoesNotExist,
-  invalidPassword,
+  emailAlreadyExists,
+  emailNotRegistered,
+  invalidCredentials,
   hasNotAdminPermission,
+  invalidEmailCode,
 } = require('../constant/err.type');
 
 /**
@@ -34,6 +35,50 @@ const verifyUser = async (ctx, next) => {
 };
 
 /**
+ * @description: 校验邮箱，邮箱唯一
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
+const verifyEmail = async (ctx, next) => {
+  const { email, type } = ctx.request.body;
+  try {
+    const res = await getUserInfo({ email, paranoid: false });
+
+    // 账号注册校验邮箱是否存在
+    if ((ctx.path.includes('/register') || type === 'register') && res)
+      return ctx.app.emit('error', emailAlreadyExists, ctx);
+    // 重置密码校验邮箱是否不存在
+    if ((ctx.path.includes('/reset') || type === 'reset') && !res)
+      return ctx.app.emit('error', emailNotRegistered, ctx);
+  } catch (err) {
+    return ctx.app.emit('error', userRegisterError, ctx);
+  }
+
+  await next();
+};
+
+/**
+ * @description: 校验邮箱验证码
+ * @param {*} ctx
+ * @param {*} next
+ * @return {*}
+ */
+const verifyEmailCode = async (ctx, next) => {
+  const { email, code } = ctx.request.body;
+  let type = '';
+  if (ctx.path.includes('/register')) type = 'register';
+  if (ctx.path.includes('/reset')) type = 'reset';
+
+  const savedCode = await redisClient.get(`verify:email:${type}:${email}`);
+  if (!savedCode || savedCode !== code) {
+    return ctx.app.emit('error', invalidEmailCode, ctx);
+  }
+
+  await next();
+};
+
+/**
  * @description: 密码加密处理
  * @param {*} ctx 上下文对象
  * @param {*} next 下一个中间件
@@ -41,16 +86,6 @@ const verifyUser = async (ctx, next) => {
  */
 const cryptPassword = async (ctx, next) => {
   const { password } = ctx.request.body;
-  // const regex = /^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{53}$/;
-  // if (regex.test(password)) {
-  //   // 使用 bcryptjs 加密密码
-  //   const salt = bcrypt.genSaltSync(10);
-  //   ctx.request.body.password = bcrypt.hashSync(password, salt);
-  //   await next();
-  // } else {
-  //   return ctx.app.emit('error', passwordFormatError, ctx);
-  // }
-
   const salt = bcrypt.genSaltSync(10);
   ctx.request.body.password = bcrypt.hashSync(password, salt);
   await next();
@@ -63,20 +98,27 @@ const cryptPassword = async (ctx, next) => {
  * @return {*}
  */
 const verifyLogin = async (ctx, next) => {
-  const { username, password } = ctx.request.body;
+  const { username, email, password } = ctx.request.body;
   try {
-    // 1. 判断用户是否存在
-    const res = await getUserInfo({ username });
-    if (!res) {
-      // 用户名不存在
-      return ctx.app.emit('error', userDoesNotExist, ctx);
+    let res = null;
+    if (username) {
+      // 1. 判断用户是否存在
+      res = await getUserInfo({ username });
+    } else {
+      // 2. 判断邮箱是否存在
+      res = await getUserInfo({ email });
     }
-    // 2. 验证密码
+    if (!res) {
+      // 用户名或邮箱不存在
+      return ctx.app.emit('error', invalidCredentials, ctx);
+    }
+
+    // 3. 验证密码
     if (!bcrypt.compareSync(password, res.password)) {
-      return ctx.app.emit('error', invalidPassword, ctx);
+      return ctx.app.emit('error', invalidCredentials, ctx);
     }
   } catch (err) {
-    return ctx.app.emit('error', userLoginError, ctx);
+    return ctx.app.emit('error', invalidCredentials, ctx);
   }
 
   await next();
@@ -100,6 +142,8 @@ const hadUpdatePermission = async (ctx, next) => {
 
 module.exports = {
   verifyUser,
+  verifyEmail,
+  verifyEmailCode,
   cryptPassword,
   verifyLogin,
   hadUpdatePermission,

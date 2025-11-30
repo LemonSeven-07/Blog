@@ -9,6 +9,8 @@ const router = require('../router/index.js');
 
 const app = new Koa();
 
+app.proxy = true; // ✅ 允许通过代理头获取真实 IP
+
 // 解析 HTTP 请求体数据
 app.use(
   koaBody({

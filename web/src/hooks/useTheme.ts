@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setIsDark } from '@/store/modules/config';
+import { setIsDark } from '@/store/modules/theme';
 
 export function useTheme() {
-  const isDark = useAppSelector((state) => state.config.isDark);
+  const isDark = useAppSelector((state) => state.theme.isDark);
   const dispatch = useAppDispatch();
 
   // 系统主题监听
@@ -23,8 +23,9 @@ export function useTheme() {
     };
 
     mediaQuery.addEventListener('change', handler);
+
     return () => mediaQuery.removeEventListener('change', handler);
-  }, [dispatch]);
+  }, [dispatch, isDark]);
 
   // 同步到 <html> data-theme
   useEffect(() => {

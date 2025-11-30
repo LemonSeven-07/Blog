@@ -6,11 +6,25 @@
   "description": "个人博客网站 Icon 图标",
   "glyphs": [
     {
-      "icon_id": "11210824",
-      "name": "目录",
+      "icon_id": "1240750",
+      "name": "评论",
+      "font_class": "comment",
+      "unicode": "e60d",
+      "unicode_decimal": 58893
+    },
+    {
+      "icon_id": "11372777",
+      "name": "收藏",
+      "font_class": "favorite",
+      "unicode": "e8c6",
+      "unicode_decimal": 59590
+    },
+    {
+      "icon_id": "36375236",
+      "name": "大纲",
       "font_class": "catalogs",
-      "unicode": "e604",
-      "unicode_decimal": 58884
+      "unicode": "e64a",
+      "unicode_decimal": 58954
     },
     {
       "icon_id": "1668855",

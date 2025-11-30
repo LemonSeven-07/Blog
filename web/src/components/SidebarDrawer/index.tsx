@@ -6,13 +6,20 @@ interface DrawerProps {
   open: boolean;
   handleClose: () => void;
   children?: ReactNode;
+  width?: number;
 }
 
-const SidebarDrawer: React.FC<DrawerProps> = ({ placement, open, handleClose, children }) => {
+const SidebarDrawer: React.FC<DrawerProps> = ({
+  placement,
+  open,
+  handleClose,
+  children,
+  width
+}) => {
   const style: React.CSSProperties = {
     position: 'fixed',
     top: 0,
-    width: '18rem',
+    width: (width || 18) + 'rem',
     height: '100vh'
   };
   if (placement === 'right') style.right = 0;
@@ -22,7 +29,7 @@ const SidebarDrawer: React.FC<DrawerProps> = ({ placement, open, handleClose, ch
     <>
       <Drawer
         placement={placement}
-        width="18rem"
+        width={(width || 18) + 'rem'}
         closable={false}
         onClose={() => handleClose()}
         open={open}

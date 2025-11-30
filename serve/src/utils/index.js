@@ -1,12 +1,14 @@
 const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
+// 导入发送邮件的包文件
+const nodemailer = require('nodemailer');
 
 const { redisClient } = require('../db/redis.js');
 
 class blogPackagingMethod {
   /**
    * @description: 生成 accessToken 和 refreshToken
-   * @param {*} userInfo 登录用户关键信息 包含：用户id、用户名、用户权限、禁言
+   * @param {*} userInfo 登录用户关键信息 包含：用户id、用户名、邮箱、用户头像、用户权限、禁言
    * @return {*} { accessToken, refreshToken }
    */
   issueTokens(userInfo) {
@@ -185,6 +187,69 @@ class blogPackagingMethod {
     });
 
     return result;
+  }
+
+  async sendEmailConfig(email, code, type) {
+    const { USER_EMAIL, USER_EMAIL_PASS, EMAIL_CODE_EXPIRE } = process.env;
+    try {
+      // 建立一个 SMTP 连接
+      let transporter = await nodemailer.createTransport({
+        host: 'smtp.qq.com',
+        secure: false, // true for 465, false for other ports
+        port: 25,
+        auth: {
+          // user 为发送方的邮箱地址， pass 为发送方的邮箱密码生成的授权码
+          user: USER_EMAIL,
+          pass: USER_EMAIL_PASS,
+        },
+      });
+      // 配置相关参数
+      let option = {
+        // from 为发送方的邮箱地址， to 为接收方的邮件地址
+        from: USER_EMAIL,
+        to: email,
+      };
+
+      if (type === 'register') {
+        option.subject = "[yolo's blog] 注册邮箱验证码";
+        option.html = `<div style="font-family: Arial, sans-serif; line-height: 1.8;">
+            <h2 style="color: #409EFF;">欢迎注册 yolo's blog 🎉</h2>
+            <p>您好！感谢您注册 yolo's blog。</p>
+            <p>您的注册验证码是：
+              <span style="color: #409EFF; font-size: 18px; font-weight: bold;">${code}</span>
+            </p>
+            <p>该验证码 <strong>${EMAIL_CODE_EXPIRE} 分钟</strong> 内有效，请尽快完成验证。</p>
+            <p>如果这不是您本人的操作，请忽略此邮件。</p>
+          </div>`;
+      } else if (type === 'reset') {
+        option.subject = "[yolo's blog] 重置密码邮箱验证码";
+        option.html = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.8;">
+            <h2 style="color: #409EFF;">重置密码请求</h2>
+            <p>您好！我们收到了您在 yolo's blog 上的密码重置请求。</p>
+            <p>您的验证码是：
+              <span style="color: #E74C3C; font-size: 18px; font-weight: bold;">${code}</span>
+            </p>
+            <p>该验证码 <strong>${EMAIL_CODE_EXPIRE} 分钟</strong> 内有效。</p>
+            <p>如果这不是您本人发起的操作，请忽略此邮件，您的账号仍然安全。</p>
+          </div>
+        `;
+      } else {
+        option.subject = "[yolo's blog] 邮箱验证码";
+        option.html = `
+          <div>
+            <p>验证码：
+              <span style="color: #409EFF;">${code}</span>
+            </p>
+            <p>${EMAIL_CODE_EXPIRE} 分钟内有效。</p>
+          </div>
+        `;
+      }
+
+      return { transporter, option };
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
 

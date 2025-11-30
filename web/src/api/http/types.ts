@@ -1,9 +1,9 @@
 /*
  * @Author: yolo
  * @Date: 2025-09-08 15:52:20
- * @LastEditors: chenshijie
- * @LastEditTime: 2025-09-09 17:38:50
- * @FilePath: /Blog/web/src/api/http/types.ts
+ * @LastEditors: yolo
+ * @LastEditTime: 2025-10-11 17:57:24
+ * @FilePath: /web/src/api/http/types.ts
  * @Description: axios 相关类型定义
  */
 
@@ -11,7 +11,7 @@ import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // 扩展 AxiosRequestConfig 类型
 export interface MyAxiosRequestConfig extends AxiosRequestConfig {
-  ignoreLoading?: boolean; // 是否触发全局 loading 加载状态，⭐️ 默认 false 触发
+  ignoreLoading?: boolean; // 是否触发全局 loading 加载状态，⭐️ 默认 true 不触发
 }
 
 // http 请求方法类型

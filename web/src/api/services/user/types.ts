@@ -1,11 +1,58 @@
-export interface AuthAction {
+import type { RouteItem } from '@/types/app/common';
+
+export interface UserProfile {
+  userId: number | null; // 用户 ID
+  avatar: string; // 用户头像
+  username: string; // 用户名
+  role: number; // 用户权限
+  email: string; // 用户邮箱
+  banned: boolean; // 用户是否被禁言
+}
+
+export interface RegisterAction {
   Request: {
     username: string;
+    email: string;
+    code: string;
     password: string;
   };
+  Response: UserProfile;
+}
+
+export interface ResetPassword {
+  Request: {
+    email: string;
+    code: string;
+    password: string;
+  };
+}
+
+export interface AppInitResponse {
+  user: UserProfile | null;
+  routes: RouteItem[];
+}
+
+export interface SendEmailCode {
+  Request: {
+    email: string;
+    type: 'register' | 'reset';
+  };
+}
+
+export interface LoginAction {
+  Request: {
+    username?: string;
+    email?: string;
+    password: string;
+  };
+  Response: UserProfile;
+}
+
+export interface ArticleCategory {
   Response: {
-    token: string;
-    userId: number;
+    id: number;
+    name: string;
+    url: string;
   };
 }
 

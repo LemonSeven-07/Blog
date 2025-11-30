@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:05:16
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-29 01:41:37
+ * @LastEditTime: 2025-10-30 10:50:21
  * @FilePath: /web/src/pages/client/ArticleDetail/index.tsx
  * @Description: 文章查看页面
  */
@@ -12,7 +12,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
 import hljs from 'highlight.js';
-import { message, Tag, Button, Anchor } from 'antd';
+import { message, Tag, Button, Anchor, Input } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
@@ -32,8 +32,10 @@ import releaseTimeSvg from '@/assets/svg/release-time.svg';
 import categorySvg from '@/assets/svg/category.svg';
 import tagSvg from '@/assets/svg/tag.svg';
 import viewsSvg from '@/assets/svg/views.svg';
-import commentsSvg from '@/assets/svg/comments.svg';
 import SidebarDrawer from '@/components/SidebarDrawer';
+import avatar from '@/assets/images/avatar.png';
+
+const { TextArea } = Input;
 
 interface CodeRendererProps {
   node?: Element & { value?: string };
@@ -78,6 +80,7 @@ const articles: Article[] = [
 const ArticleDetail = () => {
   console.log('ArticleDetail 渲染');
   const flatToc = useRef<TocItem[]>([]);
+  const commentRef = useRef<HTMLTextAreaElement>(null);
   const [open, setOpen] = useState(false);
   const [tocTree, setTocTree] = useState<TocItem[]>([]);
 
@@ -218,7 +221,11 @@ const ArticleDetail = () => {
             </div>
           );
         }
-        return <a href={href}>{children}</a>;
+        return (
+          <a href={href} target="_blank" rel="noreferrer">
+            {children}
+          </a>
+        );
       },
       code: ({ node, inline, className = '', children, ...props }: CodeRendererProps) => {
         const match = /language-(\w+)/.exec(className || '');
@@ -320,61 +327,96 @@ const ArticleDetail = () => {
   );
 
   return (
-    <div className="article-main">
-      <div className="article-header">
-        <div className="article-title">{articles[0].title}</div>
-        <div className="article-mate">
-          <div className="article-author">
-            <img src={authorSvg} title="文章作者" />
-            <span>yolo</span>
-          </div>
+    <div className="article-container">
+      <div className="article-main">
+        <div className="article-header">
+          <div className="article-title">{articles[0].title}</div>
+          <div className="article-mate">
+            <div className="article-author">
+              <img src={authorSvg} title="文章作者" />
+              <span>yolo</span>
+            </div>
 
-          <div className="release-time">
-            <img src={releaseTimeSvg} title="发布时间" />
-            <span>2025-09-23</span>
-          </div>
+            <div className="release-time">
+              <img src={releaseTimeSvg} title="发布时间" />
+              <span>2025-09-23</span>
+            </div>
 
-          <div className="article-category">
-            <img src={categorySvg} title="分类" />
-            <Tag color="blue">前端</Tag>
-          </div>
+            <div className="article-category">
+              <img src={categorySvg} title="分类" />
+              <Tag color="blue">前端</Tag>
+            </div>
 
-          <div className="article-tags">
-            <img src={tagSvg} title="标签" />
-            <Tag color="geekblue">mvvm</Tag>
-            <Tag color="purple">vue</Tag>
-          </div>
+            <div className="article-tags">
+              <img src={tagSvg} title="标签" />
+              <Tag color="geekblue">mvvm</Tag>
+              <Tag color="purple">vue</Tag>
+            </div>
 
-          <div className="article-views">
-            <img src={viewsSvg} title="浏览量" />
-            <span>99</span>
-          </div>
-
-          <div className="article-coments">
-            <img src={commentsSvg} title="评论数量" />
-            <span>99</span>
+            <div className="article-views">
+              <img src={viewsSvg} title="浏览量" />
+              <span>99</span>
+            </div>
           </div>
         </div>
+
+        <article className="article-content">
+          <PhotoProvider>
+            <div className="content markdown-body">
+              <ReactMarkdown
+                components={renderers}
+                remarkPlugins={[[remarkGfm, { singleTilde: false }], remarkMath, remarkMark]}
+                rehypePlugins={rehypePlugins}
+              >
+                {articles[0].content}
+              </ReactMarkdown>
+            </div>
+          </PhotoProvider>
+        </article>
       </div>
 
-      <article className="article-content">
-        <PhotoProvider>
-          <div className="content markdown-body">
-            <ReactMarkdown
-              components={renderers}
-              remarkPlugins={[[remarkGfm, { singleTilde: false }], remarkMath, remarkMark]}
-              rehypePlugins={rehypePlugins}
-            >
-              {articles[0].content}
-            </ReactMarkdown>
+      <div className="article-comment">
+        <div className="comment-header">文章评论 99</div>
+
+        <div className="comment-box">
+          <div className="comment-box__avatar">
+            <img src={avatar} alt="作者头像" />
           </div>
-        </PhotoProvider>
-      </article>
+
+          <div className="comment-box__input">
+            <TextArea
+              placeholder="平等表达，友善交流"
+              id="comment"
+              name="comment"
+              autoSize={{ minRows: 2 }}
+              showCount
+              maxLength={300}
+              ref={commentRef}
+            />
+
+            <div className="comment-box__actions">
+              <Button type="primary">发送</Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="comment-list"></div>
+      </div>
 
       <Button
-        className="article-drawer-btn iconfont icon-catalogs"
+        className="article-catalogs-btn iconfont icon-catalogs"
         title="大纲"
         onClick={() => setOpen(true)}
+      />
+
+      <Button className="article-favorite-btn iconfont icon-favorite" title="收藏" />
+
+      <Button
+        className="article-comment-btn iconfont icon-comment"
+        title="去评论"
+        onClick={() => {
+          commentRef.current?.focus();
+        }}
       />
 
       <SidebarDrawer placement="right" open={open} handleClose={() => setOpen(false)}>

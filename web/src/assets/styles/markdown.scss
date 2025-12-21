@@ -7,6 +7,7 @@
 }
 
 .article-container {
+  width: 100%;
   overflow-x: hidden;
 
   .article-main {
@@ -557,39 +558,43 @@
   .article-catalogs-btn,
   .article-comment-btn,
   .article-favorite-btn {
-    @include use-theme {
-      color: get-var('--yolo-text');
-      background-color: get-var('--yolo-card-bg');
-      border-color: get-var('--yoloy-btn-border');
-
-      &:hover {
-        color: get-var('--yolo-btn-text-hover');
-        background-color: get-var('--yolo-card-bg');
-        border-color: get-var('--yoloy-btn-border');
-      }
-    }
-
     position: fixed;
     right: 3.75rem;
     z-index: 20;
-    width: 3rem;
-    height: 3rem;
-    font-size: 1.75rem;
 
-    &::before {
+    .ant-btn {
+      @include use-theme {
+        color: get-var('--yolo-article-suspended-color');
+        background-color: get-var('--yolo-card-bg');
+        box-shadow: get-var('--yolo-article-suspended-box-shadow');
+
+        &:hover {
+          color: get-var('--yolo-btn-text-hover');
+          background-color: get-var('--yolo-card-bg');
+        }
+      }
+
+      width: 3rem;
+      height: 3rem;
+      border: none;
+      border-radius: 50%;
       font-size: 1.75rem;
     }
   }
 
   .article-catalogs-btn {
-    bottom: 9rem;
+    bottom: 14rem;
   }
 
   .article-favorite-btn {
-    bottom: 5.7rem;
+    bottom: 10rem;
+
+    &.collected .ant-btn::before {
+      color: #fa8c16;
+    }
   }
 
   .article-comment-btn {
-    bottom: 2.4rem;
+    bottom: 6rem;
   }
 }

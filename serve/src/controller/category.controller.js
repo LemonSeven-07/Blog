@@ -1,6 +1,11 @@
 const { createCategory, findCategory } = require('../service/category.service');
-const { findCategoriesError, createCategoryError } = require('../constant/err.type');
+const {
+  findCategoriesError,
+  createCategoryError,
+  getTagsByCategoryError,
+} = require('../constant/err.type');
 const { createRoute } = require('../service/route.service');
+const { findTagsByCategoryId } = require('../service/tag.service');
 const { sequelize } = require('../model/index');
 
 class CategoryController {
@@ -57,6 +62,26 @@ class CategoryController {
       };
     } catch (err) {
       ctx.app.emit('error', findCategoriesError, ctx);
+    }
+  }
+
+  /**
+   * @description: 查询分类下对应的所有文章标签
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async getTagsByCategory(ctx) {
+    const categoryId = ctx.params.id;
+    try {
+      const tags = await findTagsByCategoryId(categoryId);
+
+      ctx.body = {
+        code: '200',
+        message: '获取分类下的标签成功',
+        data: tags,
+      };
+    } catch (err) {
+      ctx.app.emit('error', getTagsByCategoryError, ctx);
     }
   }
 }

@@ -70,7 +70,7 @@ class UserService {
    * @param {*} userId 用户id
    * @return {*}
    */
-  async updateUer({ username, email, password, avatar, banned, role }, userId) {
+  async updateUser({ username, email, password, avatar, banned, role }, userId) {
     let whereOpt = {};
     if (userId) {
       Object.assign(whereOpt, { id: userId });

@@ -99,6 +99,11 @@ module.exports = {
     message: '分类搜索失败',
     data: null,
   },
+  getTagsByCategoryError: {
+    code: '10043',
+    message: '获取分类下的标签失败',
+    data: null,
+  },
   commentError: {
     code: '10015',
     message: '评论失败',
@@ -154,6 +159,11 @@ module.exports = {
     message: '文件类型不合法',
     data: null,
   },
+  displayStorageWarning: {
+    code: '10040',
+    message: '请确保文件为有效内容，避免上传不必要的文件',
+    data: null,
+  },
   uploadArticlesError: {
     code: '10026',
     message: '上传失败',
@@ -207,6 +217,26 @@ module.exports = {
   logoutError: {
     code: '10039',
     message: '登出失败',
+    data: null,
+  },
+  tagAlreadyExists: {
+    code: '10041',
+    message: '标签名已存在',
+    data: null,
+  },
+  tagCreateError: {
+    code: '10042',
+    message: '标签创建失败',
+    data: null,
+  },
+  addFavoriteError: {
+    code: '10044',
+    message: '收藏失败',
+    data: null,
+  },
+  removeFavoriteError: {
+    code: '10045',
+    message: '取消收藏失败',
     data: null,
   },
 };

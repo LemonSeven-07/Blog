@@ -2,33 +2,30 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2025-11-17 23:00:23
+ * @LastEditTime: 2025-12-22 01:21:31
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
 
-import { useEffect, useState } from 'react';
-import { Button, Table, Tooltip, Modal, Upload, Form, Select, Input, Image } from 'antd';
-import type { TableColumnsType, TableProps, UploadProps, UploadFile, GetProp } from 'antd';
+import { useEffect, useState, useRef } from 'react';
+import { Button, Table, Tooltip, Modal } from 'antd';
+import type { TableColumnsType, TableProps, UploadFile } from 'antd';
 import {
   DeleteOutlined,
   DownloadOutlined,
   SendOutlined,
   EyeOutlined,
   EditOutlined,
-  UploadOutlined,
-  InboxOutlined,
-  PlusOutlined
+  UploadOutlined
 } from '@ant-design/icons';
-import SearchForm from '@/components/SearchForm';
 import api from '@/api';
 import { useAppSelector } from '@/store/hooks';
 import type { tagItem } from '@/types/app/common';
-
-const { TextArea } = Input;
+import BaseForm from '@/components/DynamicForm/BaseForm';
+import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
+import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
-type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
 interface DataType {
   id: number;
@@ -42,41 +39,115 @@ interface DataType {
   createdAt: string;
 }
 
-const getBase64 = (file: FileType): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
+interface ImportFormValues {
+  title: string;
+  summary: string;
+  categoryId: number;
+  tagIds: number[];
+  file: UploadFile[];
+  image: UploadFile[];
+}
+
+interface SearchFormValues {
+  keyword: string;
+  categoryId: number;
+  tagIds: number[];
+  dateRange: string[];
+  userId: number;
+}
 
 const Articles = () => {
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
-  const [searchOptions, setSearchOptions] = useState([
+  // 文章导入表单
+  const [formItems, setFormItems] = useState<DynamicFormItem[]>([
+    {
+      label: '文章标题',
+      name: 'title',
+      type: 'input' as const,
+      required: true,
+      pattern: /^.{4,50}$/,
+      tip: '文章标题长度应在4-50个字符之间!'
+    },
+    {
+      label: '文章摘要',
+      name: 'summary',
+      type: 'textarea' as const,
+      required: true,
+      pattern: /^.{16,150}$/,
+      tip: '输入长度必须大于等于16字符小于等于150字符',
+      rows: { minRows: 3 },
+      maxLength: 150
+    },
+    {
+      label: '文章分类',
+      name: 'categoryId',
+      type: 'select' as const,
+      required: true,
+      options: categoryRoutes.map((item) => ({
+        label: item.meta?.title || '未命名',
+        value: item.id
+      })),
+      onChange: (value) => {
+        console.log(129, value);
+      }
+    },
+    {
+      label: '文章标签',
+      name: 'tagIds',
+      type: 'select' as const,
+      required: true,
+      mode: 'multiple',
+      maxCount: 3,
+      options: []
+    },
+    {
+      label: '文章上传',
+      name: 'file',
+      type: 'uploadFile' as const,
+      required: true,
+      accept: '.md',
+      hint: '仅支持Markdown文件（.md）。严禁上传违禁文件。'
+    },
+    {
+      label: '文章封面',
+      name: 'image',
+      type: 'uploadImg' as const,
+      accept: 'image/png,image/jpeg,image/jpg',
+      listType: 'picture-card' as const
+    }
+  ]);
+  // 文章查询表单
+  const [searchOptions, setSearchOptions] = useState<DynamicFormItem[]>([
     {
       label: '关键词',
       name: 'keyword',
-      type: 'input',
+      type: 'input' as const,
       labelCol: 6,
       wrapperCol: 18
     },
     {
       label: '分类',
-      name: 'category',
-      type: 'select',
+      name: 'categoryId',
+      type: 'select' as const,
       width: 230,
       labelCol: 7,
       wrapperCol: 17,
       options: categoryRoutes.map((item) => ({
         label: item.meta?.title || '未命名',
         value: item.id
-      }))
+      })),
+      onChange: (value) => {
+        console.log(129, value);
+        if (value) getTags({ categoryId: value as number });
+      }
     },
     {
       label: '标签',
-      name: 'tag',
-      type: 'select',
+      name: 'tagIds',
+      type: 'select' as const,
+      mode: 'multiple' as const,
       disabled: true,
+      maxCount: 3,
       labelCol: 6,
       wrapperCol: 18,
       options: []
@@ -84,30 +155,36 @@ const Articles = () => {
     {
       label: '起止时间',
       name: 'dateRange',
-      type: 'rangePicker',
+      type: 'rangePicker' as const,
       labelCol: 6,
       wrapperCol: 18
     },
     {
       label: '作者',
-      name: 'author',
-      type: 'input',
+      name: 'userId',
+      type: 'input' as const,
       width: 250,
       labelCol: 6,
       wrapperCol: 18
     }
   ]);
+  // 文章批量处理key
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  // 文章列表数据
   const [tableDatas, setTableDatas] = useState<DataType[]>([]);
+  // 所有文章标签
   const [allTags, setAllTags] = useState<tagItem[]>([]);
+  // 分类文章对应的所有标签
   const [tags, setTags] = useState<tagItem[]>([]);
+  // 是否打开文章导入对话框
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [imgList, setImgList] = useState<UploadFile[]>([]);
+  // 文章导入表单对象
+  const importFormRef = useRef<DynamicFormRef<ImportFormValues>>(null);
+  // 文章查询表单对象
+  const searchFormRef = useRef<DynamicFormRef<SearchFormValues>>(null);
+  // 文章列表表头
   const [columns] = useState<TableColumnsType<DataType>>([
-    { title: '作者', dataIndex: 'author', align: 'center' },
+    { title: '作者', dataIndex: 'userId', align: 'center' },
     { title: '标题', dataIndex: 'title', align: 'center' },
     { title: '封面', dataIndex: 'coverImage', align: 'center' },
     { title: '分类', dataIndex: 'category', align: 'center' },
@@ -151,91 +228,137 @@ const Articles = () => {
       )
     }
   ]);
-  const [form] = Form.useForm();
 
   useEffect(() => {
     getTags();
   }, []);
 
-  const getTags = async (params: { articleId?: number; categoryId?: number } = {}) => {
-    const res = await api.tagApi.getTags(params);
+  /**
+   * @description: 获取所有标签或者分类对应文章下的标签
+   * @param {object} params
+   * @return {*}
+   */
+  const getTags = async (params: { categoryId?: number } = {}) => {
     if (JSON.stringify(params) === '{}') {
+      const res = await api.tagApi.getTags();
+      const datas = res.data || [];
+      const tags = datas.map((item) => ({
+        label: item.name,
+        value: item.id
+      }));
+
       // 获取全部标签
-      setAllTags(res.data || []);
+      setFormItems((prev) =>
+        prev.map((item) => (item.name === 'tagIds' ? { ...item, options: tags } : item))
+      );
     } else {
+      const res = await api.categoryApi.getTagsByCategory(params as { categoryId: number });
+      const datas = res.data || [];
+      const tags = datas.map((item) => ({
+        label: item.name,
+        value: item.id
+      }));
+
       // 根据分类获取对应的标签
-      setTags(res.data || []);
+      setSearchOptions((prev) =>
+        prev.map((item) =>
+          item.name === 'tagIds'
+            ? ({ ...item, options: tags, disabled: false } as typeof item)
+            : item
+        )
+      );
     }
   };
 
+  /**
+   * @description: 表格复选框勾选事件
+   * @param {React} newSelectedRowKeys 复选框勾选行key数组
+   * @return {*}
+   */
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
     console.log('selectedRowKeys changed: ', newSelectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
+  // 表格行可选择配置
   const rowSelection: TableRowSelection<DataType> = {
     selectedRowKeys,
     onChange: onSelectChange
   };
 
+  /**
+   * @description: 查看文章
+   * @param {number} id 文章id
+   * @return {*}
+   */
   const viewArticle = (id: number) => {
     console.log('查看文章', id);
   };
 
+  /**
+   * @description: 导出文章
+   * @param {number} id 文章id
+   * @return {*}
+   */
   const exportArticle = (id: number) => {
     console.log('导出文章', id);
   };
 
+  /**
+   * @description: 编辑文章
+   * @param {number} id 文章id
+   * @return {*}
+   */
   const editArticle = (id: number) => {
     console.log('编辑文章', id);
   };
 
+  /**
+   * @description: 删除文章
+   * @param {number} id 文章id
+   * @return {*}
+   */
   const deleteArticle = (id: number) => {
     console.log('删除文章', id);
   };
 
-  const startUpload = () => {
-    console.log('开始导入文章');
-    form.validateFields().then((values) => {
-      console.log('表单值：', values);
-      setIsModalOpen(false);
-    });
-  };
-
   /**
-   * @description: // 处理上传文章封面前的逻辑
-   * @param {FileType} file 文章封面文件
+   * @description: 文章导入
    * @return {*}
    */
-  const beforeUploadImg = (img: FileType & { url?: string }) => {
-    // 为文件生成一个预览 URL，供预览使用
-    img.url = URL.createObjectURL(img);
-
-    // 限制只上传一个文件，清除文件列表，覆盖旧文件
-    setImgList([img]);
-
-    // 阻止默认上传行为，手动上传
-    return false;
+  const handleImport = () => {
+    importFormRef
+      .current!.validateForm()
+      .then((values) => {
+        const { title, summary, categoryId, tagIds, file, image } = values;
+        const formData = new FormData();
+        formData.append('title', title!);
+        formData.append('summary', summary!);
+        formData.append('categoryId', categoryId!.toString());
+        formData.append('tagIds', JSON.stringify(tagIds));
+        formData.append('file', file![0].originFileObj!);
+        if (image && image.length) formData.append('image', image[0].originFileObj!);
+        api.articleApi.uploadArticle(formData);
+      })
+      .catch(() => {
+        importFormRef.current!.scrollToFirstError();
+        console.log('表单校验失败');
+      });
   };
-  const uploadButton = (
-    <button style={{ border: 0, background: 'none' }} type="button">
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>Upload</div>
-    </button>
-  );
-  const handlePreview = async (img: UploadFile) => {
-    console.log('预览图片文件', img);
-    if (!img.url && !img.preview) {
-      img.preview = await getBase64(img.originFileObj as FileType);
-    }
 
-    setPreviewImage(img.url || (img.preview as string));
-    setPreviewOpen(true);
+  const handleSearch = (values: SearchFormValues) => {
+    console.log(336, values);
   };
 
   return (
     <div className="article-manage-container">
-      <SearchForm searchOptions={searchOptions} />
+      {/* 查询表单 */}
+      <AdvancedForm<SearchFormValues>
+        formItems={searchOptions}
+        handleSubmit={handleSearch}
+        showFooter
+        ref={searchFormRef}
+      />
 
       <div className="article-management-main">
         <div className="article-function-buttons">
@@ -273,138 +396,18 @@ const Articles = () => {
         width="580px"
         maskClosable={false}
         open={isModalOpen}
-        onOk={startUpload}
+        onOk={handleImport}
         onCancel={() => setIsModalOpen(false)}
       >
-        <Form
-          form={form}
-          style={{
-            width: '100%',
-            margin: '0 auto',
-            padding: '1rem',
-            background: '#fff',
-            borderRadius: '0.5rem'
-          }}
-          labelCol={{ span: 5 }}
-          wrapperCol={{ span: 19 }}
-          colon={false}
-        >
-          <Form.Item
-            label="文章上传"
-            name="file"
-            valuePropName="fileList"
-            getValueFromEvent={({ fileList }) => fileList}
-            rules={[{ required: false, message: '请选择一个文件!' }]}
-          >
-            <Upload.Dragger
-              multiple
-              accept=".md"
-              fileList={fileList}
-              beforeUpload={() => false} // 阻止自动上传
-              onChange={({ fileList }) => setFileList(fileList)}
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">点击或拖动文件至此区域上传</p>
-              <p className="ant-upload-hint">
-                支持单个或批量上传，但仅支持Markdown文件（.md）。严禁上传违禁文件。
-              </p>
-            </Upload.Dragger>
-          </Form.Item>
-
-          <Form.Item
-            label="文章标题"
-            name="title"
-            rules={[
-              {
-                required: false,
-                message: '请输入文章标题!'
-              },
-              {
-                min: 4,
-                max: 25,
-                message: '文章标题长度应在4-25个字符之间!'
-              }
-            ]}
-          >
-            <Input allowClear placeholder="请输入文章标题" />
-          </Form.Item>
-
-          <Form.Item
-            label="文章摘要"
-            name="summary"
-            rules={[
-              {
-                required: false,
-                message: '请选输入文章摘要!'
-              },
-              {
-                min: 16,
-                message: '文章摘要最少16个字符!'
-              }
-            ]}
-          >
-            <TextArea
-              className="text-area-with-count"
-              placeholder="请输入文章摘要"
-              autoSize={{ minRows: 2 }}
-              showCount
-              maxLength={150}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="文章分类"
-            name="category"
-            rules={[
-              {
-                required: false,
-                message: '请选择文章分类!'
-              }
-            ]}
-          >
-            <Select allowClear options={[]} placeholder="请选择文章分类" />
-          </Form.Item>
-
-          <Form.Item
-            label="文章标签"
-            name="category"
-            rules={[
-              {
-                required: false,
-                message: '请选择文章标签!'
-              }
-            ]}
-          >
-            <Select allowClear options={[]} placeholder="请选择文章标签" />
-          </Form.Item>
-
-          <Form.Item label="文章封面" name="coverImage">
-            <Upload
-              accept="image/png,image/jpeg,image/jpg"
-              listType="picture-card"
-              fileList={imgList}
-              showUploadList={{ showPreviewIcon: true, showRemoveIcon: true }}
-              onPreview={handlePreview}
-              beforeUpload={beforeUploadImg}
-            >
-              {uploadButton}
-            </Upload>
-          </Form.Item>
-        </Form>
-
-        {previewImage && (
-          <Image
-            wrapperStyle={{ display: 'none' }}
-            preview={{
-              visible: previewOpen,
-              onVisibleChange: (visible) => setPreviewOpen(visible),
-              afterOpenChange: (visible) => !visible && setPreviewImage('')
-            }}
-            src={previewImage}
-          />
-        )}
+        {/* 文章导入表单 */}
+        <BaseForm
+          layout={'horizontal'}
+          formItems={formItems}
+          labelCol={5}
+          wrapperCol={19}
+          showFooter={false}
+          ref={importFormRef}
+        />
       </Modal>
     </div>
   );

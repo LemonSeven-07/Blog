@@ -2,41 +2,80 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2025-11-18 22:28:38
- * @FilePath: /web/src/components/SearchForm/index.tsx
- * @Description: 查询表单组件
+ * @LastEditTime: 2025-12-22 01:20:42
+ * @FilePath: /web/src/components/DynamicForm/AdvancedForm/index.tsx
+ * @Description: 水平布局表单组件，例如：查询表单等
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { Button, Form, Input, Select, DatePicker, message } from 'antd';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { Button, Form, Input, Select, DatePicker } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import type { SelectProps } from 'antd';
+import type { DefaultOptionType } from 'antd/es/select';
+import { useForm } from '../hooks/useForm';
+import type { DynamicFormItem, DynamicFormRef } from '../types';
+import { pickerPlaceholder, format } from '../types';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+dayjs.extend(isoWeek);
 
-interface searchOptionsItem {
-  label: string; // 表单项标签
-  name: string; // 表单项名称
-  type: string; // 表单项类型：input、select、datePicker、rangePicker
-  required?: boolean; // 是否必填
-  disabled?: boolean; // 是否禁用
-  hide?: boolean; // 是否隐藏
-  labelCol?: number; // 标签栅格宽度
-  wrapperCol?: number; // 组件栅格宽度
-  allowClear?: boolean; // 是否允许清除
-  mode?: 'multiple' | 'tags' | undefined; // 选择框模式
-  options?: { label: string; value: number }[]; // 下拉选择框选项
-  tip?: string; // 校验提示语
-  pattern?: RegExp; // 校验正则表达式
-  width?: number; // 组件宽度，默认单位 px
-  blur?: () => void; // 是否在失去焦点时校验（仅对输入框有效）
-  focus?: () => void; // 获取焦点时的回调（仅对输入框有效）
-  onChange?: () => void; // 值改变时的回调
+interface AdvancedFormProps<TValues extends object> {
+  formItems: DynamicFormItem[]; // 表单项数据
+  labelCol?: number; // 标签布局
+  wrapperCol?: number; // 组件布局
+  children?: React.ReactNode; // 操作按钮插槽
+  showFooter?: boolean; // 是否显示表单操作按钮
+  handleSubmit?: (values: TValues) => void; // 表单提交方法
 }
 
-interface SearchFormProps {
-  searchOptions: searchOptionsItem[];
-}
+const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends object>(
+  {
+    formItems,
+    labelCol,
+    wrapperCol,
+    children,
+    showFooter = true,
+    handleSubmit
+  }: AdvancedFormProps<TValues>,
+  ref: React.Ref<DynamicFormRef<TValues>>
+) {
+  const {
+    form,
+    setFields,
+    setField,
+    getFields,
+    getField,
+    resetForm,
+    validateForm,
+    scrollToFirstError,
+    handleBlur,
+    handleChange,
+    onFinish
+  } = useForm(formItems, handleSubmit);
 
-const SearchForm = ({ searchOptions }: SearchFormProps) => {
-  const [form] = Form.useForm();
+  // 使用 useImperativeHandle 暴露给父组件的 ref 方法
+  useImperativeHandle(ref, () => ({
+    // 批量设置表单项的值
+    setFields,
+
+    // 设置单个表单项的值
+    setField,
+
+    // 获取整个表单中（或指定字段）的所有值
+    getFields,
+
+    // 获取单个表单项的值
+    getField,
+
+    // 重置整个表单中（或指定字段）的所有值
+    resetForm,
+
+    // 校验整个表单中（或指定字段）的所有值
+    validateForm,
+
+    // 自动滚动到校验失败的第一个表单项
+    scrollToFirstError
+  }));
 
   const containerRef = useRef<HTMLDivElement | null>(null); // 用来获取容器元素
   const [isWrapped, setIsWrapped] = useState(false); // 用来存储是否换行的状态
@@ -82,6 +121,8 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
         borderRadius: '0.5rem'
       }}
       colon={false}
+      clearOnDestroy
+      onFinish={onFinish}
     >
       <div
         style={{
@@ -92,7 +133,7 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
         }}
         ref={containerRef}
       >
-        {searchOptions.map((item) => {
+        {formItems.map((item) => {
           if (item.hide) return null;
 
           // 输入框
@@ -108,8 +149,8 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
                 <Form.Item
                   label={item.label}
                   name={item.name}
-                  labelCol={{ span: item.labelCol || 8 }}
-                  wrapperCol={{ span: item.wrapperCol || 16 }}
+                  labelCol={{ span: item.labelCol || labelCol || 8 }}
+                  wrapperCol={{ span: item.wrapperCol || wrapperCol || 16 }}
                   rules={[
                     {
                       required: item.required ? item.required : false,
@@ -124,10 +165,12 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
                         ]
                       : [])
                   ]}
+                  initialValue={item.value ? item.value : undefined}
                 >
                   <Input
                     disabled={item.disabled ? item.disabled : false}
                     allowClear={!item.allowClear}
+                    onBlur={(e) => handleBlur(e, item)}
                     placeholder={'请输入' + item.label}
                   />
                 </Form.Item>
@@ -147,20 +190,33 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
                 <Form.Item
                   label={item.label}
                   name={item.name}
-                  labelCol={{ span: item.labelCol || 8 }}
-                  wrapperCol={{ span: item.wrapperCol || 16 }}
+                  labelCol={{ span: item.labelCol || labelCol || 8 }}
+                  wrapperCol={{ span: item.wrapperCol || labelCol || 16 }}
                   rules={[
                     {
                       required: item.required ? item.required : false,
                       message: '请选择' + item.label + '!'
                     }
                   ]}
+                  initialValue={item.value ? item.value : undefined}
                 >
                   <Select
+                    showSearch
+                    filterOption={(input: string, option: DefaultOptionType | undefined) =>
+                      ((option?.label ?? '') as string).toLowerCase().includes(input.toLowerCase())
+                    }
                     mode={item.mode}
                     disabled={item.disabled ? item.disabled : false}
                     allowClear={!item.allowClear}
-                    options={item.options || []}
+                    maxCount={
+                      typeof item.maxCount === 'number' &&
+                      (item.mode === 'multiple' || item.mode === 'tags') &&
+                      item.maxCount >= 0
+                        ? item.maxCount
+                        : undefined
+                    }
+                    options={(item.options || []) as SelectProps['options']}
+                    onChange={(value) => handleChange({ value }, item)}
                     placeholder={'请选择' + item.label}
                   />
                 </Form.Item>
@@ -180,23 +236,26 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
                 <Form.Item
                   label={item.label}
                   name={item.name}
-                  labelCol={{ span: item.labelCol || 8 }}
-                  wrapperCol={{ span: item.wrapperCol || 16 }}
+                  labelCol={{ span: item.labelCol || labelCol || 8 }}
+                  wrapperCol={{ span: item.wrapperCol || wrapperCol || 16 }}
                   rules={[
                     {
                       required: item.required ? item.required : false,
                       message: '请选择' + item.label + '!'
                     }
                   ]}
+                  initialValue={
+                    item.value
+                      ? dayjs(item.value as string, format[item.picker || 'date'])
+                      : undefined
+                  }
                 >
                   <DatePicker
-                    format={{
-                      format: 'YYYYMMDD',
-                      type: 'mask'
-                    }}
-                    style={{ width: '100%' }}
+                    // style={{ width: '100%' }}
                     disabled={item.disabled ? item.disabled : false}
                     allowClear={!item.allowClear}
+                    picker={item.picker ? item.picker : 'date'}
+                    onChange={(_, dateString) => handleChange({ dateString }, item)}
                     placeholder={'请选择' + item.label}
                   />
                 </Form.Item>
@@ -216,19 +275,30 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
                 <Form.Item
                   label={item.label}
                   name={item.name}
-                  labelCol={{ span: item.labelCol || 8 }}
-                  wrapperCol={{ span: item.wrapperCol || 16 }}
+                  labelCol={{ span: item.labelCol || labelCol || 8 }}
+                  wrapperCol={{ span: item.wrapperCol || wrapperCol || 16 }}
                   rules={[
                     {
                       required: item.required ? item.required : false,
                       message: '请选择' + item.label + '!'
                     }
                   ]}
+                  initialValue={
+                    item.value
+                      ? (item.value as string[]).map(
+                          (str) => item && dayjs(str, format[item.picker || 'date'])
+                        )
+                      : undefined
+                  }
                 >
                   <DatePicker.RangePicker
                     disabled={item.disabled ? item.disabled : false}
                     allowClear={!item.allowClear}
-                    placeholder={['开始日期', '结束日期']}
+                    picker={item.picker ? item.picker : 'date'}
+                    onChange={(_, dateStrings) => handleChange({ dateStrings }, item)}
+                    placeholder={
+                      pickerPlaceholder[item.picker ? item.picker : 'date'] as [string, string]
+                    }
                   />
                 </Form.Item>
               </div>
@@ -237,30 +307,43 @@ const SearchForm = ({ searchOptions }: SearchFormProps) => {
           return null;
         })}
 
-        {/* 查询和重置按钮 */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            justifyContent: isWrapped ? 'flex-end' : 'flex-start',
-            marginRight: '1rem'
-          }}
-        >
-          <Button
-            type="primary"
-            htmlType="submit"
-            style={{ marginRight: '16px' }}
-            icon={<SearchOutlined />}
-          >
-            搜索
-          </Button>
-          <Button htmlType="button" onClick={() => message.info('重置')} icon={<ReloadOutlined />}>
-            重置
-          </Button>
-        </div>
+        {showFooter &&
+          // 查询和重置按钮
+          (children ? (
+            children
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: isWrapped ? 'flex-end' : 'flex-start',
+                marginRight: '1rem'
+              }}
+            >
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{ marginRight: '16px' }}
+                icon={<SearchOutlined />}
+              >
+                搜索
+              </Button>
+              <Button
+                htmlType="button"
+                onClick={() => form.resetFields()}
+                icon={<ReloadOutlined />}
+              >
+                重置
+              </Button>
+            </div>
+          ))}
       </div>
     </Form>
   );
-};
+});
 
-export default SearchForm;
+const AdvancedForm = AdvancedFormInner as <TValues extends object>(
+  props: AdvancedFormProps<TValues> & React.RefAttributes<DynamicFormRef<TValues>>
+) => JSX.Element;
+
+export default AdvancedForm;

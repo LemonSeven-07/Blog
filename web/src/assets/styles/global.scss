@@ -211,7 +211,7 @@ body {
   }
 }
 
-.submit-form-container {
+.base-form-container {
   .range-input-form-item {
     display: flex;
 
@@ -220,7 +220,7 @@ body {
     }
   }
 
-  .submit-form-footer-item {
+  .base-form-footer-item {
     .ant-form-item-control {
       max-width: none;
 

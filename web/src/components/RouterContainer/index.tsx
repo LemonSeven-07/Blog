@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, message } from 'antd';
 import locale from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -23,6 +23,17 @@ const RouterContainer = () => {
 
     getRoutes();
   }, [dispatch, phase]);
+
+  useEffect(() => {
+    const msg = sessionStorage.getItem('GLOBAL_MESSAGE');
+
+    if (msg) {
+      // 显示全局提示消息
+      message.error(msg);
+      // 显示后清除消息
+      sessionStorage.removeItem('GLOBAL_MESSAGE');
+    }
+  }, []);
 
   const getRoutes = () => {
     dispatch(fetchAppInit()).then((res) => {

@@ -2,13 +2,13 @@
  * @Author: yolo
  * @Date: 2025-09-15 10:13:20
  * @LastEditors: yolo
- * @LastEditTime: 2025-11-22 16:24:26
+ * @LastEditTime: 2025-12-17 16:21:39
  * @FilePath: /web/src/components/Header/Right.tsx
  * @Description: header 消息通知和 gitHub 地址
  */
 
-import { memo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { memo, useRef, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge, Flex, Segmented, Button, Avatar, Modal, Popover, message, Divider } from 'antd';
 import {
   BellFilled,
@@ -32,6 +32,7 @@ const HeaderRight = () => {
   const { role, userId, username } = useAppSelector((state) => state.userInfo);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark, toggleThemeByNode } = useTheme();
   const capsuleRef = useRef<HTMLDivElement>(null);
   const [openSearchModal, setOpenSearchModal] = useState(false);
@@ -71,6 +72,18 @@ const HeaderRight = () => {
     </div>
   );
 
+  // 点击搜索的文章后关闭对话框
+  useEffect(() => {
+    if (openSearchModal) {
+      setOpenSearchModal(false);
+    }
+  }, [location.key]);
+
+  /**
+   * @description: 点击下拉菜单
+   * @param {*} key 菜单 key
+   * @return {*}
+   */
   const handleMenuClick = async (key: 'profile' | 'favorites' | 'admin' | 'logout') => {
     console.log('点击个人头像选择下拉菜单', key);
     if (key === 'logout') {
@@ -102,6 +115,10 @@ const HeaderRight = () => {
     }
   };
 
+  /**
+   * @description: 切换主题
+   * @return {*}
+   */
   const handleThemeChange = () => {
     toggleThemeByNode(capsuleRef.current);
   };
@@ -150,7 +167,13 @@ const HeaderRight = () => {
         </Popover>
       ) : (
         <>
-          <Button ghost color="primary" variant="outlined" onClick={() => setOpenAuthModal(true)}>
+          <Button
+            ghost
+            color="primary"
+            variant="outlined"
+            onClick={() => setOpenAuthModal(true)}
+            id="auth-button"
+          >
             登录 | 注册
           </Button>
         </>

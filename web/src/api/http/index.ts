@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:21
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-18 10:39:29
- * @FilePath: /Blog/web/src/api/http/index.ts
+ * @LastEditTime: 2025-12-03 13:48:13
+ * @FilePath: /web/src/api/http/index.ts
  * @Description: 对外统一导出方法。axios 封装包含：自动添加 token、更新 token、取消不必要的请求、缓存接口请求、页面 loading
  */
 
@@ -39,6 +39,9 @@ const httpExceptionCode: Record<number, string> = {
   504: '请求超时，请稍后再试(504)',
   505: '请求协议不被支持，请联系管理员(505)'
 };
+
+// 防抖标识
+let isHandling401 = false;
 
 // 请求拦截
 httpInstance.interceptors.request.use(
@@ -90,9 +93,23 @@ httpInstance.interceptors.response.use(
     if ((error as AxiosError).response) {
       const status = (error as AxiosError).response?.status;
       if (status && httpExceptionCode[status]) {
-        if (status === 401) {
+        if (status === 401 && !isHandling401) {
+          // ✅ 防抖处理，避免多个 401 错误同时弹出
+          isHandling401 = true;
+
+          // 清除 token 登录状态
           localStorage.removeItem('token');
-          message.warning(httpExceptionCode[status]);
+
+          // ✅ 触发全局事件，显示消息
+          sessionStorage.setItem('GLOBAL_MESSAGE', httpExceptionCode[status]);
+
+          // ✅ 强制回到首页（SPA 跳转）
+          window.location.replace('/');
+
+          // 标记 401 处理完成
+          setTimeout(() => {
+            isHandling401 = false;
+          }, 3000); // 3秒后重置防抖标志
         } else {
           message.error(httpExceptionCode[status]);
         }

@@ -2,28 +2,30 @@
  * @Author: yolo
  * @Date: 2025-09-18 14:47:02
  * @LastEditors: yolo
- * @LastEditTime: 2025-10-22 11:28:04
+ * @LastEditTime: 2025-12-15 04:22:21
  * @FilePath: /web/src/pages/client/ArticleExplorer/FilterBar.tsx
  * @Description: 文章列表筛选条件（排序 / 标签）。
  */
 
 import { memo, useState, useEffect } from 'react';
 import { Select } from 'antd';
-import { useAppSelector } from '@/store/hooks';
 import api from '@/api';
 
-const FilterBar = (props: { slug: string }) => {
-  const [sort, setSort] = useState<string>('new');
+interface FilterBarProps {
+  categoryId: number;
+  sort: string;
+  tagId: number;
+  handleSort: (type: 'new' | 'hot') => void;
+  handleTagChange: (tagId: number) => void;
+}
+
+const FilterBar = ({ categoryId, sort, tagId, handleSort, handleTagChange }: FilterBarProps) => {
   const [options, setOptions] = useState<{ value: number; label: string }[]>([]);
-  const { categoryRoutes } = useAppSelector((state) => state.navigation);
 
   useEffect(() => {
-    setSort('new');
-
-    if (props.slug) {
-      // 获取分类对应标签
-      const { id } = categoryRoutes.filter((route) => route.name === props.slug)[0];
-      api.tagApi.getTags({ categoryId: id }).then((res) => {
+    console.log('categoryId 改变了', categoryId);
+    if (categoryId) {
+      api.categoryApi.getTagsByCategory({ categoryId }).then((res) => {
         const datas = res.data || [];
         const newOptions: typeof options = [];
         datas.forEach((item) => {
@@ -35,15 +37,7 @@ const FilterBar = (props: { slug: string }) => {
         setOptions([{ value: 0, label: '全部' }, ...newOptions]);
       });
     }
-  }, [props.slug]);
-
-  const handleSort = (type: string) => {
-    setSort(type);
-  };
-
-  const handleTagChange = () => {};
-
-  const handleTagSearch = () => {};
+  }, [categoryId]);
 
   return (
     <header className="list-header">
@@ -61,17 +55,19 @@ const FilterBar = (props: { slug: string }) => {
           热度
         </span>
       </nav>
-      {props.slug && (
+      {categoryId ? (
         <Select
           showSearch
           className="sub-tags"
           classNames={{ popup: { root: 'sub-tags-popup' } }}
-          defaultValue="全部"
+          defaultValue={0}
+          value={tagId}
           optionFilterProp="label"
           onChange={handleTagChange}
-          onSearch={handleTagSearch}
           options={options}
         />
+      ) : (
+        ''
       )}
     </header>
   );

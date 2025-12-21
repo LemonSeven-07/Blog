@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 17:11:07
  * @LastEditors: yolo
- * @LastEditTime: 2025-11-11 01:53:31
+ * @LastEditTime: 2025-12-03 01:24:28
  * @FilePath: /web/src/layout/client/index.tsx
  * @Description: 前台页面布局
  */
@@ -38,9 +38,11 @@ const ClientLayout = () => {
           </nav>
 
           <div className="main-content">
-            <nav className={`sidebar-left ${hidden ? 'sticky' : ''}`}>
-              <CategoryNav direction={'vertical'} />
-            </nav>
+            {categoryRoutes.length > 0 && (
+              <nav className={`sidebar-left ${hidden ? 'sticky' : ''}`}>
+                <CategoryNav direction={'vertical'} />
+              </nav>
+            )}
 
             <div className="entry-list-content">
               <Outlet />

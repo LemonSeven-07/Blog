@@ -7,10 +7,16 @@ const { randomUUID } = require('crypto'); // 生成UUID
 
 const { sequelize } = require('../model/index');
 
-const { transformComments, optimizeGroupAndFilter } = require('../utils/index');
+const {
+  transformComments,
+  optimizeGroupAndFilter,
+  clearCacheFiles,
+  uploadImageToGitHub,
+  deleteGitHubImage,
+  decodeFile,
+} = require('../utils/index');
 
 const {
-  createArticle,
   findArticle,
   findOneArticle,
   updateArticleViewCount,
@@ -19,9 +25,17 @@ const {
   removeArticle,
   updateArticle,
   outputArticle,
-  uploadArticle,
+  createArticle,
   loadMoreArticle,
+  getExistingArticleIds,
+  updateArticleFavoriteCount,
 } = require('../service/article.service');
+
+const {
+  addArticleFavorite,
+  removeArticleFavorite,
+  findFavoritesByArticleId,
+} = require('../service/favorite.service');
 
 const {
   createArticleError,
@@ -31,6 +45,8 @@ const {
   outputArticlesError,
   uploadArticlesError,
   loadMoreError,
+  addFavoriteError,
+  removeFavoriteError,
 } = require('../constant/err.type');
 
 class articleController {
@@ -41,15 +57,19 @@ class articleController {
    */
   async create(ctx) {
     const { userId } = ctx.state.user;
+    const transaction = await sequelize.transaction();
     try {
-      const res = await createArticle({ userId, ...ctx.request.body });
+      const res = await createArticle({ userId, ...ctx.request.body }, transaction);
       if (!res) throw new Error();
+
+      await transaction.commit();
       ctx.body = {
         code: '200',
         data: res,
         message: '文章创建成功',
       };
     } catch (err) {
+      await transaction.rollback();
       ctx.app.emit('error', createArticleError, ctx);
     }
   }
@@ -99,23 +119,23 @@ class articleController {
   async loadMore(ctx) {
     const {
       keyword,
-      tag,
+      tagIds = '',
       categoryId,
       lastId, // 上次请求的最后一条ID
       lastSortValue, // 上次的排序字段值
       limit = 20, // 每页数量
-      sortBy = 'createdAt', // 排序方式
+      sort = 'new', // 排序方式
     } = ctx.query;
 
     try {
       const res = await loadMoreArticle({
         keyword,
-        tag,
+        tagIds,
         categoryId,
         lastId,
         lastSortValue,
         limit,
-        sortBy,
+        sort,
       });
       ctx.body = {
         code: '200',
@@ -134,21 +154,23 @@ class articleController {
    */
   async findById(ctx) {
     const { id } = ctx.params;
-    const { type = 1 } = ctx.query;
+    const { userId } = ctx.query;
     try {
-      const res = await findOneArticle(id);
+      const res = await findOneArticle(id, userId);
       if (!res) throw new Error();
+
       // 更新文章浏览量
-      if (type === 1 && (await !updateArticleViewCount({ id, viewCount: res.viewCount }))) {
+      if (await !updateArticleViewCount({ id, viewCount: res.viewCount })) {
         throw new Error();
       }
 
       // 重新构建评论树结构
-      const comments = transformComments(res.comments);
+      // const comments = transformComments(res.comments);
 
       ctx.body = {
         code: '200',
-        data: { ...res, comments },
+        // data: { ...res, comments },
+        data: res,
         message: '获取文章详情成功',
       };
     } catch (err) {
@@ -376,69 +398,114 @@ class articleController {
       ctx.app.emit('error', outputArticlesError, ctx);
     } finally {
       // 延迟5秒后清理临时目录（确保文件已发送完成）
-      setTimeout(async () => {
-        // 删除目录及其所有内容
-        fs.rm(
-          tempDir,
-          {
-            recursive: true, // 递归删除
-            force: true, // 忽略不存在的路径
-            maxRetries: 3, // 重试次数(针对文件锁定)
-            retryDelay: 100, // 重试间隔(ms)
-          },
-          err => {
-            if (err) console.error('❌ 导出临时目录删除失败:', err);
-          },
-        );
-      }, 5000);
+      clearCacheFiles([tempDir], 5000);
     }
   }
 
   /**
-   * @description: 文章上传（支持单个和批量上传）
+   * @description: 文章导入
    * @param {*} ctx 上下文对象
    * @return {*}
    */
-  async upload(ctx) {
+  async createArticleFromFile(ctx) {
     const { userId } = ctx.state.user;
-    let files = ctx.request.files.files; // 获取上传文件
-    if (!Array.isArray(files)) files = [files];
+    const { file, image } = ctx.request.files;
+    let files = !Array.isArray(file) ? [file] : file;
     const transaction = await sequelize.transaction();
+    let coverImage = '';
     try {
-      for (let i = 0; i < files.length; i++) {
-        let res = await uploadArticle(files[i], userId, transaction);
-        if (!res) throw new Error();
+      if (image) {
+        const { cdnUrl } = await uploadImageToGitHub(
+          fs.readFileSync(image.filepath),
+          image.mimetype,
+          'cover',
+        );
+
+        if (!cdnUrl) throw new Error();
+        coverImage = cdnUrl;
       }
 
-      await transaction.commit();
+      let fileData = await fs.promises.readFile(files[0].filepath, 'utf8');
+      // 从md文件中获取文章主体内容
+      let { content } = decodeFile(fileData);
+      let res = await createArticle(
+        {
+          ...ctx.request.body,
+          tagIds: JSON.parse(ctx.request.body.tagIds),
+          userId,
+          content,
+          coverImage,
+        },
+        transaction,
+      );
 
+      if (!res) throw new Error();
+
+      await transaction.commit();
       ctx.body = {
         code: '200',
         data: null,
-        message: '导入成功',
+        message: '文章导入成功',
       };
     } catch (err) {
+      // 删除已上传的封面图片
+      deleteGitHubImage(coverImage);
       await transaction.rollback();
       ctx.app.emit('error', uploadArticlesError, ctx);
     } finally {
       // 延迟5秒后清理临时目录（确保文件导入完成）
-      setTimeout(() => {
-        files.forEach(file => {
-          // 删除导入临时文件
-          fs.rm(
-            file.filepath,
-            {
-              recursive: true, // 递归删除
-              force: true, // 忽略不存在的路径
-              maxRetries: 3, // 重试次数(针对文件锁定)
-              retryDelay: 100, // 重试间隔(ms)
-            },
-            err => {
-              if (err) console.error('❌ 导入临时目录删除失败:', err);
-            },
-          );
-        });
-      }, 5000);
+      clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
+    }
+  }
+
+  /**
+   * @description: 文章收藏或取消收藏（运行单个或批量操作）
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async toggleArticleFavorite(ctx) {
+    const { articleIds, action } = ctx.request.body;
+    const { userId } = ctx.state.user;
+    const transaction = await sequelize.transaction();
+    try {
+      // 获取已存在的文章id
+      const validArticles = await getExistingArticleIds(articleIds);
+      // 如果批量收藏或批量取消收藏的文章id不存在则抛错
+      if (validArticles.length < articleIds.length) throw new Error();
+
+      // 查询已收藏的文章id
+      const existing = await findFavoritesByArticleId(articleIds, userId);
+      const existingIds = existing.map(item => item.articleId);
+      // 过滤掉已收藏的id
+      const newIds = articleIds.filter(id => !existingIds.includes(id));
+
+      if (action === 'add') {
+        await addArticleFavorite(articleIds, userId, transaction);
+        if (newIds.length) {
+          const res = await updateArticleFavoriteCount(newIds, action, transaction);
+          if (!res) throw new Error();
+        }
+      } else {
+        await removeArticleFavorite(articleIds, userId, transaction);
+        if (existingIds.length) {
+          const res = await updateArticleFavoriteCount(existingIds, action, transaction);
+          if (!res) throw new Error();
+        }
+      }
+
+      await transaction.commit();
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: action === 'add' ? '收藏成功' : '取消收藏成功',
+      };
+    } catch (err) {
+      await transaction.rollback();
+      if (action === 'add') {
+        ctx.app.emit('error', addFavoriteError, ctx);
+      } else {
+        ctx.app.emit('error', removeFavoriteError, ctx);
+      }
     }
   }
 }

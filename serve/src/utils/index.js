@@ -1,4 +1,6 @@
+const fs = require('fs'); // 原生路径处理模块（用于安全拼接路径）
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const { randomUUID } = require('crypto');
 // 导入发送邮件的包文件
 const nodemailer = require('nodemailer');
@@ -249,6 +251,124 @@ class blogPackagingMethod {
       return { transporter, option };
     } catch (e) {
       console.log(e);
+    }
+  }
+
+  /**
+   * @description: 清除上传的临时文件
+   * @param {*} filepaths 需要清除的临时文件路径数组
+   * @param {*} delay 延时清除时间  默认 5s
+   * @return {*}
+   */
+  clearCacheFiles(filepaths, delay = 5000) {
+    setTimeout(() => {
+      filepaths.forEach(filepath => {
+        // 删除导入临时文件
+        fs.rm(
+          filepath,
+          {
+            recursive: true, // 递归删除
+            force: true, // 忽略不存在的路径
+            maxRetries: 3, // 重试次数(针对文件锁定)
+            retryDelay: 100, // 重试间隔(ms)
+          },
+          err => {
+            if (err) console.error('❌ 临时文件清除失败:', err);
+          },
+        );
+      });
+    }, delay);
+  }
+
+  /**
+   * @description: 上传图片到 GitHub
+   * @param {Buffer} buffer 文件二进制
+   * @param {string} mimetype 文件类型，例如 image/png
+   * @return {string} 图片的 jsDelivr CDN 地址
+   */
+  async uploadImageToGitHub(buffer, mimetype, dir = 'cover') {
+    const {
+      GITHUB_OWNER,
+      GITHUB_TOKEN,
+      GITHUB_REPO,
+      GITHUB_USER_DIR,
+      GITHUB_MD_DIR,
+      GITHUB_COVER_DIR,
+    } = process.env;
+    const dirMap = {
+      cover: GITHUB_COVER_DIR,
+      md: GITHUB_MD_DIR,
+      user: GITHUB_USER_DIR,
+    };
+    const ext = mimetype.split('/')[1] || 'png';
+    const fileName = `${randomUUID()}.${ext}`;
+
+    const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${dirMap[dir]}/${fileName}`;
+
+    const base64Content = buffer.toString('base64');
+
+    const response = await axios.put(
+      apiUrl,
+      {
+        message: `upload image ${fileName}`,
+        content: base64Content,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github+json',
+        },
+      },
+    );
+
+    // jsDelivr CDN 地址
+    const cdnUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}@master/${dirMap[dir]}/${fileName}`;
+
+    return {
+      fileName,
+      cdnUrl,
+      githubUrl: response.data.content.html_url,
+    };
+  }
+
+  /**
+   * @description: 删除 GitHub 上的图片
+   * @param {*} url 图片CDN URL
+   * @return {*}
+   */
+  deleteGitHubImage(url) {
+    if (!url) return Promise.resolve();
+    // 正则提取 @branch 后面的路径，不包含开头的 /
+    const regex = /https:\/\/cdn\.jsdelivr\.net\/gh\/[^@]+@[^\/]+\/(.+)/;
+    const match = url.match(regex);
+    if (match) {
+      const filePath = match[1];
+      const { GITHUB_OWNER, GITHUB_TOKEN, GITHUB_REPO } = process.env;
+      const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`;
+
+      return axios
+        .get(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${GITHUB_TOKEN}`,
+            Accept: 'application/vnd.github+json',
+          },
+        })
+        .then(response => {
+          const sha = response.data.sha;
+
+          return axios.delete(apiUrl, {
+            headers: {
+              Authorization: `Bearer ${GITHUB_TOKEN}`,
+              Accept: 'application/vnd.github+json',
+            },
+            data: {
+              message: `delete image ${filePath}`,
+              sha: sha,
+            },
+          });
+        });
+    } else {
+      return Promise.reject(new Error('Invalid GitHub CDN URL'));
     }
   }
 }

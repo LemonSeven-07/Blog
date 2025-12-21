@@ -2,24 +2,38 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:07:21
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-18 16:35:33
- * @FilePath: /Blog/web/src/pages/client/ArticleExplorer/index.tsx
+ * @LastEditTime: 2025-12-15 14:33:09
+ * @FilePath: /web/src/pages/client/ArticleExplorer/index.tsx
  * @Description: 文章分类查询页面
  */
 
-import { memo } from 'react';
+import { useState } from 'react';
+import { useAppSelector } from '@/store/hooks';
 import FilterBar from './FilterBar';
 import PreviewList from './PreviewList';
 
-const Category = (props: { slug: string }) => {
-  console.log('分类查询', props.slug);
+const ArticleExplorer = ({ slug }: { slug: string }) => {
+  console.log('分类查询', slug);
+  const [sort, setSort] = useState<'new' | 'hot'>('new');
+  const [tagId, setTagId] = useState<number>(0);
+  const { categoryRoutes } = useAppSelector((state) => state.navigation);
 
   return (
     <>
-      <FilterBar slug={props.slug} />
-      <PreviewList />
+      <FilterBar
+        categoryId={slug ? categoryRoutes.filter((route) => route.name === slug)[0].id : 0}
+        sort={sort}
+        tagId={tagId}
+        handleSort={(type: 'new' | 'hot') => setSort(type)}
+        handleTagChange={(tagId: number) => setTagId(tagId)}
+      />
+      <PreviewList
+        categoryId={slug ? categoryRoutes.filter((route) => route.name === slug)[0].id : 0}
+        sort={sort}
+        tagId={tagId}
+      />
     </>
   );
 };
 
-export default memo(Category);
+export default ArticleExplorer;

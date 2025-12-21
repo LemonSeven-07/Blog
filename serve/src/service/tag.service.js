@@ -1,41 +1,79 @@
 const { Sequelize } = require('sequelize');
 
-const { tag: Tag } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
+const { tag: Tag, article: Article, category: Category } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
 class TagService {
   /**
-   * @description: 按条件查询标签
-   * @param {*} articleId 文章id
-   * @param {*} categoryId 文章分类id
+   * @description: 查找标签
+   * @param {*} name 标签名
    * @return {*}
    */
-  async findTags({ articleId, categoryId }) {
-    const whereOpt = {};
-    articleId && Object.assign(whereOpt, { articleId });
-    categoryId && Object.assign(whereOpt, { categoryId });
-    // 查询所有标签
+  async getTagByName(name) {
+    const res = await Tag.findOne({
+      where: { name },
+    });
+    return res ? res.dataValues : null;
+  }
+
+  /**
+   * @description: 创建标签
+   * @param {*} name 标签名
+   * @return {*}
+   */
+  async createTag(name) {
+    const res = await Tag.create({ name });
+    return res ? res.dataValues : null;
+  }
+
+  /**
+   * @description: 查询所有标签
+   * @return {*}
+   */
+  async findAllTags() {
     const res = await Tag.findAll({
-      where: whereOpt,
-      // 指定查询的字段
-      attributes: [
-        'name', // 选择 name 标签名字段
-        // sequelize.fn('COUNT', sequelize.col('name')) → 定义聚合函数
-        // 'count' → 指定返回结果的字段别名
-        // sequelize.fn() → 第一个参数 'COUNT' 是 SQL 聚合函数相当于 SQL 中的 COUNT(name)，第二个参数是要计算的列
-        [Sequelize.fn('COUNT', Sequelize.col('name')), 'count'], // 计算每个 name 的出现次数，别名设为 count
-      ],
-      // 按 name 分组（相同的 name 会被合并为一行）
-      group: ['name'],
-      // 按 count 降序排序（重复次数最多的排在最前面）
-      // sequelize.literal() 允许直接插入原始 SQL 片段，不会经过 Sequelize 的转义处理
-      // 这里的 'count' 是 SQL 中的列名（或别名），对应前面查询中通过 COUNT 聚合生成的 count 列
-      order: [[Sequelize.literal('count'), 'DESC']],
-      // 返回纯 JSON 数据（非 Sequelize 模型实例）禁用 Sequelize 实例化，提升性能
-      raw: true,
+      order: [['createdAt', 'DESC']],
     });
 
-    // 返回查询结果
     return res;
+  }
+
+  /**
+   * @description: 通过文章分类获取对应的文章标签列表
+   * @param {*} categoryId 分类ID
+   * @return {*}
+   */
+  async findTagsByCategoryId(categoryId) {
+    // 查出指定分类下的所有标签，每个标签只出现一次，同时统计这个标签关联的文章数量；只统计，不返回文章或中间表字段。
+    const tags = await Tag.findAll({
+      include: [
+        {
+          // 查询每个标签时，把关联的文章也查出来
+          model: Article,
+          as: 'articles',
+          required: true, // 只有关联了文章的标签才会被查询出来
+          attributes: [], // 不查询文章字段
+          through: { attributes: [] }, // 不查询中间表字段
+          include: [
+            {
+              // 查询关联文章的分类表
+              model: Category,
+              as: 'category',
+              required: true, // 只有关联了分类的文章才会被查询出来
+              attributes: [], // 不查询分类字段
+              where: { id: categoryId },
+            },
+          ],
+        },
+      ],
+      group: ['Tag.id'], // 标签去重
+      attributes: [
+        'id',
+        'name',
+        [Sequelize.fn('COUNT', Sequelize.col('articles.id')), 'articleCount'],
+      ], // 只查询标签字段
+    });
+
+    return tags;
   }
 }
 

@@ -8,14 +8,14 @@ const { getArticleInfo } = require('../service/article.service');
  * @param {*} next 下一个中间件
  * @return {*}
  */
-const verifyArticleTitle = async (ctx, next) => {
+const verifyArticle = async (ctx, next) => {
   const { title } = ctx.request.body;
   const { userId } = ctx.state.user;
   const { id } = ctx.request.params;
   try {
     // 检查文章标题是否已存在
     const res = await getArticleInfo({ id, userId, title });
-    if (res) return ctx.app.emit('error', articleAlreadyExists, ctx);
+    if (res && res.dataValues) return ctx.app.emit('error', articleAlreadyExists, ctx);
   } catch (err) {
     return ctx.app.emit('error', createArticleError, ctx);
   }
@@ -24,5 +24,5 @@ const verifyArticleTitle = async (ctx, next) => {
 };
 
 module.exports = {
-  verifyArticleTitle,
+  verifyArticle,
 };

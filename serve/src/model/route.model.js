@@ -48,7 +48,7 @@ const Route = sequelize.define(
 Route.associate = models => {
   // 一对多关系：一个父路由可以有多个子路由
   Route.hasMany(models.route, {
-    foreignKey: 'parent_id',
+    foreignKey: 'parentId',
     as: 'children',
   });
 };

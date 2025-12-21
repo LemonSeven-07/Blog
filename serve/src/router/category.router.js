@@ -5,12 +5,15 @@ const { createCategorySchema } = require('../constant/schema.js');
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 const { joiValidate } = require('../middleware/validator.middleware.js');
 const { verifyName } = require('../middleware/category.middleware.js');
-const { findAll, create } = require('../controller/category.controller');
+const { findAll, create, getTagsByCategory } = require('../controller/category.controller');
 
 const router = new Router({ prefix: '/category' });
 
 // 创建分类
 router.post('/', auth, hadAdminPermission, joiValidate(createCategorySchema), verifyName, create);
+
+// 查询分类下对应的所有文章标签
+router.get('/:id/tags', getTagsByCategory);
 
 // 获取分类列表
 router.get('/list', findAll);

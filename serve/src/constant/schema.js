@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const moment = require('moment');
+const { createTag } = require('../service/tag.service');
 
 module.exports = {
   registerSchema: Joi.object({
@@ -245,30 +246,46 @@ module.exports = {
     }),
   }),
 
-  getTagsSchema: Joi.object({
-    articleId: Joi.number().integer().messages({
-      'number.integer': 'articleId必须是整数',
-    }),
-    categoryId: Joi.number().integer().messages({
-      'number.integer': 'categoryId必须是整数',
+  createTagSchema: Joi.object({
+    name: Joi.string().required().messages({
+      'string.empty': '标签名不能为空',
     }),
   }),
 
   articleMaintenanceSchema: Joi.object({
     categoryId: Joi.number().integer().required().messages({
+      'number.empty': 'categoryId不能为空',
       'number.integer': 'categoryId必须是整数',
-      'string.empty': 'categoryId不能为空',
     }),
+    title: Joi.string()
+      .pattern(/^.{4,50}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '文章标题长度应在4-50个字符之间',
+      }),
+    summary: Joi.string()
+      .pattern(/^.{16,150}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '文章摘要长度应在16-150个字符之间',
+      }),
+    tagIds: Joi.array()
+      .items(
+        Joi.number().integer().messages({
+          'number.base': '每一项必须是数字',
+          'number.integer': '每一项必须是整数',
+        }),
+      )
+      .min(1)
+      .required()
+      .messages({
+        'array.base': 'tagIds必须是数组',
+        'array.min': 'tagIds至少包含一个元素',
+        'any.required': 'tagIds不能为空',
+      }),
+
     content: Joi.string().required().messages({
       'string.empty': '文章内容不能为空',
-    }),
-    tagList: Joi.array().items(Joi.string()).required().messages({
-      'array.base': 'tagList必须是一个数组',
-    }),
-    title: Joi.string().min(1).max(50).required().messages({
-      'string.empty': '文章标题不能为空',
-      'string.min': '文章标题长度不能小于1',
-      'string.max': '文章标题长度不能大于50',
     }),
   }),
   getPaginationArticlesSchema: Joi.object({
@@ -295,15 +312,15 @@ module.exports = {
     keyword: Joi.string().allow('').messages({
       'string.empty': 'keyword不能为空',
     }),
-    tag: Joi.string().allow('').messages({
-      'string.empty': 'tag不能为空',
-    }),
+    tagIds: Joi.string()
+      .allow('')
+      .pattern(/^(\d+)(,\d+)*$/) // 数字和逗号组合
+      .optional(),
     categoryId: Joi.number().integer().messages({
       'number.integer': 'categoryId必须是整数',
     }),
-    sortBy: Joi.string().valid('createdAt', 'viewCount').required().messages({
-      'string.empty': 'sortBy不能为空',
-      'any.only': 'sortBy必须是createdAt或viewCount',
+    sort: Joi.string().valid('new', 'hot').messages({
+      'any.only': 'sort必须是new或hot',
     }),
     lastId: Joi.number().integer().messages({
       'number.empty': 'lastId不能为空',
@@ -329,10 +346,61 @@ module.exports = {
         'number.integer': 'ids数组元素必须是整数',
       }),
   }),
+  importArticleSchema: Joi.object({
+    categoryId: Joi.number().integer().required().messages({
+      'number.empty': 'categoryId不能为空',
+      'number.integer': 'categoryId必须是整数',
+    }),
+    title: Joi.string()
+      .pattern(/^.{4,50}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '文章标题长度应在4-50个字符之间',
+      }),
+    summary: Joi.string()
+      .pattern(/^.{16,150}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '文章摘要长度应在16-150个字符之间',
+      }),
+    tagIds: Joi.array()
+      .items(
+        Joi.number().integer().messages({
+          'number.base': '每一项必须是数字',
+          'number.integer': '每一项必须是整数',
+        }),
+      )
+      .min(1)
+      .required()
+      .messages({
+        'array.base': 'tagIds必须是数组',
+        'array.min': 'tagIds至少包含一个元素',
+        'any.required': 'tagIds不能为空',
+      }),
+  }),
   outputArticlesSchema: Joi.object({
     ids: Joi.string()
       .pattern(/^\d+(,\d+)*$/) // 数字和逗号组合
-      .message('必须是逗号分隔的数字字符串'),
+      .message('ids必须是逗号分隔的数字字符串'),
+  }),
+  toggleArticleFavoriteSchema: Joi.object({
+    articleIds: Joi.array()
+      .items(
+        Joi.number().integer().messages({
+          'number.base': 'articleIds每一项必须是数字',
+          'number.integer': 'articleIds每一项必须是整数',
+        }),
+      )
+      .min(1)
+      .required()
+      .messages({
+        'array.base': 'articleIds必须是数组',
+        'array.min': 'articleIds至少包含一个元素',
+        'any.required': 'articleIds不能为空',
+      }),
+    action: Joi.string().valid('add', 'remove').messages({
+      'any.only': 'action必须是add或remove',
+    }),
   }),
 
   wsCommentSchema: Joi.object({
@@ -341,10 +409,10 @@ module.exports = {
       'number.integer': 'authorId必须是整数',
     }),
     content: Joi.string().required().messages({
-      'string.empty': '评论内容不能为空',
+      'string.empty': 'content不能为空',
     }),
     entityId: Joi.number().integer().required().messages({
-      'number.empty': '文章id不能为空',
+      'number.empty': 'entityId不能为空',
       'number.integer': 'entityId必须是整数',
     }),
   }),

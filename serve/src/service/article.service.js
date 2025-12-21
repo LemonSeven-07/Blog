@@ -1,8 +1,4 @@
-const fs = require('fs'); // 原生路径处理模块（用于安全拼接路径）
-const path = require('path'); // 原生路径处理模块（用于安全拼接路径）
-const { Op } = require('sequelize');
-
-const { decodeFile } = require('../utils/index');
+const { Sequelize, Op } = require('sequelize');
 
 const {
   article: Article,
@@ -10,7 +6,10 @@ const {
   category: Category,
   comment: Comment,
   user: User,
+  favorite: Favorite,
 } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
+
+const { deleteGitHubImage } = require('../utils/index');
 
 class ArticleService {
   /**
@@ -30,28 +29,6 @@ class ArticleService {
       attributes: ['id', 'title'],
       where: whereOpt,
     });
-    return res ? res.dataValues : null;
-  }
-
-  /**
-   * @description: 创建文章（向articles表中插入一条数据）
-   * @param {*} userId 当前用户id
-   * @param {*} title 文章标题
-   * @param {*} content 文章内容
-   * @param {*} categoryId 文章分类id
-   * @param {*} tagList 标签名 数组
-   * @return {*}
-   */
-  async createArticle({ userId, title, content, categoryId, tagList }) {
-    const tags = tagList.map(t => ({ name: t, categoryId }));
-    const res = await Article.create(
-      { userId, categoryId, title, content, tags },
-      {
-        // 关联创建文章标签
-        include: [Tag],
-      },
-    );
-
     return res ? res.dataValues : null;
   }
 
@@ -119,80 +96,106 @@ class ArticleService {
   /**
    * @description: 滚动查询文章列表
    * @param {*} keyword 查询关键字
-   * @param {*} tag 标签名
+   * @param {*} tagIds 标签id字符串
    * @param {*} categoryId 分类id
    * @param {*} lastId 上次查询的最后一条数据的id
    * @param {*} lastSortValue 如果是按发布时间查询，lastSortValue为上次查询最后一条数据的发布时间；如果是按浏览量则是最后一条数据的浏览量
    * @param {*} limit 每次滚动查询数量
-   * @param {*} sortBy 排序方式 默认根据发布时间降序
+   * @param {*} sort 排序方式 默认根据发布时间降序
    * @return {*}
    */
-  async loadMoreArticle({ keyword, tag, categoryId, lastId, lastSortValue, limit, sortBy }) {
+  async loadMoreArticle({ keyword, tagIds, categoryId, lastId, lastSortValue, limit, sort }) {
     // 1. 定义排序规则映射表
     const orderMap = {
-      createdAt: [
+      new: [
         ['createdAt', 'DESC'],
         ['id', 'DESC'],
       ], // 第一排序规则：按发布时间降序. 第二排序规则：按ID降序
-      viewCount: [
+      hot: [
         ['viewCount', 'DESC'],
         ['id', 'DESC'],
       ], // 第一排序规则：按文章浏览量降序. 第二排序规则：按ID降序
     };
-    // 根据sortBy参数选择排序规则，默认用createdAt
-    const order = orderMap[sortBy];
+    // 根据sort参数选择排序规则，默认用createdAt
+    const order = orderMap[sort];
 
     // 2. 构建查询条件对象
-    const whereOpt = {
-      [Op.or]: {
-        title: {
-          [Op.like]: `%${keyword || ''}%`,
+    const andConditions = [];
+    if (keyword) {
+      // 关键字条件（OR）
+      andConditions.push({
+        [Op.or]: {
+          title: {
+            [Op.like]: `%${keyword}%`,
+          },
+          content: {
+            [Op.like]: `%${keyword}%`,
+          },
         },
-        content: {
-          [Op.like]: `%${keyword || ''}%`,
-        },
-      },
-    };
-    categoryId && Object.assign(whereOpt, { categoryId });
+      });
+    }
+    // 分类条件
+    if (categoryId) andConditions.push({ categoryId });
     // 如果有游标值（不是第一页请求）
     if (lastId && lastSortValue) {
       // 确定当前排序字段（createdAt或viewCount）
-      const sortField = sortBy === 'createdAt' ? 'createdAt' : 'viewCount';
-      const sortValue = sortBy === 'createdAt' ? lastSortValue : parseInt(lastSortValue);
+      const sortField = sort === 'new' ? 'createdAt' : 'viewCount';
+      const sortValue = sort === 'new' ? lastSortValue : parseInt(lastSortValue);
 
-      whereOpt[Op.or] = [
-        // 条件1：排序字段值更小的记录
-        { [sortField]: { [Op.lt]: sortValue } },
-
-        // 条件2：排序字段值相同但ID更小的记录
-        {
-          [Op.and]: [{ [sortField]: sortValue }, { id: { [Op.lt]: lastId } }],
-        },
-      ];
+      andConditions.push({
+        [Op.or]: [
+          // 条件1：排序字段值更小的记录
+          { [sortField]: { [Op.lt]: sortValue } },
+          // 条件2：排序字段值相同但ID更小的记录
+          {
+            [Op.and]: [{ [sortField]: sortValue }, { id: { [Op.lt]: lastId } }],
+          },
+        ],
+      });
+    }
+    // 标签条件（存在多个标签id时，查询包含其中任意一个标签的文章）
+    if (tagIds) {
+      andConditions.push({
+        [Op.and]: Sequelize.literal(`
+          EXISTS (
+            SELECT 1
+            FROM article_tags at
+            WHERE at.article_id = Article.id
+              AND at.tag_id IN (${tagIds
+                .split(',')
+                .map(id => Number(id))
+                .join(',')})
+          )
+        `),
+      });
     }
 
     // 3. 执行数据库查询
     const res = await Article.findAll({
-      where: whereOpt, // 上文构建的查询条件
+      where: { [Op.and]: andConditions }, // 上文构建的查询条件
       limit: parseInt(limit), // 转换为数字类型
       attributes: {
-        exclude: ['updatedAt'], // 不返回更新时间戳字段
+        exclude: ['updatedAt', 'content'], // 不返回更新时间戳字段
       },
       order, // 排序规则
       include: [
         {
           model: Tag, // 关联 Tag 模型
           as: 'tags',
-          attributes: ['id', 'name'], // 只返回 name 字段
-          where: tag ? { name: tag } : {}, // 如果有传入 tag，则进行过滤
-          required: !!tag, // 有 tag 就 inner join，否则 left join
+          attributes: ['id', 'name'], // 只返回 id name 字段
+          through: { attributes: [] }, // 不返回中间表字段
         },
         {
           model: Category, // 关联 Tag 模型
-          attributes: ['id', 'name'], // 只返回 name 字段
           as: 'category',
-          where: categoryId ? { id: categoryId } : {}, // 如果有传入 tag，则进行过滤
-          required: !!tag, // 有 tag 就 inner join，否则 left join
+          attributes: ['id', 'name'], // 只返回 id name 字段
+          where: categoryId ? { id: categoryId } : {}, // 如果有传入 categoryId，则进行过滤
+          required: !!categoryId, // 有 categoryId 就 inner join，否则 left join
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username'], // 只返回用户名和ID
         },
       ],
     });
@@ -207,7 +210,7 @@ class ArticleService {
           lastId: lastRecord.id, // 记录最后一条的ID
           // 根据当前排序方式返回对应的字段值
           lastSortValue:
-            sortBy === 'createdAt'
+            sort === 'new'
               ? lastRecord.createdAt // 时间字符串
               : lastRecord.viewCount, // 直接返回浏览量
         }
@@ -223,83 +226,48 @@ class ArticleService {
   /**
    * @description: 查询文章详情
    * @param {*} id 文章id
+   * @param {*} userId 用户id
    * @return {*}
    */
-  async findOneArticle(id) {
+  async findOneArticle(id, userId) {
     const res = await Article.findOne({
       where: {
         id,
       },
       attributes: {
-        exclude: ['updatedAt'], // 不返回更新时间戳字段
+        exclude: ['summary', 'coverImage', 'updatedAt'], // 不返回更新时间戳字段
       },
       include: [
         {
           model: Tag, // 关联 Tag 模型
-          attributes: ['name'], // 只返回 name 字段
+          as: 'tags',
+          attributes: ['id', 'name'], // 只返回 id name 字段
+          through: { attributes: [] }, // 不返回中间表字段
         },
         {
           model: Category, // 关联 Category 模型
           as: 'category',
-          attributes: ['id', 'name'], // 只返回 name 字段
+          attributes: ['id', 'name'], // 只返回 id name 字段
         },
         {
-          model: Comment, // 关联 Comment 模型
-          as: 'comments', // 使用在 Article 模型中定义的关联别名
-          attributes: [
-            'id',
-            'authorId',
-            'articleId',
-            'content',
-            'userId',
-            'createdAt',
-            'deletedAt',
-          ], // 只返回必要字段
-          separate: true, // 单独查询嵌套数据并排序
-          paranoid: false,
-          where: {
-            entityId: id,
-            entityType: 'post', // 确保是一级评论
-          },
-          include: [
-            {
-              model: Comment, // 自关联，获取回复评论
-              as: 'replies', // 使用在 Comment 模型中定义的关联别名
-              attributes: [
-                'id',
-                'authorId',
-                'articleId',
-                'content',
-                'userId',
-                'entityId',
-                'createdAt',
-                'deletedAt',
-              ],
-              separate: true, // 单独查询嵌套数据并排序
-              paranoid: false,
-              include: [
-                {
-                  model: User, // 回复评论的作者信息
-                  as: 'author',
-                  attributes: ['id', 'username'],
-                },
-                {
-                  model: User, // 回复评论的目标用户信息
-                  as: 'replyToUser',
-                  attributes: ['id', 'username'],
-                },
-              ],
-              order: [['createdAt', 'ASC']], // 回复按创建时间升序排列(从早到晚)
-            },
-            {
-              model: User, // 评论作者信息
-              as: 'author',
-              attributes: ['id', 'username'],
-            },
-          ],
-          order: [['createdAt', 'DESC']], // 一级评论按创建时间升序排列(从早到晚)
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'avatar'], // 只返回用户名和ID
         },
-      ],
+      ].concat(
+        // 未登录无需关联查询文章收藏信息
+        userId
+          ? [
+              {
+                model: Favorite,
+                as: 'favorites',
+                where: { userId }, // 只查当前用户的收藏记录
+                required: false, // left join，防止没有收藏也能返回文章 即使用户未收藏，也返回文章信息
+                attributes: ['id'], // 只返回收藏id
+              },
+            ]
+          : [],
+      ),
     });
 
     if (res) {
@@ -393,32 +361,68 @@ class ArticleService {
   /**
    * @description: 更新文章表数据
    * @param {*} id 文章id
+   * @param {*} userId 文章作者id
    * @param {*} categoryId 分类id
+   * @param {*} title 文章标题
+   * @param {*} summary 文章摘要
    * @param {*} content 文章内容
    * @param {*} tagList 标签名数组
-   * @param {*} title 文章标题
+   * @param {*} coverImage 文章封面
    * @param {*} transaction sequelize 事务对象
    * @return {*}
    */
-  async updateArticle({ id, categoryId, content, tagList, title }, transaction) {
-    const tags = tagList.map(t => ({ name: t, articleId: id, categoryId }));
-    const res = await Article.update(
-      { title, content, categoryId },
-      {
-        where: { id },
-        lock: true, // 锁定表，防止其他事务修改
-        transaction,
-      },
-    );
+  async updateArticle(
+    { id, userId, categoryId, title, summary, content, tagIds, coverImage },
+    transaction,
+  ) {
+    // 1️⃣ 查询旧的文章实例获取旧的封面图片地址
+    const article = await Article.findByPk(id, { transaction });
 
-    // 删除原文章标签名
-    await Tag.destroy({ where: { articleId: id }, transaction });
-    // 批量创建当前文章的标签名
-    tags.length &&
-      (await Tag.bulkCreate(tags, {
-        lock: true, // 锁定表，防止其他事务修改
-        transaction,
-      }));
+    // 2️⃣ 构造更新数据对象
+    const newArticle = {};
+    userId && Object.assign(newArticle, { userId });
+    categoryId && Object.assign(newArticle, { categoryId });
+    title && Object.assign(newArticle, { title });
+    summary && Object.assign(newArticle, { summary });
+    content && Object.assign(newArticle, { content });
+    coverImage && Object.assign(newArticle, { coverImage });
+
+    // 3️⃣ 更新文章基本信息
+    const res = await Article.update(newArticle, {
+      where: { id },
+      lock: true, // 锁定表，防止其他事务修改
+      transaction,
+    });
+
+    if (res[0] > 0) {
+      // 4️⃣ 删除 GitHub 上旧的封面图片
+      if (article && article.dataValues && article.dataValues.coverImage)
+        deleteGitHubImage(article.dataValues.coverImage);
+
+      // 5️⃣ 替换标签（自动插入 article_tags）
+      await article.setTags(tagIds || [], { lock: true, transaction });
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * @description: 批量更新 favoriteCount
+   * @param {*} articleIds 文章 id 数组
+   * @param {*} action 操作类型  add 收藏文章  remove 取消文章收藏
+   * @param {*} transaction sequelize 事务对象
+   * @return {*}
+   */
+  async updateArticleFavoriteCount(articleIds, action, transaction) {
+    const res = await Article.update(
+      {
+        favoriteCount: Sequelize.literal(
+          action === 'add' ? 'favorite_count + 1' : 'favorite_count - 1',
+        ),
+      },
+      { where: { id: articleIds }, transaction },
+    );
 
     return res[0] > 0 ? true : false;
   }
@@ -465,83 +469,75 @@ class ArticleService {
   }
 
   /**
-   * @description: 文章导入（根据导入文件名来判断是否是更新还是创建文章）
-   * @param {*} file 文件对象
+   * @description: 创建文章（向articles表中插入一条数据）
    * @param {*} userId 当前用户id
+   * @param {*} summary 文章摘要
+   * @param {*} title 文章标题
+   * @param {*} content 文章内容
+   * @param {*} categoryId 文章分类id
+   * @param {*} tagIds 标签名 数组
    * @param {*} transaction sequelize 事务对象
    * @return {*}
    */
-  uploadArticle = async (file, userId, transaction) => {
-    let fileData = await fs.promises.readFile(file.filepath, 'utf8');
-    // 从md文件中分离出分类、标签、日期、文章主体内容
-    let { category, tags = [], content } = decodeFile(fileData);
-    // 通过分类查找分类id
-    const categoryData = await Category.findOne({
-      where: {
-        name: category[0],
-      },
-      lock: true, // 锁定表，防止其他事务修改
-      transaction,
-    });
-    let createData = {
-      userId,
-      categoryId: 99, // 分类默认其他
-      title: path
-        .parse(file.originalFilename)
-        .name.replace(/[\/\\:*?"<>|]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim(),
-      content,
-    };
-
-    if (categoryData) createData.categoryId = categoryData.dataValues.id;
-
-    if (tags.length) {
-      let arr = [];
-      tags[0].split('、').forEach(tag => {
-        if (tag && tag !== '无') {
-          arr.push({ name: tag, categoryId: createData.categoryId });
-        }
-      });
-      if (arr.length) createData.tags = arr;
-    }
-
+  createArticle = async (
+    { userId, title, summary, categoryId, tagIds, content, coverImage },
+    transaction,
+  ) => {
     // 通过文章标题查找是否已存在该文章，如果有就更新表数据，没有就创建表数据
-    const articleData = await this.getArticleInfo(
-      { userId, title: createData.title },
-      {
-        lock: true, // 锁定表，防止其他事务修改
-        transaction,
-      },
-    );
+    const articleData = await this.getArticleInfo({ userId, title });
 
     if (articleData) {
       // 更新表数据
-      let tagList = [];
-      if (tags.length) {
-        tagList = tags[0].split('、').filter(tag => tag && tag !== '无');
-      }
       return await this.updateArticle(
         {
           id: articleData.id,
-          categoryId: createData.categoryId,
+          userId,
+          categoryId,
+          title,
+          summary,
           content,
-          tagList,
-          title: createData.title,
+          tagIds,
+          coverImage,
         },
         transaction,
       );
     } else {
+      const createData = {
+        userId,
+        categoryId,
+        title,
+        summary,
+        content,
+        coverImage,
+      };
+
       // 创建表数据
       const res = await Article.create(createData, {
-        include: [Tag],
-        lock: true, // 锁定表，防止其他事务修改
         transaction,
       });
+
+      // 设置标签（自动插入 article_tags）
+      await res.setTags(tagIds || [], { transaction });
 
       return res ? res.dataValues : null;
     }
   };
+
+  /**
+   * @description: 获取存在的文章
+   * @param {*} articleIds 文章id数组
+   * @return {*}
+   */
+  async getExistingArticleIds(articleIds) {
+    const validArticles = await Article.findAll({
+      where: {
+        id: articleIds,
+      },
+      attributes: ['id'],
+    });
+
+    return validArticles;
+  }
 }
 
 module.exports = new ArticleService();

@@ -16,7 +16,7 @@ const {
   createUser,
   getUserInfo,
   removeUser,
-  updateUer,
+  updateUser,
   findUsers,
 } = require('../service/user.service.js');
 
@@ -84,7 +84,7 @@ class UserController {
   async resetPassword(ctx) {
     const { email, password } = ctx.request.body;
     try {
-      const res = await updateUer({ email, password }, null);
+      const res = await updateUser({ email, password }, null);
       if (!res) throw new Error();
       // 重置成功，删除该邮箱的验证码，避免影响下次重置
       await redisClient.del(`verify:email:reset:${email}`);
@@ -231,7 +231,7 @@ class UserController {
   async update(ctx) {
     const { userId } = ctx.request.params;
     try {
-      const res = await updateUer(ctx.request.body, userId);
+      const res = await updateUser(ctx.request.body, userId);
       if (!res) throw new Error();
 
       ctx.body = {

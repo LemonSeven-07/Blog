@@ -6,6 +6,7 @@ $themes: (
   light: (
     --yolo-bg: #f2f3f5,
     --yolo-card-bg: #fff,
+    --yolo-card-bg-hover: #f7f8f9,
     --yolo-text: #000,
     --yolo-header-shadow: 0 2px 8px #f0f1f2,
     --yolo-header-btn-text: rgb(85 85 85 / 60%),
@@ -62,11 +63,14 @@ $themes: (
     --yolo-comment-input-border: #d9d9d9,
     --yolo-comment-input-shadow: rgb(5 145 255 / 10%),
     --yolo-comment-input-tip: #aaa,
-    --yolo-skeleton-bg: #f2f2f2
+    --yolo-skeleton-bg: #f2f2f2,
+    --yolo-article-suspended-color: #8a919f,
+    --yolo-article-suspended-box-shadow: 0 6px 12px rgb(0 0 0 / 15%)
   ),
   dark: (
     --yolo-bg: #232931,
     --yolo-card-bg: #354149,
+    --yolo-card-bg-hover: #3f4a52,
     --yolo-text: #e0e0e0,
     --yolo-header-shadow: string.unquote(
         '0 1px 3px rgb(0 0 0 / 30%),' + '0 2px 6px rgb(0 0 0 / 20%)'
@@ -127,7 +131,11 @@ $themes: (
     --yolo-comment-input-border: #666,
     --yolo-comment-input-shadow: rgb(64 150 255 / 50%),
     --yolo-comment-input-tip: #666,
-    --yolo-skeleton-bg: #3a3a3a
+    --yolo-skeleton-bg: #3a3a3a,
+    --yolo-article-suspended-color: #e0e0e0,
+    --yolo-article-suspended-box-shadow: string.unquote(
+        '0 6px 16px rgb(0, 0, 0, 0.45),' + '0 0 0 1px rgb(255, 255, 255, 0.04)'
+      )
   )
 );
 $curTheme: light;

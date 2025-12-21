@@ -73,7 +73,7 @@ const FloatingBlock = () => {
     <div ref={constraintsRef} className="floating-box">
       <motion.div
         className="floating-buttons"
-        initial={{ bottom: '14rem', right: '3.75rem' }}
+        initial={{ bottom: '23rem', right: '3.75rem' }}
         drag
         dragConstraints={constraintsRef}
         dragElastic={0.1}

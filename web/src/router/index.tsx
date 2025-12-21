@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { Skeleton } from 'antd';
 import ErrorPage from '@/components/ErrorPage';
 import type { ComponentMap, RouteItem } from '@/types/app/common';
@@ -33,7 +33,8 @@ const RequireAuth = ({ children }: { children: JSX.Element }) => {
 // 组件映射表
 const componentMap: ComponentMap = {
   // 假设这是你的组件
-  ArticleExplorer: (name: string) => withLoadingComponent(<ArticleExplorer slug={name} />),
+  ArticleExplorer: (name: string) =>
+    withLoadingComponent(<ArticleExplorer slug={name} key={name} />),
   Notify: withLoadingComponent(<Notify />),
   LifeNotes: withLoadingComponent(<LifeNotes />),
   Dashboard: withLoadingComponent(<Dashboard />),
@@ -113,3 +114,5 @@ export const transformRoutes = (AllRoutes: RouteItem[]) => {
 
   return routes;
 };
+
+export const router = createBrowserRouter(routes);

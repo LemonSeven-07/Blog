@@ -2,11 +2,11 @@
  * @Author: yolo
  * @Date: 2025-09-28 15:18:54
  * @LastEditors: yolo
- * @LastEditTime: 2025-11-28 01:09:44
+ * @LastEditTime: 2025-12-17 02:47:38
  * @FilePath: /web/src/utils/index.ts
  * @Description: 封装公共工具类
  */
-class Utils {
+export class Utils {
   /**
    * @description: 防抖
    * @param {T} func 需要被延迟执行的函数
@@ -35,5 +35,3 @@ class Utils {
     };
   }
 }
-
-export default Utils;

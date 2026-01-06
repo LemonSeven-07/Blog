@@ -5,5 +5,6 @@ export interface UserState {
   role: number; // 用户权限
   email: string; // 用户邮箱
   banned: boolean; // 用户是否被禁言
+  createdAt: string; // 用户注册时间
   phase: 'initializing' | 'guest' | 'authenticated'; // 标识当前身份阶段和驱动初始化逻辑
 }

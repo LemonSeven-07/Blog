@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { ConfigProvider, message } from 'antd';
+import { ConfigProvider, Spin, message } from 'antd';
 import locale from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -14,6 +14,7 @@ dayjs.locale('zh-cn');
 const RouterContainer = () => {
   const [router, setRouter] = useState(createBrowserRouter(routes));
   const { phase } = useAppSelector((state) => state.userInfo);
+  const { globalLoading } = useAppSelector((state) => state.loading);
   const [loading, setLoading] = useState(true);
   const dispatch = useAppDispatch();
 
@@ -47,7 +48,10 @@ const RouterContainer = () => {
   return (
     <ConfigProvider locale={locale}>
       <FloatingBlock />
-      <RouterProvider router={router} />
+
+      <Spin spinning={globalLoading}>
+        <RouterProvider router={router} />
+      </Spin>
     </ConfigProvider>
   );
 };

@@ -59,7 +59,7 @@ const auth = async (ctx, next) => {
         const refreshToken = ctx.cookies.get('refresh_token');
         try {
           // 1.1. 校验 refreshToken 是否有效
-          const { userId, username, role, banned, jti, seesionId } = jwt.verify(
+          const { userId, username, email, avatar, role, banned, jti, seesionId } = jwt.verify(
             refreshToken,
             JWT_SECRET,
           );
@@ -75,6 +75,8 @@ const auth = async (ctx, next) => {
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await issueTokens({
             userId,
             username,
+            email,
+            avatar,
             role,
             banned,
             seesionId,
@@ -101,10 +103,12 @@ const auth = async (ctx, next) => {
           };
           return await next();
         } catch (refreshErr) {
-          if (ctx.path !== '/app/init') return ctx.app.emit('error', tokenInvalidError, ctx);
+          if (ctx.path !== '/app/init' && ctx.path !== '/article/list')
+            return ctx.app.emit('error', tokenInvalidError, ctx);
         }
       default:
-        if (ctx.path !== '/app/init') return ctx.app.emit('error', tokenInvalidError, ctx);
+        if (ctx.path !== '/app/init' && ctx.path !== '/article/list')
+          return ctx.app.emit('error', tokenInvalidError, ctx);
     }
   }
   await next();

@@ -556,6 +556,7 @@
   }
 
   .article-catalogs-btn,
+  .article-come-back-btn,
   .article-comment-btn,
   .article-favorite-btn {
     position: fixed;
@@ -583,11 +584,15 @@
   }
 
   .article-catalogs-btn {
-    bottom: 14rem;
+    bottom: 16rem;
+  }
+
+  .article-come-back-btn {
+    bottom: 12rem;
   }
 
   .article-favorite-btn {
-    bottom: 10rem;
+    bottom: 8rem;
 
     &.collected .ant-btn::before {
       color: #fa8c16;
@@ -595,6 +600,6 @@
   }
 
   .article-comment-btn {
-    bottom: 6rem;
+    bottom: 4rem;
   }
 }

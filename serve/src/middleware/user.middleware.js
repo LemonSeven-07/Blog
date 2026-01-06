@@ -21,14 +21,16 @@ const {
  */
 const verifyUser = async (ctx, next) => {
   const { username } = ctx.request.body;
-  try {
-    const res = await getUserInfo({ username, paranoid: false });
-    if (res) {
-      // 用户名已存在
-      return ctx.app.emit('error', userAlreadyExists, ctx);
+  if (username) {
+    try {
+      const res = await getUserInfo({ username, paranoid: false });
+      if (res) {
+        // 用户名已存在
+        return ctx.app.emit('error', userAlreadyExists, ctx);
+      }
+    } catch (err) {
+      return ctx.app.emit('error', userRegisterError, ctx);
     }
-  } catch (err) {
-    return ctx.app.emit('error', userRegisterError, ctx);
   }
 
   await next();
@@ -41,16 +43,21 @@ const verifyUser = async (ctx, next) => {
  * @return {*}
  */
 const verifyEmail = async (ctx, next) => {
-  const { email, type } = ctx.request.body;
+  const { email, type = 'update' } = ctx.request.body;
   try {
     const res = await getUserInfo({ email, paranoid: false });
 
     // 账号注册校验邮箱是否存在
     if ((ctx.path.includes('/register') || type === 'register') && res)
       return ctx.app.emit('error', emailAlreadyExists, ctx);
+
     // 重置密码校验邮箱是否不存在
     if ((ctx.path.includes('/reset') || type === 'reset') && !res)
       return ctx.app.emit('error', emailNotRegistered, ctx);
+
+    // 更换绑定邮箱校验新邮箱是否存在
+    if ((ctx.path.includes('/user/email') || type === 'update') && res)
+      return ctx.app.emit('error', emailAlreadyExists, ctx);
   } catch (err) {
     return ctx.app.emit('error', userRegisterError, ctx);
   }
@@ -69,6 +76,7 @@ const verifyEmailCode = async (ctx, next) => {
   let type = '';
   if (ctx.path.includes('/register')) type = 'register';
   if (ctx.path.includes('/reset')) type = 'reset';
+  if (ctx.path.includes('/user/email')) type = 'update';
 
   const savedCode = await redisClient.get(`verify:email:${type}:${email}`);
   if (!savedCode || savedCode !== code) {

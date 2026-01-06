@@ -81,32 +81,40 @@ class articleController {
    */
   async findAll(ctx) {
     const {
-      categoryId,
       keyword,
-      tag,
-      order,
-      behavior = 'scroll',
+      categoryId,
+      tagId,
+      publishTimeRange,
+      author,
+      sort = 'new',
       pageNum = 1,
       pageSize = 10,
     } = ctx.query;
-    const { userId } = ctx.state.user;
+
     try {
-      const res = await findArticle({
+      const params = {
         categoryId,
         keyword,
-        tag,
-        userId,
-        order,
+        tagId,
+        publishTimeRange,
         pageNum,
         pageSize,
-        behavior,
-      });
+        sort,
+      };
+      if (ctx.state.user && ctx.state.user.role === 1) {
+        params.username = author;
+      } else if (ctx.state.user && ctx.state.user.role === 2) {
+        params.userId = ctx.state.user.userId;
+      }
+      const res = await findArticle(params);
+
       ctx.body = {
         code: '200',
         data: res,
         message: '获取文章列表成功',
       };
     } catch (err) {
+      console.log(117, err);
       ctx.app.emit('error', findArticleError, ctx);
     }
   }
@@ -119,7 +127,7 @@ class articleController {
   async loadMore(ctx) {
     const {
       keyword,
-      tagIds = '',
+      tagId = '',
       categoryId,
       lastId, // 上次请求的最后一条ID
       lastSortValue, // 上次的排序字段值
@@ -130,7 +138,7 @@ class articleController {
     try {
       const res = await loadMoreArticle({
         keyword,
-        tagIds,
+        tagId,
         categoryId,
         lastId,
         lastSortValue,

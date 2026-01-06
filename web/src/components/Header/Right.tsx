@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-15 10:13:20
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-17 16:21:39
+ * @LastEditTime: 2026-01-07 02:25:53
  * @FilePath: /web/src/components/Header/Right.tsx
  * @Description: header 消息通知和 gitHub 地址
  */
@@ -29,7 +29,7 @@ import api from '@/api';
 
 const HeaderRight = () => {
   console.log('HeaderRight渲染');
-  const { role, userId, username } = useAppSelector((state) => state.userInfo);
+  const { role, userId, username, avatar } = useAppSelector((state) => state.userInfo);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,6 +44,7 @@ const HeaderRight = () => {
       <div className="panel-name">
         <strong>{username}</strong>
       </div>
+
       <Divider style={{ margin: '8px 0' }} />
 
       <div className="panel-menu__content">
@@ -88,7 +89,7 @@ const HeaderRight = () => {
     console.log('点击个人头像选择下拉菜单', key);
     if (key === 'logout') {
       Modal.confirm({
-        title: '确认退出登录?',
+        title: '系统提示',
         content: '您确定要退出当前账号吗?',
         okText: '确认',
         cancelText: '取消',
@@ -110,6 +111,10 @@ const HeaderRight = () => {
         },
         onCancel() {}
       });
+    } else if (key === 'profile') {
+      navigate('/profile');
+    } else if (key === 'favorites') {
+      navigate('/favorites');
     } else if (key === 'admin') {
       navigate('/admin/dashboard');
     }
@@ -133,7 +138,7 @@ const HeaderRight = () => {
         <SearchModal open={openSearchModal} handleCancel={() => setOpenSearchModal(false)} />
       )}
 
-      <Button icon={<SearchOutlined />} />
+      <Button icon={<SearchOutlined />} onClick={() => setOpenSearchModal(true)} />
 
       <Flex gap="small" align="flex-start" vertical>
         <Segmented
@@ -163,7 +168,21 @@ const HeaderRight = () => {
           classNames={{ root: 'user-propver-panel' }}
           getPopupContainer={() => document.body}
         >
-          <Avatar size={44} icon={<UserOutlined />} />
+          {avatar ? (
+            <img
+              src={avatar}
+              alt=""
+              style={{
+                width: '44px',
+                height: '44px',
+                objectFit: 'cover',
+                borderRadius: '50%',
+                margin: '0 0.75rem'
+              }}
+            />
+          ) : (
+            <Avatar size={44} icon={<UserOutlined />} />
+          )}
         </Popover>
       ) : (
         <>

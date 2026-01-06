@@ -16,7 +16,7 @@ module.exports = {
   },
   emailAlreadyExists: {
     code: '10005',
-    message: '该邮箱已被注册，请直接登录',
+    message: '邮箱已被注册',
     data: null,
   },
   emailNotRegistered: {
@@ -81,7 +81,7 @@ module.exports = {
   },
   userUpdateError: {
     code: '10011',
-    message: '用户修改失败',
+    message: '用户信息修改失败',
     data: null,
   },
   findUsersError: {
@@ -201,7 +201,7 @@ module.exports = {
   },
   loadMoreError: {
     code: '10032',
-    message: '滚动加载失败',
+    message: '加载失败',
     data: null,
   },
   findNoticeError: {
@@ -237,6 +237,26 @@ module.exports = {
   removeFavoriteError: {
     code: '10045',
     message: '取消收藏失败',
+    data: null,
+  },
+  updateAvatarError: {
+    code: '10046',
+    message: '头像修改失败',
+    data: null,
+  },
+  updatePasswordError: {
+    code: '10047',
+    message: '密码修改失败',
+    data: null,
+  },
+  updateEmailError: {
+    code: '10048',
+    message: '邮箱修改失败',
+    data: null,
+  },
+  getCategoriesByFavoriteError: {
+    code: '10049',
+    message: '获取收藏文章对应的分类失败',
     data: null,
   },
 };

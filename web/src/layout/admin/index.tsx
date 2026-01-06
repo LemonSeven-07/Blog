@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 17:11:24
  * @LastEditors: yolo
- * @LastEditTime: 2025-11-17 03:05:26
+ * @LastEditTime: 2026-01-07 05:04:09
  * @FilePath: /web/src/layout/admin/index.tsx
  * @Description: 后台页面布局
  */
@@ -65,7 +65,7 @@ const AdminLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { username } = useAppSelector((state) => state.userInfo);
+  const { username, avatar } = useAppSelector((state) => state.userInfo);
   const { adminRoutes } = useAppSelector((state) => state.navigation);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -112,6 +112,7 @@ const AdminLayout = () => {
       <div className="panel-name">
         <strong>{username}</strong>
       </div>
+
       <Divider style={{ margin: '8px 0' }} />
 
       <div className="panel-menu__content">
@@ -133,7 +134,7 @@ const AdminLayout = () => {
       navigate('/');
     } else if (key === 'logout') {
       Modal.confirm({
-        title: '确认退出登录?',
+        title: '系统提示',
         content: '您确定要退出当前账号吗?',
         okText: '确认',
         cancelText: '取消',
@@ -174,7 +175,21 @@ const AdminLayout = () => {
           classNames={{ root: 'user-propver-panel' }}
           getPopupContainer={(triggerNode) => triggerNode.parentElement as HTMLElement}
         >
-          <Avatar size={44} icon={<UserOutlined />} />
+          {avatar ? (
+            <img
+              src={avatar}
+              alt=""
+              style={{
+                width: '44px',
+                height: '44px',
+                objectFit: 'cover',
+                borderRadius: '50%',
+                margin: '0 0.75rem'
+              }}
+            />
+          ) : (
+            <Avatar size={44} icon={<UserOutlined />} />
+          )}
         </Popover>
       </Header>
 

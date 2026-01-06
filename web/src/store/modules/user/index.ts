@@ -11,6 +11,7 @@ const initialState: UserState = {
   role: 2, // 用户权限
   email: '', // 用户邮箱
   banned: false, // 用户是否被禁言
+  createdAt: '', // 用户注册时间
   phase: 'initializing'
 };
 

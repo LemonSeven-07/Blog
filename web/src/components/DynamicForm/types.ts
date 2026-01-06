@@ -84,7 +84,7 @@ export interface DynamicFormItem {
 
   onBlur?: (value: string, key?: string) => void; // 表单项失去焦点时校验
 
-  focus?: () => void; // 获取焦点时的回调（仅对输入框有效）
+  onFocus?: () => void; // 获取焦点时的回调（仅对输入框有效）
 
   /** 业务层 onChange，只关心最终值 */
   onChange?: (value: DynamicFormValue, options?: DynamicFormItem['options']) => void; // 表单项值改变时的回调

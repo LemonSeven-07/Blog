@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 
 /**
- * 监听全局滚动，超过阈值隐藏 header
+ * @description: 监听全局滚动，超过阈值隐藏 header
  * @param threshold 滚动多少像素开始隐藏 header，默认一屏高度
  * @returns hidden 是否隐藏 header
  */

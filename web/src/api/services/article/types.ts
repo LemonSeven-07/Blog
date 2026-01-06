@@ -33,3 +33,20 @@ export interface ToggleArticleFavorite {
     action: 'add' | 'remove';
   };
 }
+
+export interface GetArticles {
+  Request: {
+    pageNum: number;
+    pageSize: number;
+    keyword?: string;
+    tagId?: number;
+    categoryId?: number;
+    author?: string;
+    sort?: 'new' | 'hot';
+    publishTimeRange?: string;
+  };
+  Response: {
+    list: ArticleSearchResult['list'];
+    total: number;
+  };
+}

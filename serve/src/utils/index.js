@@ -164,7 +164,7 @@ class blogPackagingMethod {
   }
 
   /**
-   * 合并相同key的posts和comments
+   * @description: 合并相同key的posts和comments
    * @param {Array} data - 原始数据
    * @returns {Object} 结构: { [key]: Array<post|comment> }
    */
@@ -370,6 +370,16 @@ class blogPackagingMethod {
     } else {
       return Promise.reject(new Error('Invalid GitHub CDN URL'));
     }
+  }
+
+  yyyymmddToDateTime(yyyymmdd, endOfDay = false) {
+    const str = String(yyyymmdd);
+
+    const year = str.slice(0, 4);
+    const month = str.slice(4, 6);
+    const day = str.slice(6, 8);
+
+    return endOfDay ? `${year}-${month}-${day} 23:59:59` : `${year}-${month}-${day} 00:00:00`;
   }
 }
 

@@ -13,6 +13,8 @@ const ArticleExplorer = lazy(() => import('@/pages/client/ArticleExplorer'));
 const ArticleDetail = lazy(() => import('@/pages/client/ArticleDetail'));
 const Notify = lazy(() => import('@/pages/client/Notify'));
 const LifeNotes = lazy(() => import('@/pages/client/LifeNotes'));
+const Profile = lazy(() => import('@/pages/client/Profile'));
+const Favorites = lazy(() => import('@/pages/client/Favorites'));
 
 // 后台页面
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -32,11 +34,13 @@ const RequireAuth = ({ children }: { children: JSX.Element }) => {
 
 // 组件映射表
 const componentMap: ComponentMap = {
-  // 假设这是你的组件
   ArticleExplorer: (name: string) =>
     withLoadingComponent(<ArticleExplorer slug={name} key={name} />),
   Notify: withLoadingComponent(<Notify />),
   LifeNotes: withLoadingComponent(<LifeNotes />),
+  Profile: withLoadingComponent(<Profile />),
+  Favorites: withLoadingComponent(<Favorites />),
+
   Dashboard: withLoadingComponent(<Dashboard />),
   Articles: withLoadingComponent(<Articles />),
   Users: withLoadingComponent(<Users />)
@@ -81,7 +85,11 @@ export const transformRoutes = (AllRoutes: RouteItem[]) => {
 
   AllRoutes.forEach((route: RouteItem) => {
     const component = componentMap[route.component];
-    if (route.meta.type === 'category' || route.meta.type === 'header') {
+    if (
+      route.meta.type === 'category' ||
+      route.meta.type === 'header' ||
+      route.meta.type === 'normal'
+    ) {
       routes[0].children?.push({
         index: false,
         path: route.path,

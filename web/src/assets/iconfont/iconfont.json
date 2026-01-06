@@ -6,6 +6,13 @@
   "description": "个人博客网站 Icon 图标",
   "glyphs": [
     {
+      "icon_id": "10804818",
+      "name": "返回",
+      "font_class": "come-back",
+      "unicode": "e670",
+      "unicode_decimal": 58992
+    },
+    {
       "icon_id": "1240750",
       "name": "评论",
       "font_class": "comment",

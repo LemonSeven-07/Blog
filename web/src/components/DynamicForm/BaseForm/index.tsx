@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-11-18 00:38:43
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-22 01:17:05
+ * @LastEditTime: 2026-01-01 01:36:29
  * @FilePath: /web/src/components/DynamicForm/BaseForm/index.tsx
  * @Description: 提交类表单组件
  */
@@ -34,6 +34,7 @@ import type {
 import type { DynamicFormItem, DynamicFormRef } from '../types';
 import { pickerPlaceholder, format } from '../types';
 import { useForm } from '../hooks/useForm';
+import RangeInputFormItem from '../RangeInputFormItem';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 dayjs.extend(isoWeek);
@@ -140,7 +141,6 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
    * @return {*}
    */
   const onFinishFailed = () => {
-    console.log(145);
     scrollToFirstError();
   };
 
@@ -186,11 +186,11 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                       ]
                     : [])
                 ]}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Input
                   disabled={item.disabled ? item.disabled : false}
-                  allowClear={!item.allowClear}
+                  allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   onBlur={(e) => handleBlur(e, item)}
                   placeholder={'请输入' + item.label}
                 />
@@ -218,11 +218,11 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                       ]
                     : [])
                 ]}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Input.Password
                   disabled={item.disabled ? item.disabled : false}
-                  allowClear={!item.allowClear}
+                  allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   onBlur={(e) => handleBlur(e, item)}
                   placeholder={'请输入' + item.label}
                 />
@@ -246,12 +246,12 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                     message: item.tip
                   }
                 ]}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Input.TextArea
                   className="text-area-with-count"
                   disabled={item.disabled ? item.disabled : false}
-                  allowClear={!item.allowClear}
+                  allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   autoSize={item.rows}
                   showCount
                   maxLength={item.maxLength}
@@ -267,83 +267,36 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
               <Form.Item
                 label={item.label}
                 name={item.name}
-                key={item.name}
+                required={item.required ? item.required : false}
                 rules={[
                   {
-                    required: item.required ? item.required : false,
-                    message: ''
+                    validator(_, value: string[]) {
+                      if (item.required) {
+                        if (!value || value.length !== 2) {
+                          return Promise.reject(`请输入${item.label}`);
+                        }
+                        if (!value[0] || !value[1]) {
+                          return Promise.reject(
+                            item.rangeName &&
+                              Array.isArray(item.rangeName) &&
+                              item.rangeName.length >= 2
+                              ? `${item.rangeName[0]}和${item.rangeName[1]}均为必填`
+                              : '范围输入框均为必填'
+                          );
+                        }
+                      }
+
+                      return Promise.resolve();
+                    }
                   }
                 ]}
-                style={{ marginBottom: 0 }}
+                key={item.name}
               >
-                <div className="range-input-form-item">
-                  <Form.Item
-                    name={'start' + item.name}
-                    key={'start' + item.name}
-                    dependencies={[item.name]}
-                    rules={[
-                      {
-                        required: item.required ? item.required : false,
-                        message: `请输入${(item.rangeName as string[])[0]}!`
-                      },
-                      ...(item.pattern
-                        ? [
-                            {
-                              pattern: item.pattern,
-                              message: item.tip || '请输入正确的' + item.label + '格式!'
-                            }
-                          ]
-                        : [])
-                    ]}
-                    initialValue={item.value ? (item.value as string[])[0] : undefined}
-                  >
-                    <Input
-                      disabled={item.disabled ? item.disabled : false}
-                      allowClear={!item.allowClear}
-                      onBlur={(e) => handleBlur(e, item)}
-                      placeholder={`请输入${(item.rangeName as string[])[0]}`}
-                    />
-                  </Form.Item>
-
-                  {/* 连接符（——） */}
-                  <div
-                    style={{
-                      width: '3rem',
-                      textAlign: 'center',
-                      lineHeight: '2rem'
-                    }}
-                  >
-                    ——
-                  </div>
-
-                  <Form.Item
-                    name={'end' + item.name}
-                    key={'end' + item.name}
-                    dependencies={[item.name]}
-                    rules={[
-                      {
-                        required: item.required ? item.required : false,
-                        message: `请输入${(item.rangeName as string[])[1]}!`
-                      },
-                      ...(item.pattern
-                        ? [
-                            {
-                              pattern: item.pattern,
-                              message: item.tip || '请输入正确的' + item.label + '格式!'
-                            }
-                          ]
-                        : [])
-                    ]}
-                    initialValue={item.value ? (item.value as string[])[1] : undefined}
-                  >
-                    <Input
-                      disabled={item.disabled ? item.disabled : false}
-                      allowClear={!item.allowClear}
-                      onBlur={(e) => handleBlur(e, item)}
-                      placeholder={`请输入${(item.rangeName as string[])[1]}`}
-                    />
-                  </Form.Item>
-                </div>
+                <RangeInputFormItem
+                  formItem={item}
+                  value={item.value ? (item.value as string[]) : []}
+                  handleBlur={handleBlur}
+                />
               </Form.Item>
             );
 
@@ -360,7 +313,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                     message: '请选择' + item.label + '!'
                   }
                 ]}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Select
                   showSearch
@@ -369,7 +322,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   }
                   mode={item.mode}
                   disabled={item.disabled ? item.disabled : false}
-                  allowClear={!item.allowClear}
+                  allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   maxCount={
                     typeof item.maxCount === 'number' &&
                     (item.mode === 'multiple' || item.mode === 'tags') &&
@@ -398,7 +351,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   }
                 ]}
                 initialValue={
-                  item.value
+                  typeof item.value !== 'undefined'
                     ? dayjs(item.value as string, format[item.picker || 'date'])
                     : undefined
                 }
@@ -406,7 +359,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                 <DatePicker
                   // style={{ width: '100%' }}
                   disabled={item.disabled ? item.disabled : false}
-                  allowClear={!item.allowClear}
+                  allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   picker={item.picker ? item.picker : 'date'}
                   onChange={(_, dateString) => handleChange({ dateString }, item)}
                   placeholder={'请选择' + item.label}
@@ -428,7 +381,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   }
                 ]}
                 initialValue={
-                  item.value
+                  typeof item.value !== 'undefined'
                     ? (item.value as string[]).map(
                         (str) => item && dayjs(str, format[item.picker || 'date'])
                       )
@@ -437,7 +390,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
               >
                 <DatePicker.RangePicker
                   disabled={item.disabled ? item.disabled : false}
-                  allowClear={!item.allowClear}
+                  allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   picker={item.picker ? item.picker : 'date'}
                   onChange={(_, dateStrings) => handleChange({ dateStrings }, item)}
                   placeholder={
@@ -454,7 +407,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                 label={item.label}
                 name={item.name}
                 key={item.name}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Switch
                   disabled={item.disabled ? item.disabled : false}
@@ -476,7 +429,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                     message: '请选择' + item.label + '!'
                   }
                 ]}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Checkbox.Group
                   options={(item.options || []) as CheckboxOptionType<string>[]}
@@ -499,7 +452,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                     message: '请选择' + item.label + '!'
                   }
                 ]}
-                initialValue={item.value ? item.value : undefined}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
                 <Radio.Group
                   options={(item.options || []) as CheckboxGroupProps<string>['options']}

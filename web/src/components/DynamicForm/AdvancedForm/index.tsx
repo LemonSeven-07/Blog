@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-22 01:20:42
+ * @LastEditTime: 2026-01-01 01:32:08
  * @FilePath: /web/src/components/DynamicForm/AdvancedForm/index.tsx
  * @Description: 水平布局表单组件，例如：查询表单等
  */
@@ -165,11 +165,11 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                         ]
                       : [])
                   ]}
-                  initialValue={item.value ? item.value : undefined}
+                  initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
                 >
                   <Input
                     disabled={item.disabled ? item.disabled : false}
-                    allowClear={!item.allowClear}
+                    allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                     onBlur={(e) => handleBlur(e, item)}
                     placeholder={'请输入' + item.label}
                   />
@@ -198,7 +198,7 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                       message: '请选择' + item.label + '!'
                     }
                   ]}
-                  initialValue={item.value ? item.value : undefined}
+                  initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
                 >
                   <Select
                     showSearch
@@ -207,7 +207,7 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                     }
                     mode={item.mode}
                     disabled={item.disabled ? item.disabled : false}
-                    allowClear={!item.allowClear}
+                    allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                     maxCount={
                       typeof item.maxCount === 'number' &&
                       (item.mode === 'multiple' || item.mode === 'tags') &&
@@ -245,7 +245,7 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                     }
                   ]}
                   initialValue={
-                    item.value
+                    typeof item.value !== 'undefined'
                       ? dayjs(item.value as string, format[item.picker || 'date'])
                       : undefined
                   }
@@ -253,7 +253,7 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                   <DatePicker
                     // style={{ width: '100%' }}
                     disabled={item.disabled ? item.disabled : false}
-                    allowClear={!item.allowClear}
+                    allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                     picker={item.picker ? item.picker : 'date'}
                     onChange={(_, dateString) => handleChange({ dateString }, item)}
                     placeholder={'请选择' + item.label}
@@ -284,7 +284,7 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                     }
                   ]}
                   initialValue={
-                    item.value
+                    typeof item.value !== 'undefined'
                       ? (item.value as string[]).map(
                           (str) => item && dayjs(str, format[item.picker || 'date'])
                         )
@@ -293,7 +293,7 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                 >
                   <DatePicker.RangePicker
                     disabled={item.disabled ? item.disabled : false}
-                    allowClear={!item.allowClear}
+                    allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                     picker={item.picker ? item.picker : 'date'}
                     onChange={(_, dateStrings) => handleChange({ dateStrings }, item)}
                     placeholder={

@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-17 14:44:28
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-20 04:44:24
+ * @LastEditTime: 2026-01-01 05:24:47
  * @FilePath: /web/src/components/PreviewArticle/index.tsx
  * @Description: 预览文章
  */
@@ -52,7 +52,7 @@ const PreviewArticle = ({ article }: { article: ArticleSearchResult['list'][numb
 
         {article.coverImage ? (
           <div className="article-cover-image">
-            <img src={article.coverImage} alt={article.title} />
+            <img src={article.coverImage} alt="" />
           </div>
         ) : (
           ''

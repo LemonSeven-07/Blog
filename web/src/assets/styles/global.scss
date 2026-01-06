@@ -1,4 +1,5 @@
 @use './themes.scss' as *;
+@use './mixins.scss' as mixins;
 @import '../iconfont/iconfont.css';
 
 html {
@@ -25,6 +26,14 @@ body {
 #root {
   width: 100%;
   height: 100%;
+
+  > .ant-spin-nested-loading {
+    height: 100%;
+
+    > .ant-spin-container {
+      height: 100%;
+    }
+  }
 }
 /* stylelint-enable selector-max-id */
 
@@ -203,6 +212,21 @@ body {
   .search-modal-body {
     .ant-input-affix-wrapper {
       margin-bottom: 1rem;
+    }
+
+    .article-preview-list {
+      > .article-preview-list-item {
+        @include use-theme {
+          color: get-var('--yolo-text');
+          background: get-var('--yolo-bg');
+
+          &:hover {
+            background: get-var('--yolo-card-bg-hover');
+          }
+        }
+
+        @include mixins.article-preview-item-style;
+      }
     }
   }
 

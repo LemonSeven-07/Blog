@@ -2,14 +2,15 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-22 01:21:31
+ * @LastEditTime: 2026-01-07 04:57:34
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { Button, Table, Tooltip, Modal } from 'antd';
-import type { TableColumnsType, TableProps, UploadFile } from 'antd';
+import { Link } from 'react-router-dom';
+import { Button, Table, Tooltip, Modal, Tag } from 'antd';
+import type { TableColumnsType, TableProps, UploadFile, TablePaginationConfig } from 'antd';
 import {
   DeleteOutlined,
   DownloadOutlined,
@@ -20,7 +21,6 @@ import {
 } from '@ant-design/icons';
 import api from '@/api';
 import { useAppSelector } from '@/store/hooks';
-import type { tagItem } from '@/types/app/common';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
 import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
@@ -29,11 +29,20 @@ type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'
 
 interface DataType {
   id: number;
-  author: string;
-  title: number;
+  user: {
+    id: number;
+    username: string;
+  };
+  title: string;
   coverImage: string;
-  category: string;
-  tag: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  tags: {
+    id: number;
+    name: string;
+  }[];
   viewCount: number;
   favoriteCount: number;
   createdAt: string;
@@ -51,13 +60,17 @@ interface ImportFormValues {
 interface SearchFormValues {
   keyword: string;
   categoryId: number;
-  tagIds: number[];
-  dateRange: string[];
-  userId: number;
+  tagId: number;
+  publishTimeRange: string[];
+  author?: string;
 }
+
+// 文章标签显示颜色
+const tagColor = ['geekblue', 'purple', 'cyan'];
 
 const Articles = () => {
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
+  const { role } = useAppSelector((state) => state.userInfo);
   // 文章导入表单
   const [formItems, setFormItems] = useState<DynamicFormItem[]>([
     {
@@ -86,10 +99,7 @@ const Articles = () => {
       options: categoryRoutes.map((item) => ({
         label: item.meta?.title || '未命名',
         value: item.id
-      })),
-      onChange: (value) => {
-        console.log(129, value);
-      }
+      }))
     },
     {
       label: '文章标签',
@@ -137,15 +147,14 @@ const Articles = () => {
         value: item.id
       })),
       onChange: (value) => {
-        console.log(129, value);
+        searchFormRef.current?.resetForm(['tagId']);
         if (value) getTags({ categoryId: value as number });
       }
     },
     {
       label: '标签',
-      name: 'tagIds',
+      name: 'tagId',
       type: 'select' as const,
-      mode: 'multiple' as const,
       disabled: true,
       maxCount: 3,
       labelCol: 6,
@@ -153,29 +162,22 @@ const Articles = () => {
       options: []
     },
     {
-      label: '起止时间',
-      name: 'dateRange',
+      label: '发布起止时间',
+      name: 'publishTimeRange',
       type: 'rangePicker' as const,
-      labelCol: 6,
-      wrapperCol: 18
-    },
-    {
-      label: '作者',
-      name: 'userId',
-      type: 'input' as const,
-      width: 250,
-      labelCol: 6,
-      wrapperCol: 18
+      labelCol: 7,
+      wrapperCol: 17
     }
-  ]);
+  ]); // 非管理员不显示作者查询条件
   // 文章批量处理key
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [pagination, setPagination] = useState({
+    pageNum: 1, // 当前页
+    pageSize: 10, // 每页条数
+    total: 0 // 总条数（后端返回）
+  });
   // 文章列表数据
   const [tableDatas, setTableDatas] = useState<DataType[]>([]);
-  // 所有文章标签
-  const [allTags, setAllTags] = useState<tagItem[]>([]);
-  // 分类文章对应的所有标签
-  const [tags, setTags] = useState<tagItem[]>([]);
   // 是否打开文章导入对话框
   const [isModalOpen, setIsModalOpen] = useState(false);
   // 文章导入表单对象
@@ -184,11 +186,36 @@ const Articles = () => {
   const searchFormRef = useRef<DynamicFormRef<SearchFormValues>>(null);
   // 文章列表表头
   const [columns] = useState<TableColumnsType<DataType>>([
-    { title: '作者', dataIndex: 'userId', align: 'center' },
+    { title: '作者', dataIndex: 'user', align: 'center', render: (value) => value.username },
     { title: '标题', dataIndex: 'title', align: 'center' },
-    { title: '封面', dataIndex: 'coverImage', align: 'center' },
-    { title: '分类', dataIndex: 'category', align: 'center' },
-    { title: '标签', dataIndex: 'tag', align: 'center' },
+    {
+      title: '封面',
+      dataIndex: 'coverImage',
+      align: 'center',
+      render: (value) =>
+        value ? (
+          <img src={value} alt="" style={{ width: '90px', height: '60px', objectFit: 'cover' }} />
+        ) : (
+          ''
+        )
+    },
+    { title: '分类', dataIndex: 'category', align: 'center', render: (value) => value.name },
+    {
+      title: '标签',
+      dataIndex: 'tags',
+      align: 'center',
+      render: (value) => {
+        return (
+          <div>
+            {value.map((tag: { id: number; name: string }, index: number) => (
+              <Tag color={tagColor[index]} key={tag.id}>
+                {tag.name}
+              </Tag>
+            ))}
+          </div>
+        );
+      }
+    },
     { title: '浏览量', dataIndex: 'viewCount', align: 'center' },
     { title: '收藏量', dataIndex: 'favoriteCount', align: 'center' },
     { title: '发布时间', dataIndex: 'createdAt', align: 'center' },
@@ -201,7 +228,9 @@ const Articles = () => {
       render: (_, record) => (
         <>
           <Tooltip placement="bottom" title="查看">
-            <Button shape="circle" onClick={() => viewArticle(record.id)} icon={<EyeOutlined />} />
+            <Link to={`/article/${record.id}`} style={{ marginRight: '12px' }}>
+              <Button shape="circle" icon={<EyeOutlined />} />
+            </Link>
           </Tooltip>
 
           <Tooltip placement="bottom" title="导出">
@@ -209,18 +238,24 @@ const Articles = () => {
               shape="circle"
               onClick={() => exportArticle(record.id)}
               icon={<DownloadOutlined />}
+              style={{ marginRight: '12px' }}
             />
           </Tooltip>
 
           <Tooltip placement="bottom" title="编辑">
-            <Button shape="circle" onClick={() => editArticle(record.id)} icon={<EditOutlined />} />
+            <Button
+              shape="circle"
+              onClick={() => editArticle(record.id)}
+              icon={<EditOutlined />}
+              style={{ marginRight: '12px' }}
+            />
           </Tooltip>
 
           <Tooltip placement="bottom" title="删除">
             <Button
               shape="circle"
               onClick={() => deleteArticle(record.id)}
-              color="danger"
+              danger
               icon={<DeleteOutlined />}
             />
           </Tooltip>
@@ -230,7 +265,22 @@ const Articles = () => {
   ]);
 
   useEffect(() => {
+    // 超级管理员可按文章作者查询，普通管理员不可见该查询条件只能查自身发布的文章
+    if (role === 1) {
+      setSearchOptions([
+        ...searchOptions,
+        {
+          label: '文章作者',
+          name: 'author',
+          type: 'input' as const,
+          width: 240,
+          labelCol: 8,
+          wrapperCol: 16
+        }
+      ]);
+    }
     getTags();
+    getArticles({ pageNum: 1, pageSize: 10 });
   }, []);
 
   /**
@@ -262,7 +312,7 @@ const Articles = () => {
       // 根据分类获取对应的标签
       setSearchOptions((prev) =>
         prev.map((item) =>
-          item.name === 'tagIds'
+          item.name === 'tagId'
             ? ({ ...item, options: tags, disabled: false } as typeof item)
             : item
         )
@@ -283,16 +333,8 @@ const Articles = () => {
   // 表格行可选择配置
   const rowSelection: TableRowSelection<DataType> = {
     selectedRowKeys,
+    fixed: 'left',
     onChange: onSelectChange
-  };
-
-  /**
-   * @description: 查看文章
-   * @param {number} id 文章id
-   * @return {*}
-   */
-  const viewArticle = (id: number) => {
-    console.log('查看文章', id);
   };
 
   /**
@@ -342,12 +384,67 @@ const Articles = () => {
       })
       .catch(() => {
         importFormRef.current!.scrollToFirstError();
-        console.log('表单校验失败');
       });
   };
 
+  /**
+   * @description: 调取文章分页查询接口
+   * @param {*} params 参数报文
+   * @return {*}
+   */
+  const getArticles = async (
+    values: Partial<SearchFormValues & { pageNum: number; pageSize: number }>
+  ) => {
+    const {
+      keyword,
+      categoryId,
+      tagId,
+      author,
+      publishTimeRange,
+      pageNum = 1,
+      pageSize = 10
+    } = values;
+    const params = {
+      pageNum,
+      pageSize,
+      keyword,
+      categoryId,
+      tagId,
+      author,
+      publishTimeRange: publishTimeRange ? publishTimeRange.join() : publishTimeRange
+    };
+    console.log(419, params);
+    const res = await api.articleApi.getArticles(params);
+    const { list, total } = res.data;
+    setPagination({ pageNum, pageSize, total });
+    setTableDatas(list);
+  };
+
+  /**
+   * @description: 文章查询
+   * @param {SearchFormValues} values
+   * @return {*}
+   */
   const handleSearch = (values: SearchFormValues) => {
-    console.log(336, values);
+    getArticles({ ...values, pageNum: pagination.pageNum, pageSize: pagination.pageSize });
+  };
+
+  /**
+   * @description: 分页、排序、筛选变化时触发
+   * @param {TablePaginationConfig} value
+   * @return {*}
+   */
+  const handlePaginationChange = (value: TablePaginationConfig) => {
+    const { current: pageNum = 1, pageSize = 10, total = 0 } = value;
+    setPagination({
+      pageNum,
+      pageSize,
+      total
+    });
+
+    searchFormRef.current?.validateForm().then((values) => {
+      getArticles({ ...values, pageNum, pageSize });
+    });
   };
 
   return (
@@ -369,11 +466,15 @@ const Articles = () => {
             文章发布
           </Button>
 
-          <Button type="primary" icon={<DownloadOutlined />}>
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            disabled={selectedRowKeys.length ? false : true}
+          >
             批量导出
           </Button>
 
-          <Button danger icon={<DeleteOutlined />}>
+          <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length ? false : true}>
             批量删除
           </Button>
 
@@ -383,11 +484,20 @@ const Articles = () => {
         </div>
 
         <Table<DataType>
+          rowKey="id"
           rowSelection={rowSelection}
           columns={columns}
           dataSource={tableDatas}
-          scroll={{ x: 1500 }}
-          rowKey="id"
+          scroll={{ x: 'max-content' }}
+          pagination={{
+            current: pagination.pageNum,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true, // 是否可切换 pageSize
+            showQuickJumper: true, // 是否可快速跳页
+            showTotal: (total) => `共 ${total} 条`
+          }}
+          onChange={handlePaginationChange}
         />
       </div>
 

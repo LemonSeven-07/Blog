@@ -7,6 +7,7 @@ export interface UserProfile {
   role: number; // 用户权限
   email: string; // 用户邮箱
   banned: boolean; // 用户是否被禁言
+  createdAt: string; // 用户注册时间
 }
 
 export interface RegisterAction {
@@ -35,7 +36,7 @@ export interface AppInitResponse {
 export interface SendEmailCode {
   Request: {
     email: string;
-    type: 'register' | 'reset';
+    type: 'register' | 'reset' | 'update';
   };
 }
 
@@ -58,11 +59,9 @@ export interface ArticleCategory {
 
 export interface UpdateUser {
   Request: {
-    userId: number;
-    username: string;
-    password: string;
-    role: number;
-    banned: boolean;
+    username?: string;
+    role?: number;
+    banned?: boolean;
   };
 }
 
@@ -72,5 +71,24 @@ export interface GetUsers {
     pageSize: number;
     username: string;
     rangeDate: string;
+  };
+}
+
+export interface UpdateAvatar {
+  Request: FormData;
+}
+
+export interface UpdatePasswrd {
+  Request: {
+    oldPassword: string;
+    newPassword: string;
+  };
+}
+
+export interface UpdateEmail {
+  Request: {
+    password: string;
+    email: string;
+    code: string;
   };
 }

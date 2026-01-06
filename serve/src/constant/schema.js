@@ -27,9 +27,9 @@ module.exports = {
       'string.empty': '邮箱不能为空',
       'string.email': '邮箱格式不正确',
     }),
-    type: Joi.string().valid('register', 'reset').required().messages({
+    type: Joi.string().valid('register', 'reset', 'update').required().messages({
       'string.empty': 'type不能为空',
-      'any.only': 'type必须是register或reset',
+      'any.only': 'type必须是register或reset或update',
     }),
   }),
   resetPasswordSchema: Joi.object({
@@ -64,11 +64,6 @@ module.exports = {
       .messages({
         'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
       }),
-    password: Joi.string()
-      .pattern(/^[a-zA-Z0-9!@#*,]{6,16}$/)
-      .messages({
-        'string.pattern.base': '密码由字母、数字和特殊字符“!@#*,”组成，长度6-16位',
-      }),
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
     }),
@@ -76,10 +71,31 @@ module.exports = {
       'boolean.base': 'disabledDiscuss必须是布尔值',
     }),
   })
-    .or('username', 'password', 'role', 'banned')
+    .or('username', 'role', 'banned')
     .messages({
       'object.missing': '必要字段为空',
     }),
+  updatePasswordSchema: Joi.object({
+    oldPassword: Joi.string().required().messages({
+      'string.empty': 'oldPassword不能为空',
+    }),
+    newPassword: Joi.string().required().messages({
+      'string.empty': 'newPassword不能为空',
+    }),
+  }),
+  updateEmialSchema: Joi.object({
+    password: Joi.string().required().messages({
+      'string.empty': 'oldPassword不能为空',
+    }),
+    email: Joi.string().email().required().messages({
+      'string.empty': '邮箱不能为空',
+      'string.email': '邮箱格式不正确',
+    }),
+    code: Joi.string().length(6).required().messages({
+      'string.empty': '验证码不能为空',
+      'string.length': '验证码错误',
+    }),
+  }),
   adminUpdateUserSchema: Joi.object({
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
@@ -298,24 +314,55 @@ module.exports = {
     keyword: Joi.string().allow('').messages({
       'string.empty': 'keyword不能为空',
     }),
-    tag: Joi.string().allow('').messages({
-      'string.empty': 'tag不能为空',
+    tagId: Joi.number().integer().messages({
+      'number.integer': 'tagId必须是整数',
     }),
     categoryId: Joi.number().integer().messages({
       'number.integer': 'categoryId必须是整数',
     }),
-    order: Joi.string().allow('').messages({
-      'string.empty': 'order不能为空',
+    sort: Joi.string().valid('new', 'hot').messages({
+      'any.only': 'sort必须是new或hot',
+    }),
+    publishTimeRange: Joi.string()
+      .pattern(/^\d{4}\d{2}\d{2},\s*\d{4}\d{2}\d{2}$/)
+      .custom((value, helpers) => {
+        const [startDateStr, endDateStr] = value.split(/\s*,\s*/);
+
+        // 验证是否为有效日期
+        if (
+          !moment(startDateStr, 'YYYYMMDD', true).isValid() ||
+          !moment(endDateStr, 'YYYYMMDD', true).isValid()
+        ) {
+          return helpers.error('any.invalid');
+        }
+
+        // 验证结束日期不小于开始日期
+        if (moment(endDateStr).isBefore(moment(startDateStr))) {
+          return helpers.error('date.endBeforeStart');
+        }
+
+        return value;
+      })
+      .messages({
+        'string.pattern.base': 'publishTimeRange日期范围格式应为"YYYYMMDD, YYYYMMDD"',
+        'any.invalid': '包含无效的日期',
+        'date.endBeforeStart': '结束日期不能早于开始日期',
+      }),
+    author: Joi.string().allow('').messages({
+      'string.empty': 'author不能为空',
     }),
   }),
   getLoadMoreArticlesSchema: Joi.object({
     keyword: Joi.string().allow('').messages({
       'string.empty': 'keyword不能为空',
     }),
-    tagIds: Joi.string()
-      .allow('')
-      .pattern(/^(\d+)(,\d+)*$/) // 数字和逗号组合
-      .optional(),
+    tagId: Joi.number().integer().messages({
+      'number.integer': 'tagId必须是整数',
+    }),
+    // tagIds: Joi.string()
+    //   .allow('')
+    //   .pattern(/^(\d+)(,\d+)*$/) // 数字和逗号组合
+    //   .optional(),
     categoryId: Joi.number().integer().messages({
       'number.integer': 'categoryId必须是整数',
     }),

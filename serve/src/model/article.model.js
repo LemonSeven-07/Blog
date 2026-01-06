@@ -26,7 +26,7 @@ const Article = sequelize.define(
       comment: '文章摘要',
     },
     content: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT('medium'),
       allowNull: false,
       comment: '文章内容',
     },

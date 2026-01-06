@@ -1,4 +1,5 @@
 @use './themes.scss' as *;
+@use './mixins.scss' as mixins;
 
 .app-container {
   @include use-theme {
@@ -423,6 +424,21 @@
             }
           }
         }
+
+        .article-preview-list {
+          > .article-preview-list-item {
+            @include use-theme {
+              color: get-var('--yolo-text');
+              background: get-var('--yolo-card-bg');
+
+              &:hover {
+                background: get-var('--yolo-card-bg-hover');
+              }
+            }
+
+            @include mixins.article-preview-item-style;
+          }
+        }
       }
 
       .sidebar-right {
@@ -650,102 +666,196 @@
           transition: top 0.3s ease;
         }
       }
-    }
-  }
-}
 
-.article-preview-list {
-  > .article-preview-list-item {
-    @include use-theme {
-      color: get-var('--yolo-text');
-      background: get-var('--yolo-card-bg');
-
-      &:hover {
-        background: get-var('--yolo-card-bg-hover');
-      }
-    }
-
-    margin-bottom: 0.625rem;
-    display: flex;
-    padding: 1rem;
-    border-radius: 4px;
-    text-decoration: none;
-    color: inherit;
-
-    > .article-preview-info {
-      flex: 1;
-
-      .article-title {
-        font-size: 1rem;
-        font-weight: 600;
-        line-height: 2.5rem;
-      }
-
-      .article-summary {
-        display: -webkit-box;
-        font-size: 0.875rem;
-        margin-bottom: 0.5rem;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
-      }
-
-      .article-meta {
-        display: flex;
-        justify-content: space-between;
-
-        .article-meta-info {
-          display: flex;
-          align-items: center;
-          margin: 0;
-          padding: 0;
-          list-style: none;
-
-          .vertical-line {
-            width: 1px;
-            height: 1rem;
-            margin: 0 1rem;
-            background-color: #e4e6eb;
-          }
-
-          .article-view-count {
-            margin-right: 1.5rem;
-
-            .anticon-eye {
-              margin-right: 0.5rem;
-            }
-          }
-
-          .article-favorite-count {
-            .anticon-star {
-              margin-right: 0.5rem;
-            }
-          }
+      .profile-container {
+        @include use-theme {
+          background-color: get-var('--yolo-card-bg');
         }
 
-        .article-tags {
-          float: right;
-
-          .article-tag-item:last-child {
-            margin-right: 0;
-          }
-        }
-      }
-    }
-
-    .article-cover-image {
-      display: flex;
-      width: 150px;
-      margin-left: 1rem;
-      overflow: hidden;
-      align-items: center;
-      justify-content: center;
-
-      > img {
-        display: block;
         width: 100%;
-        max-height: 100px;
-        object-fit: cover;
+        min-height: 35rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin-bottom: 20px;
+
+        .ant-spin {
+          max-height: none;
+        }
+
+        .ant-spin-container {
+          display: flex;
+          width: 100%;
+          min-height: 35rem;
+
+          .profile-sidebar {
+            @include use-theme {
+              background-color: get-var('--yolo-profile-sidebar-bg');
+            }
+
+            width: 17rem;
+            padding: 1rem;
+            flex: 0 0 auto;
+
+            .profile-avatar {
+              display: flex;
+              justify-content: center;
+              position: relative;
+              width: 100%;
+              height: 5.625rem;
+
+              .avatar-overlay {
+                opacity: 0;
+
+                &:hover {
+                  opacity: 1;
+                }
+              }
+
+              > img,
+              > .anticon-user,
+              > .click-cover {
+                width: 5.625rem;
+                height: 5.625rem;
+                border-radius: 50%;
+                object-fit: cover;
+
+                &:hover {
+                  cursor: pointer;
+                }
+              }
+
+              > .anticon-user {
+                display: inline-flex;
+                font-size: 4rem;
+                justify-content: center;
+                color: #fff;
+                background: rgb(0 0 0 / 25%);
+                align-items: center;
+              }
+
+              > .click-cover {
+                display: flex;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                color: #e0e0e0;
+                opacity: 0;
+                transform: translate(-50%, -50%);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+
+                &:hover {
+                  background: rgb(0 0 0 / 40%);
+                  opacity: 1;
+                }
+
+                > .anticon-plus-circle {
+                  font-size: 1.25rem;
+                }
+              }
+            }
+
+            .profile-username {
+              font-size: 1.25rem;
+              font-weight: bold;
+              line-height: 60px;
+              text-align: center;
+            }
+
+            .profile-info {
+              display: flex;
+              width: 100%;
+              flex-direction: column;
+              align-items: center;
+
+              .info-row {
+                display: flex;
+                width: 100%;
+                line-height: 1.8;
+
+                .label {
+                  width: 6rem;
+                  flex: 0 0 auto;
+                  text-align: right;
+                }
+
+                .value {
+                  flex: 1;
+                  margin-left: 0.25rem;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                }
+              }
+            }
+          }
+
+          .profile-content {
+            padding: 1rem;
+            flex: 1;
+          }
+
+          .profile-form-footer-item {
+            text-align: center;
+
+            > .ant-row {
+              justify-content: center;
+            }
+          }
+        }
+      }
+
+      .favorites-container {
+        width: 100%;
+
+        .ant-spin {
+          max-height: none;
+        }
+
+        .ant-spin-container {
+          .favorites-operate {
+            @include use-theme {
+              background-color: get-var('--yolo-card-bg');
+            }
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1.25rem;
+            margin-bottom: 0.625rem;
+            border-radius: 4px;
+
+            .ant-select {
+              width: 10rem;
+            }
+          }
+
+          .favorites-main {
+            .article-preview-list {
+              position: relative;
+
+              > .ant-checkbox-wrapper {
+                position: absolute;
+                top: 4px;
+                left: 6px;
+              }
+
+              > .article-preview-list-item {
+                @include use-theme {
+                  color: get-var('--yolo-text');
+                  background: get-var('--yolo-card-bg');
+
+                  &:hover {
+                    background: get-var('--yolo-card-bg-hover');
+                  }
+                }
+
+                @include mixins.article-preview-item-style;
+              }
+            }
+          }
+        }
       }
     }
   }

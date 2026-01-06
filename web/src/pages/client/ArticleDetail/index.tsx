@@ -2,13 +2,13 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:05:16
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-21 03:03:31
+ * @LastEditTime: 2025-12-25 01:10:50
  * @FilePath: /web/src/pages/client/ArticleDetail/index.tsx
  * @Description: 文章查看页面
  */
 
 import { memo, useRef, useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import dayjs from 'dayjs';
 import remarkGfm from 'remark-gfm';
@@ -70,6 +70,7 @@ const ArticleDetail = () => {
   const flatToc = useRef<TocItem[]>([]);
   const commentRef = useRef<HTMLTextAreaElement>(null);
   const { id: articleId } = useParams<{ id: string }>(); // 根据路由获取文章id
+  const navigate = useNavigate();
   const [articleDatail, setArticleDetail] = useState<ViewArticleDetailResult | null>(null); // 文章详细信息
   const [commentCount, setCommentCount] = useState<number>(0); // 文章浏览量
   const [isFavorite, setIsFavorite] = useState<boolean>(false); // 当前浏览文章收藏按钮是否高亮
@@ -95,7 +96,7 @@ const ArticleDetail = () => {
         }
       }
     });
-  }, [userId]);
+  }, [userId, articleId]);
 
   // 构建目录树
   useEffect(() => {
@@ -476,6 +477,10 @@ const ArticleDetail = () => {
 
           <div className="article-catalogs-btn">
             <Button className="iconfont icon-catalogs" title="大纲" onClick={() => setOpen(true)} />
+          </div>
+
+          <div className="article-come-back-btn">
+            <Button className="iconfont icon-come-back" title="返回" onClick={() => navigate(-1)} />
           </div>
 
           <div

@@ -9,7 +9,7 @@ const {
   favorite: Favorite,
 } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
-const { deleteGitHubImage } = require('../utils/index');
+const { deleteGitHubImage, yyyymmddToDateTime } = require('../utils/index');
 
 class ArticleService {
   /**
@@ -38,65 +38,155 @@ class ArticleService {
    * @param {*} keyword 查询关键字
    * @param {*} tag 标签名
    * @param {*} userId 当前用户id
-   * @param {*} order 排序方式 默认根据文章发布时间降序排列
+   * @param {*} username 用户名
+   * @param {*} publishTimeRange 文章发布时间区间
+   * @param {*} sort 返回数据排序规则
    * @param {*} pageNum 页数
    * @param {*} pageSize 每页数据量
    * @return {*}
    */
-  async findArticle({ categoryId, keyword, tag, userId, order, pageNum, pageSize }) {
+  async findArticle({
+    categoryId,
+    keyword,
+    tagId,
+    publishTimeRange,
+    userId,
+    username,
+    sort,
+    pageNum,
+    pageSize,
+  }) {
+    // 1️⃣ 构建查询条件
     let articleOrder = [['createdAt', 'DESC']];
     // 根据浏览量排序
-    if (order === 'viewCount') articleOrder = [['viewCount', 'DESC']];
+    if (sort === 'hot') articleOrder = [['viewCount', 'DESC']];
 
-    const whereOpt = {
-      // userId,
-      [Op.or]: {
-        title: {
-          [Op.like]: `%${keyword || ''}%`,
+    const andConditions = [];
+    if (keyword) {
+      // 关键字条件（OR）
+      andConditions.push({
+        [Op.or]: {
+          title: {
+            [Op.like]: `%${keyword}%`,
+          },
+          content: {
+            [Op.like]: `%${keyword}%`,
+          },
         },
-        content: {
-          [Op.like]: `%${keyword || ''}%`,
-        },
+      });
+    }
+    // 分类条件
+    if (categoryId) andConditions.push({ categoryId });
+
+    // 文章发布起止时间
+    if (publishTimeRange) {
+      const [start, end] = publishTimeRange.split(',') || [];
+      if (start && end) {
+        andConditions.push({
+          createdAt: {
+            [Op.between]: [yyyymmddToDateTime(start), yyyymmddToDateTime(end, true)],
+          },
+        });
+      } else if (start) {
+        andConditions.push({
+          createdAt: {
+            [Op.gte]: yyyymmddToDateTime(start), // 大于等于开始时间
+          },
+        });
+      } else if (end) {
+        andConditions.push({
+          createdAt: {
+            [Op.lte]: yyyymmddToDateTime(end, true), // 小于等于结束时间
+          },
+        });
+      }
+    }
+
+    // 2️⃣ 第一步：查询符合条件的文章 ID（分页）
+    const articleIdRows = await Article.findAll({
+      attributes: ['id'], // 只查询文章的 id，用于分页
+      where: {
+        [Op.and]: andConditions, // 上面构建的查询条件
       },
-    };
-    categoryId && Object.assign(whereOpt, { categoryId });
+      include: tagId
+        ? [
+            {
+              model: Tag,
+              as: 'tags',
+              attributes: [],
+              through: { attributes: [] }, // 不返回中间表字段
+              where: tagId ? { id: tagId } : {}, // 如果有 tagId，进行过滤
+              required: true, // INNER JOIN
+            },
+          ]
+        : [],
+      limit: pageSize * 1, // 每页数量
+      offset: (pageNum - 1) * pageSize, // 分页偏移量
+      order: articleOrder, // 排序规则，按发布时间降序
+      subQuery: false, // 防止在分页查询时被 JOIN 的行数污染
+    });
 
-    const { count, rows } = await Article.findAndCountAll({
-      limit: pageSize * 1,
-      offset: (pageNum - 1) * pageSize,
-      where: whereOpt,
-      attributes: {
-        exclude: ['updatedAt'], // 不返回更新时间戳字段
+    // 获取查询到的文章 ID
+    const articleIds = articleIdRows.map(a => a.id);
+
+    // 3️⃣ 第二步：根据文章 ID 查询文章详情，并返回标签、分类和作者信息
+    const rows = await Article.findAll({
+      where: {
+        id: articleIds,
       },
       include: [
         {
-          model: Tag, // 关联 Tag 模型
-          attributes: ['name'], // 只返回 name 字段
-          where: tag ? { name: tag } : {}, // 如果有传入 tag，则进行过滤
+          model: Tag,
+          as: 'tags',
+          attributes: ['id', 'name'], // 返回标签的 id 和 name
+          through: { attributes: [] }, // 不返回中间表字段
+          required: false, // LEFT JOIN
         },
         {
-          model: Category, // 关联 Tag 模型
-          attributes: ['id', 'name'], // 只返回 name 字段
+          model: Category,
           as: 'category',
-          where: categoryId ? { id: categoryId } : {}, // 如果有传入 tag，则进行过滤
+          attributes: ['id', 'name'], // 返回分类的 id 和 name
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username'], // 返回作者的 id 和 username
+          where: userId ? { id: userId } : username ? { username } : {}, // 如果有 tagId，进行过滤
         },
       ],
-      distinct: true, // 关键点：去重计数
-      order: articleOrder,
+      order: articleOrder, // 排序规则，按发布时间降序
+    });
+
+    // 4️⃣ 第三步：统计符合条件的文章总数（用于分页）
+    const count = await Article.count({
+      where: {
+        [Op.and]: andConditions,
+      },
+      include: tagId
+        ? [
+            {
+              model: Tag,
+              as: 'tags',
+              attributes: [],
+              through: { attributes: [] },
+              where: { id: tagId },
+              required: true, // INNER JOIN
+            },
+          ]
+        : [],
+      distinct: true, // 去重，避免重复计数
     });
 
     return {
-      pageNum,
-      pageSize,
-      total: count,
-      list: rows,
+      list: rows, // 返回文章列表
+      total: count, // 返回总数
     };
   }
 
   /**
    * @description: 滚动查询文章列表
    * @param {*} keyword 查询关键字
-   * @param {*} tagIds 标签id字符串
+   * @param {*} tagId 标签id字符串
    * @param {*} categoryId 分类id
    * @param {*} lastId 上次查询的最后一条数据的id
    * @param {*} lastSortValue 如果是按发布时间查询，lastSortValue为上次查询最后一条数据的发布时间；如果是按浏览量则是最后一条数据的浏览量
@@ -104,7 +194,7 @@ class ArticleService {
    * @param {*} sort 排序方式 默认根据发布时间降序
    * @return {*}
    */
-  async loadMoreArticle({ keyword, tagIds, categoryId, lastId, lastSortValue, limit, sort }) {
+  async loadMoreArticle({ keyword, tagId, categoryId, lastId, lastSortValue, limit, sort }) {
     // 1. 定义排序规则映射表
     const orderMap = {
       new: [
@@ -154,17 +244,14 @@ class ArticleService {
       });
     }
     // 标签条件（存在多个标签id时，查询包含其中任意一个标签的文章）
-    if (tagIds) {
+    if (tagId) {
       andConditions.push({
         [Op.and]: Sequelize.literal(`
           EXISTS (
             SELECT 1
             FROM article_tags at
             WHERE at.article_id = Article.id
-              AND at.tag_id IN (${tagIds
-                .split(',')
-                .map(id => Number(id))
-                .join(',')})
+              AND at.tag_id IN (${String(tagId)})
           )
         `),
       });

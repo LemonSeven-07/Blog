@@ -2,6 +2,8 @@ export type ComponentMap = {
   ArticleExplorer: (name: string) => JSX.Element;
   Notify: JSX.Element;
   LifeNotes: JSX.Element;
+  Profile: JSX.Element;
+  Favorites: JSX.Element;
   Dashboard: JSX.Element;
   Articles: JSX.Element;
   Users: JSX.Element;
@@ -28,7 +30,7 @@ export interface tagItem {
 
 export interface ArticleSearchParams {
   keyword?: string; // 文章关键字搜索
-  tagIds?: string; // 文章标签ID字符串，如有多个逗号分隔
+  tagId?: number; // 文章标签ID字符串
   categoryId?: number; // 文章分类 ID
   sort?: 'new' | 'hot'; // 排序方式
   lastId?: number; // 用于滚动分页的最后一条文章 ID
@@ -47,6 +49,7 @@ export interface ArticleSearchResult {
     tags: { id: number; name: string }[]; // 文章标签列表
     category: { id: number; name: string }; // 文章分类
     user: { id: number; username: string }; // 文章作者信息
+    createdAt: string; // 文章发布时间
   }[];
   nextCursor: {
     lastId: number; // 用于下一次滚动分页的最后一条文章 ID

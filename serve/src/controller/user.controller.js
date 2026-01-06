@@ -1,4 +1,8 @@
+const fs = require('fs'); // 原生路径处理模块（用于安全拼接路径）
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+const { sequelize } = require('../model/index');
 
 const {
   userRegisterError,
@@ -10,6 +14,9 @@ const {
   userUpdateError,
   findUsersError,
   logoutError,
+  updateAvatarError,
+  updatePasswordError,
+  updateEmailError,
 } = require('../constant/err.type');
 
 const {
@@ -22,7 +29,13 @@ const {
 
 const { getRoutes } = require('../service/route.service.js');
 
-const { issueTokens, sendEmailConfig } = require('../utils/index.js');
+const {
+  issueTokens,
+  sendEmailConfig,
+  uploadImageToGitHub,
+  deleteGitHubImage,
+  clearCacheFiles,
+} = require('../utils/index.js');
 const { redisClient } = require('../db/redis.js');
 const { disconnectWs } = require('../app/socket');
 
@@ -145,6 +158,11 @@ class UserController {
     }
   }
 
+  /**
+   * @description: 发送邮箱验证码
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async sendEmailCode(ctx) {
     try {
       const { email, type } = ctx.request.body;
@@ -224,15 +242,46 @@ class UserController {
   }
 
   /**
-   * @description: 修改用户信息
+   * @description: 修改用户基本信息
    * @param {*} ctx 上下文对象
    * @return {*}
    */
-  async update(ctx) {
-    const { userId } = ctx.request.params;
+  async updateProfile(ctx) {
+    const { userId, avatar, username, email, role, banned } = ctx.state.user;
+    const transaction = await sequelize.transaction();
     try {
-      const res = await updateUser(ctx.request.body, userId);
+      const res = await updateUser(
+        {
+          ...ctx.request.body,
+        },
+        userId,
+        transaction,
+      );
       if (!res) throw new Error();
+
+      // 更新 token 和 refreshToken
+      const userInfo = {
+        userId,
+        avatar,
+        username,
+        email,
+        role,
+        banned,
+        ...ctx.request.body,
+      };
+      const { NODE_ENV, REDIS_TOKEN_CACHE_TTL } = process.env;
+      const { accessToken, refreshToken } = issueTokens(userInfo);
+      ctx.cookies.set('refresh_token', refreshToken, {
+        httpOnly: true, // 前端 JS 无法读取
+        secure: NODE_ENV === 'production', // 开发环境 http = false；生产 https = true
+        sameSite: NODE_ENV === 'production' ? 'None' : 'Lax', // 防 CSRF，生产可用 'None'
+        path: '/', // Cookie 对整个域名有效
+        maxAge: 1000 * 60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL, // 过期时间
+      });
+      ctx.set('x-access-token', accessToken);
+
+      // 提交事务
+      await transaction.commit();
 
       ctx.body = {
         code: '200',
@@ -240,6 +289,7 @@ class UserController {
         message: '修改成功',
       };
     } catch (err) {
+      await transaction.rollback();
       ctx.app.emit('error', userUpdateError, ctx);
     }
   }
@@ -261,7 +311,7 @@ class UserController {
 
         const routes = await getRoutes({ role: ctx.state.user.role });
 
-        const { username, email, role, banned, avatar = '' } = res;
+        const { username, email, role, banned, avatar = '', createdAt } = res;
         ctx.body = {
           code: '200',
           data: {
@@ -272,6 +322,7 @@ class UserController {
               role,
               banned,
               avatar,
+              createdAt,
             },
             routes,
           },
@@ -314,6 +365,11 @@ class UserController {
     }
   }
 
+  /**
+   * @description: 退出登录
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
   async logout(ctx) {
     const { userId, email, jti, seesionId } = ctx.state.user;
     const { NODE_ENV, BLACK_JTI_CACHE_TTL } = process.env;
@@ -351,6 +407,146 @@ class UserController {
       };
     } catch (err) {
       ctx.app.emit('error', logoutError, ctx);
+    }
+  }
+
+  /**
+   * @description: 更新用户头像
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async updateAvatar(ctx) {
+    const { avatar } = ctx.request.files;
+    const { userId, avatar: oldAvatar, username, email, role, banned } = ctx.state.user;
+    const transaction = await sequelize.transaction();
+    let avatarUrl = '';
+    try {
+      const { cdnUrl } = await uploadImageToGitHub(
+        fs.readFileSync(avatar.filepath),
+        avatar.mimetype,
+        'user',
+      );
+      if (!cdnUrl) throw new Error();
+      avatarUrl = cdnUrl;
+
+      const res = await updateUser(
+        {
+          avatar: avatarUrl,
+        },
+        userId,
+        transaction,
+      );
+      if (!res) throw new Error();
+
+      if (oldAvatar) deleteGitHubImage(oldAvatar);
+
+      // 更新 token 和 refreshToken
+      const userInfo = {
+        userId,
+        avatar: avatarUrl,
+        username,
+        email,
+        role,
+        banned,
+      };
+      const { NODE_ENV, REDIS_TOKEN_CACHE_TTL } = process.env;
+      const { accessToken, refreshToken } = issueTokens(userInfo);
+      ctx.cookies.set('refresh_token', refreshToken, {
+        httpOnly: true, // 前端 JS 无法读取
+        secure: NODE_ENV === 'production', // 开发环境 http = false；生产 https = true
+        sameSite: NODE_ENV === 'production' ? 'None' : 'Lax', // 防 CSRF，生产可用 'None'
+        path: '/', // Cookie 对整个域名有效
+        maxAge: 1000 * 60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL, // 过期时间
+      });
+      ctx.set('x-access-token', accessToken);
+
+      // 提交事务
+      await transaction.commit();
+
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '修改成功',
+      };
+    } catch (err) {
+      deleteGitHubImage(avatarUrl);
+      await transaction.rollback();
+      ctx.app.emit('error', updateAvatarError, ctx);
+    } finally {
+      // 延迟5秒后清理临时目录（确保文件导入完成）
+      clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
+    }
+  }
+
+  /**
+   * @description: 修改用户密码
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async updatePassword(ctx) {
+    const { oldPassword, newPassword } = ctx.request.body;
+    const { userId } = ctx.state.user;
+    try {
+      const user = await getUserInfo({ userId });
+      if (!user) throw new Error();
+
+      const match = await bcrypt.compare(oldPassword, user.password);
+      if (!match) throw new Error();
+
+      const salt = bcrypt.genSaltSync(10);
+      const res = await updateUser(
+        {
+          password: bcrypt.hashSync(newPassword, salt),
+        },
+        userId,
+      );
+      if (!res) throw new Error();
+
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '修改成功',
+      };
+    } catch (err) {
+      ctx.app.emit('error', updatePasswordError, ctx);
+    }
+  }
+
+  /**
+   * @description: 更换邮箱
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async updateEmial(ctx) {
+    const { email, password } = ctx.request.body;
+    const { userId } = ctx.state.user;
+    try {
+      const user = await getUserInfo({ userId });
+      if (!user) throw new Error();
+
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) throw new Error();
+
+      const res = await updateUser(
+        {
+          email,
+        },
+        userId,
+      );
+      if (!res) throw new Error();
+
+      // 邮箱更改成功，删除该邮箱的验证码，避免影响下次注册
+      await redisClient.del(`verify:email:update:${email}`);
+      // 邮箱更改成功，删除该邮箱的发送记录，避免影响下次发送
+      await redisClient.del(`email:send:email:update:${email}`);
+
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '修改成功',
+      };
+    } catch (err) {
+      ctx.app.emit('error', updateEmailError, ctx);
     }
   }
 }

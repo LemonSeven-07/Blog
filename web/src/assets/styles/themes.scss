@@ -65,7 +65,8 @@ $themes: (
     --yolo-comment-input-tip: #aaa,
     --yolo-skeleton-bg: #f2f2f2,
     --yolo-article-suspended-color: #8a919f,
-    --yolo-article-suspended-box-shadow: 0 6px 12px rgb(0 0 0 / 15%)
+    --yolo-article-suspended-box-shadow: 0 6px 12px rgb(0 0 0 / 15%),
+    --yolo-profile-sidebar-bg: #fafafa
   ),
   dark: (
     --yolo-bg: #232931,
@@ -135,7 +136,8 @@ $themes: (
     --yolo-article-suspended-color: #e0e0e0,
     --yolo-article-suspended-box-shadow: string.unquote(
         '0 6px 16px rgb(0, 0, 0, 0.45),' + '0 0 0 1px rgb(255, 255, 255, 0.04)'
-      )
+      ),
+    --yolo-profile-sidebar-bg: #2f3540
   )
 );
 $curTheme: light;

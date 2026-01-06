@@ -23,14 +23,6 @@ export function useForm<TValues extends object>(
     const formItem = formItems.find((item) => item.name === name);
     if (formItem) {
       switch (formItem.type) {
-        case 'rangeInput':
-          if (Array.isArray(value)) {
-            result[`start${name}`] = value[0];
-            result[`end${name}`] = value[1];
-          } else {
-            throw new Error(`Invalid value for [${name}]: Expected an array.`);
-          }
-          break;
         case 'datePicker':
           if (value) {
             if (
@@ -114,12 +106,6 @@ export function useForm<TValues extends object>(
       switch (formItem.type) {
         case 'password':
           break;
-        case 'rangeInput':
-          finalValues[key] = [
-            values[`start${String(key)}` as keyof TValues],
-            values[`end${String(key)}` as keyof TValues]
-          ] as TValues[typeof key];
-          break;
         case 'datePicker':
           finalValues[key] = (value as unknown as dayjs.Dayjs).format(
             format[formItem.picker || 'date']
@@ -137,27 +123,6 @@ export function useForm<TValues extends object>(
     }
 
     return finalValues;
-  };
-
-  /**
-   * @description: 操作表单项字段名预处理方法
-   * @param {string[]} names
-   * @return {*}
-   */
-  const processFieldNames = (names: string[]) => {
-    const itemMap = new Map(formItems.map((item) => [item.name, item]));
-    const result = names
-      .map((str) => itemMap.get(str))
-      .filter((item) => item && item.type === 'rangeInput');
-    let newNames = [...names];
-    if (result.length > 0) {
-      // 范围输入框类型表单需要获取多个值才行，用批量设置表单值的方法
-      result.forEach((item) => {
-        newNames = newNames.concat([`start${item!.name}`, `end${item!.name}`]);
-      });
-    }
-
-    return newNames;
   };
 
   /**
@@ -189,12 +154,7 @@ export function useForm<TValues extends object>(
    */
   const setField = <K extends Extract<keyof TValues, string>>(name: K, value: TValues[K]) => {
     const updateValues = processSetFormValues(name, value);
-    if (Object.keys(updateValues).length > 1) {
-      // 范围输入框类型表单还需要设置start、end值才行，用批量设置表单值的方法
-      form.setFieldsValue({ ...updateValues, name: value });
-    } else {
-      form.setFieldValue(name, updateValues[name]);
-    }
+    form.setFieldValue(name, updateValues[name]);
   };
 
   /**
@@ -209,9 +169,7 @@ export function useForm<TValues extends object>(
   ): Partial<Pick<TValues, K>>;
   function getFields<K extends Extract<keyof TValues, string>>(names?: K[]) {
     if (names) {
-      // 范围输入框类型表单还需要获取start、end值才行
-      const newNames = processFieldNames(names);
-      return processGetFormValues(form.getFieldsValue(newNames));
+      return processGetFormValues(form.getFieldsValue(names));
     } else {
       return processGetFormValues(form.getFieldsValue());
     }
@@ -223,14 +181,6 @@ export function useForm<TValues extends object>(
    * @return {*}
    */
   const getField = <K extends Extract<keyof TValues, string>>(name: K): TValues[K] | undefined => {
-    const formItem = formItems.find((item) => item.name === name);
-    if (formItem?.type === 'rangeInput') {
-      const values = processGetFormValues(
-        form.getFieldsValue([name, `start${name}`, `end${name}`])
-      );
-      return values[name];
-    }
-
     const values = processGetFormValues({
       [name]: form.getFieldValue(name)
     } as Partial<TValues>);
@@ -245,9 +195,7 @@ export function useForm<TValues extends object>(
    */
   const resetForm = (names?: Extract<keyof TValues, string>[]) => {
     if (names) {
-      // 范围输入框类型表单还需要重置start、end值才行
-      const newNames = processFieldNames(names);
-      form.resetFields(newNames);
+      form.resetFields(names);
     } else {
       form.resetFields();
     }
@@ -260,9 +208,7 @@ export function useForm<TValues extends object>(
    */
   const validateForm = (names?: Extract<keyof TValues, string>[]) => {
     if (names) {
-      // 范围输入框类型表单还需要校验start、end值才行
-      const newNames = processFieldNames(names);
-      return form.validateFields(newNames);
+      return form.validateFields(names);
     } else {
       return form.validateFields();
     }
@@ -281,8 +227,6 @@ export function useForm<TValues extends object>(
     if (firstError) {
       // 获取第一个失败的字段
       const firstErrorField = document.getElementById(firstError.name[0] as string);
-
-      console.log(280, firstErrorField);
       if (firstErrorField) {
         const formItem = formItems.find((item) => item.name === firstError.name[0]);
         if (formItem && (formItem.type === 'uploadFile' || formItem.type === 'uploadImg')) {
@@ -323,7 +267,6 @@ export function useForm<TValues extends object>(
    * @return {*}
    */
   const handleChange = (params: EventParams, item: DynamicFormItem) => {
-    console.log('提交表单项值改变', params, item);
     if (!item.onChange) return;
     switch (item.type) {
       case 'select':

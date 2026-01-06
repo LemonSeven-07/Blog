@@ -7,8 +7,11 @@ const {
   loginSchema,
   updateUserSchema,
   getUersSchema,
+  updatePasswordSchema,
+  updateEmialSchema,
 } = require('../constant/schema.js');
 
+const { uploadMiddleware } = require('../middleware/upload.middleware');
 const { joiValidate } = require('../middleware/validator.middleware');
 const { auth, hadAdminPermission } = require('../middleware/auth.middleware.js');
 
@@ -26,11 +29,14 @@ const {
   resetPassword,
   login,
   remove,
-  update,
+  updateProfile,
   appInit,
   findAll,
   sendEmailCode,
   logout,
+  updateAvatar,
+  updatePassword,
+  updateEmial,
 } = require('../controller/user.controller.js');
 
 const router = new Router();
@@ -68,11 +74,38 @@ router.post('/auth/sendEmailCode', joiValidate(emailCodeSchema), verifyEmail, se
 // 用户删除
 router.delete('/user/:userId', auth, hadAdminPermission, remove);
 
-// 修改用户信息
-router.patch('/user/:userId', auth, joiValidate(updateUserSchema), hadUpdatePermission, update);
+// 修改用户头像
+router.post(
+  '/user/avatar',
+  auth,
+  uploadMiddleware({
+    avatar: { type: ['image/png', 'image/jpeg', 'image/jpg'], require: true },
+  }),
+  updateAvatar,
+);
+
+// 修改用户基本信息
+router.put(
+  '/user/profile',
+  auth,
+  joiValidate(updateUserSchema),
+  verifyUser,
+  hadUpdatePermission,
+  updateProfile,
+);
 
 // 修改用户密码
-router.patch('/user/password/:userId');
+router.put('/user/password', auth, joiValidate(updatePasswordSchema), updatePassword);
+
+// 更换邮箱
+router.put(
+  '/user/email',
+  auth,
+  joiValidate(updateEmialSchema),
+  verifyEmail,
+  verifyEmailCode,
+  updateEmial,
+);
 
 // 获取用户列表(需要管理员权限)
 router.get('/user/list', auth, joiValidate(getUersSchema), hadAdminPermission, findAll);

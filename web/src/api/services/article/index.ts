@@ -4,7 +4,8 @@ import type {
   UploadArticle,
   GetArticleList,
   ViewArticleDetail,
-  ToggleArticleFavorite
+  ToggleArticleFavorite,
+  GetArticles
 } from './types';
 
 // 导出文章
@@ -34,3 +35,7 @@ export const viewArticleDetail = (params: ViewArticleDetail['Request']) =>
 // 文章收藏或取消收藏单个和批量操作
 export const toggleArticleFavorite = (params: ToggleArticleFavorite['Request']) =>
   http.post('/article/favorites', params);
+
+// 分页查询文章列表
+export const getArticles = (params: GetArticles['Request']) =>
+  http.get<GetArticles['Response']>('/article/list', params);

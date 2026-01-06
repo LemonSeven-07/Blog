@@ -29,7 +29,7 @@ const {
 const router = new Router({ prefix: '/article' });
 
 // 获取文章列表(分页查询)
-router.get('/list', auth, hadAdminPermission, joiValidate(getPaginationArticlesSchema), findAll);
+router.get('/list', auth, joiValidate(getPaginationArticlesSchema), findAll);
 
 // 获取文章列表(滚动加载查询)
 router.get('/scroll', joiValidate(getLoadMoreArticlesSchema), loadMore);

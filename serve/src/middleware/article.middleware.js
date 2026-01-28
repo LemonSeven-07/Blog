@@ -1,4 +1,4 @@
-const { createArticleError, articleAlreadyExists } = require('../constant/err.type');
+const { articleCreateError, articleAlreadyExists } = require('../constant/err.type');
 
 const { getArticleInfo } = require('../service/article.service');
 
@@ -15,9 +15,9 @@ const verifyArticle = async (ctx, next) => {
   try {
     // 检查文章标题是否已存在
     const res = await getArticleInfo({ id, userId, title });
-    if (res && res.dataValues) return ctx.app.emit('error', articleAlreadyExists, ctx);
+    if (res) return ctx.app.emit('error', articleAlreadyExists, ctx);
   } catch (err) {
-    return ctx.app.emit('error', createArticleError, ctx);
+    return ctx.app.emit('error', articleCreateError, ctx);
   }
 
   await next();

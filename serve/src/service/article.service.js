@@ -76,7 +76,8 @@ class ArticleService {
       });
     }
     // 分类条件
-    if (categoryId) andConditions.push({ categoryId });
+    if (categoryId && categoryId * 1 > 0) andConditions.push({ categoryId });
+    if (categoryId && categoryId * 1 === 0) andConditions.push({ categoryId: { [Op.is]: null } });
 
     // 文章发布起止时间
     if (publishTimeRange) {
@@ -133,6 +134,16 @@ class ArticleService {
     const rows = await Article.findAll({
       where: {
         id: articleIds,
+
+        ...(userId && {
+          '$user.id$': userId,
+        }),
+
+        ...(username && {
+          '$user.username$': {
+            [Op.like]: `%${username}%`,
+          },
+        }),
       },
       include: [
         {
@@ -150,30 +161,48 @@ class ArticleService {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'username'], // 返回作者的 id 和 username
-          where: userId ? { id: userId } : username ? { username } : {}, // 如果有 tagId，进行过滤
+          attributes: ['id', 'username', 'deletedAt'], // 返回作者的 id 和 username
+          paranoid: false, // ⭐ 查出被软删除用户
+          required: false, // LEFT JOIN
         },
       ],
       order: articleOrder, // 排序规则，按发布时间降序
     });
+
+    const include = [];
+    if (userId || username) {
+      include.push({
+        model: User,
+        as: 'user',
+        attributes: [],
+        where: {
+          ...(userId && { id: userId }),
+          ...(username && {
+            username: { [Op.like]: `%${username}%` },
+          }),
+        },
+        required: true, // ⭐ 必须 INNER JOIN
+        paranoid: false,
+      });
+    }
+
+    if (tagId) {
+      include.push({
+        model: Tag,
+        as: 'tags',
+        attributes: [],
+        through: { attributes: [] },
+        where: { id: tagId },
+        required: true, // INNER JOIN
+      });
+    }
 
     // 4️⃣ 第三步：统计符合条件的文章总数（用于分页）
     const count = await Article.count({
       where: {
         [Op.and]: andConditions,
       },
-      include: tagId
-        ? [
-            {
-              model: Tag,
-              as: 'tags',
-              attributes: [],
-              through: { attributes: [] },
-              where: { id: tagId },
-              required: true, // INNER JOIN
-            },
-          ]
-        : [],
+      include,
       distinct: true, // 去重，避免重复计数
     });
 
@@ -442,6 +471,7 @@ class ArticleService {
       lock: true, // 锁定表，防止其他事务修改
       transaction,
     });
+
     return res > 0 ? true : false;
   }
 
@@ -517,42 +547,38 @@ class ArticleService {
   /**
    * @description: 查询导出文章列表
    * @param {*} ids 文章id，多篇文章用逗号分隔
+   * @param {*} userId 文章作者id
+   * @param {*} role 用户权限
    * @return {*}
    */
-  async outputArticle(ids) {
-    const whereOpt = {};
-    let distinctCategories = [];
+  async outputArticle(ids, userId, role) {
     if (ids) {
+      const whereOpt = {};
+      // 普通管理员权限只能导出自己发布的文章，超级管理员可以导入任何人的文章
+      if (role !== 1) whereOpt.userId = userId;
       const articleList = ids.split(',');
       whereOpt.id = articleList;
-    } else {
-      // 导出全部文章，根据分类名称生成目录结构
-      distinctCategories = await Article.findAll({
-        attributes: ['categoryId'],
-        group: ['categoryId'],
-        raw: true,
+      const res = await Article.findAll({
+        where: whereOpt,
       });
 
-      if (distinctCategories.length)
-        whereOpt.categoryId = distinctCategories.map(item => item.categoryId);
+      return res ? res : [];
+    } else {
+      // 不论什么角色权限，用户想全部导出也只能全部导出自己发布的文章
+      const res = await Article.findAll({
+        where: { userId },
+        attributes: ['id', 'categoryId', 'title', 'summary', 'content'],
+        include: [
+          {
+            model: Category, // 关联分类表
+            as: 'category',
+            attributes: ['id', 'name'], // 只返回分类的 name
+          },
+        ],
+      });
+
+      return res ? res : [];
     }
-
-    const res = await Article.findAll({
-      where: whereOpt,
-      include: [
-        {
-          model: Tag,
-          attributes: ['name'],
-        },
-        {
-          model: Category,
-          as: 'category',
-          attributes: ['name'],
-        },
-      ],
-    });
-
-    return res ? res : [];
   }
 
   /**

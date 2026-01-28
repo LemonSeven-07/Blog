@@ -1,3 +1,5 @@
+const { remove } = require('../controller/tag.controller');
+
 module.exports = {
   userRegisterError: {
     code: '10002',
@@ -29,7 +31,7 @@ module.exports = {
     message: '验证码错误，请重新获取',
     data: null,
   },
-  resetPasswordError: {
+  passwordResetError: {
     code: '10036',
     message: '密码重置失败',
     data: null,
@@ -84,17 +86,17 @@ module.exports = {
     message: '用户信息修改失败',
     data: null,
   },
-  findUsersError: {
+  usersFindError: {
     code: '10012',
     message: '用户搜索失败',
     data: null,
   },
-  findTagsError: {
+  tagsFindError: {
     code: '10013',
     message: '标签搜索失败',
     data: null,
   },
-  findCategoriesError: {
+  categoriesFindError: {
     code: '10014',
     message: '分类搜索失败',
     data: null,
@@ -109,12 +111,12 @@ module.exports = {
     message: '评论失败',
     data: null,
   },
-  deleteCommentError: {
+  commentDeleteError: {
     code: '10016',
     message: '评论删除失败',
     data: null,
   },
-  findCommentError: {
+  commentFindError: {
     code: '10017',
     message: '评论获取失败',
     data: null,
@@ -124,7 +126,7 @@ module.exports = {
     message: '您已被禁言，请文明留言',
     data: null,
   },
-  createArticleError: {
+  articleCreateError: {
     code: '10019',
     message: '文章创建失败',
     data: null,
@@ -139,12 +141,12 @@ module.exports = {
     message: '文章创建失败',
     data: null,
   },
-  findArticleError: {
+  articleFindError: {
     code: '10022',
     message: '文章获取失败',
     data: null,
   },
-  deleteArticleError: {
+  articleDeleteError: {
     code: '10023',
     message: '文章删除失败',
     data: null,
@@ -164,27 +166,27 @@ module.exports = {
     message: '请确保文件为有效内容，避免上传不必要的文件',
     data: null,
   },
-  uploadArticlesError: {
+  articlesUploadError: {
     code: '10026',
     message: '上传失败',
     data: null,
   },
-  outputArticlesError: {
+  articlesOutputError: {
     code: '10027',
     message: '导出失败',
     data: null,
   },
-  categoryEnAlreadyExists: {
+  categoryNameAlreadyExists: {
     code: '10034',
-    message: '分类英文名已存在',
-    data: null,
-  },
-  categoryAlreadyExists: {
-    code: '10004',
     message: '分类名已存在',
     data: null,
   },
-  createCategoryError: {
+  categorySlugAlreadyExists: {
+    code: '10058',
+    message: '分类路由标识已存在',
+    data: null,
+  },
+  categoryCreateError: {
     code: '10029',
     message: '文章分类创建失败',
     data: null,
@@ -194,7 +196,7 @@ module.exports = {
     message: '文件大小超过限制',
     data: null,
   },
-  updateNoticeError: {
+  noticeUpdateError: {
     code: '10031',
     message: '消息通知修改失败',
     data: null,
@@ -209,7 +211,7 @@ module.exports = {
     message: '消息通知获取失败',
     data: null,
   },
-  createRouteError: {
+  routeCreateError: {
     code: '10037',
     message: '页面路由创建失败',
     data: null,
@@ -229,27 +231,27 @@ module.exports = {
     message: '标签创建失败',
     data: null,
   },
-  addFavoriteError: {
+  favoriteAddError: {
     code: '10044',
     message: '收藏失败',
     data: null,
   },
-  removeFavoriteError: {
+  favoriteRemoveError: {
     code: '10045',
     message: '取消收藏失败',
     data: null,
   },
-  updateAvatarError: {
+  avatarUpdateError: {
     code: '10046',
     message: '头像修改失败',
     data: null,
   },
-  updatePasswordError: {
+  passwordUpdateError: {
     code: '10047',
     message: '密码修改失败',
     data: null,
   },
-  updateEmailError: {
+  emailUpdateError: {
     code: '10048',
     message: '邮箱修改失败',
     data: null,
@@ -257,6 +259,56 @@ module.exports = {
   getCategoriesByFavoriteError: {
     code: '10049',
     message: '获取收藏文章对应的分类失败',
+    data: null,
+  },
+  tagCreateError: {
+    code: '10050',
+    message: '创建文章标签失败',
+    data: null,
+  },
+  tagDoesNotExist: {
+    code: '10051',
+    message: '标签不存在',
+    data: null,
+  },
+  tagUpdateError: {
+    code: '10052',
+    message: '文章标签修改失败',
+    data: null,
+  },
+  tagDeleteError: {
+    code: '10053',
+    message: '文章标签删除失败',
+    data: null,
+  },
+  categoryUpdateError: {
+    code: '10054',
+    message: '文章分类修改失败',
+    data: null,
+  },
+  categoryDoesNotExist: {
+    code: '10055',
+    message: '文章分类不存在',
+    data: null,
+  },
+  categoryDeleteError: {
+    code: '10056',
+    message: '文章分类删除失败',
+    data: null,
+  },
+  userRestoreError: {
+    code: '10057',
+    message: '恢复用户失败',
+    data: null,
+  },
+  tagOperateError: {
+    code: '10059',
+    message: '标签操作失败',
+    data: null,
+  },
+  tagUsageError: {
+    code: '10057',
+    message: '标签已被使用',
     data: null,
   },
 };

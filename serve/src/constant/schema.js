@@ -5,10 +5,10 @@ const { createTag } = require('../service/tag.service');
 module.exports = {
   registerSchema: Joi.object({
     username: Joi.string()
-      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/)
       .required()
       .messages({
-        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-16位',
       }),
     email: Joi.string().email().required().messages({
       'string.empty': '邮箱不能为空',
@@ -47,9 +47,9 @@ module.exports = {
   }),
   loginSchema: Joi.object({
     username: Joi.string()
-      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/)
       .messages({
-        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-16位',
       }),
     email: Joi.string().email().messages({
       'string.email': '邮箱格式不正确',
@@ -59,10 +59,14 @@ module.exports = {
     }),
   }).xor('username', 'email'),
   updateUserSchema: Joi.object({
+    userId: Joi.number().integer().required().messages({
+      'number.empty': 'userId不能为空',
+      'number.integer': 'userId必须是整数',
+    }),
     username: Joi.string()
-      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/)
       .messages({
-        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-16位',
       }),
     role: Joi.number().integer().messages({
       'number.integer': '用户权限必须是整数',
@@ -75,6 +79,19 @@ module.exports = {
     .messages({
       'object.missing': '必要字段为空',
     }),
+  deleteUserSchema: Joi.object({
+    ids: Joi.array()
+      .items(Joi.number().integer()) // 数组元素必须是整数
+      .required() // 必填字段
+      .min(1) // 数组不能为空（至少1个元素）
+      .messages({
+        'array.base': 'ids必须是数组',
+        'array.empty': 'ids数组不能为空',
+        'array.min': 'ids数组至少包含一个元素',
+        'number.base': 'ids数组元素必须是数字',
+        'number.integer': 'ids数组元素必须是整数',
+      }),
+  }),
   updatePasswordSchema: Joi.object({
     oldPassword: Joi.string().required().messages({
       'string.empty': 'oldPassword不能为空',
@@ -116,22 +133,24 @@ module.exports = {
       'number.integer': 'pageSize必须是整数',
     }),
     username: Joi.string()
-      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/)
+      .allow('')
+      .pattern(/^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/)
       .messages({
-        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-12位',
+        'string.pattern.base': '用户名由中文、字母、横杠和下划线组成，长度4-16位',
       }),
-    type: Joi.number().integer().messages({
-      'number.integer': 'type必须是整数',
-    }), // 检索类型 type = 1 github 用户 type = 2 站内用户 不传则检索所有
-    rangeDate: Joi.string()
-      .pattern(/^\d{4}-\d{2}-\d{2},\s*\d{4}-\d{2}-\d{2}$/)
+    role: Joi.number().integer().valid(1, 2, 3).messages({
+      'number.integer': '用户权限必须是整数',
+      'any.only': '用户权限必须是1或2或3',
+    }),
+    registerDate: Joi.string()
+      .pattern(/^\d{4}\d{2}\d{2},\s*\d{4}\d{2}\d{2}$/)
       .custom((value, helpers) => {
         const [startDateStr, endDateStr] = value.split(/\s*,\s*/);
 
         // 验证是否为有效日期
         if (
-          !moment(startDateStr, 'YYYY-MM-DD', true).isValid() ||
-          !moment(endDateStr, 'YYYY-MM-DD', true).isValid()
+          !moment(startDateStr, 'YYYYMMDD', true).isValid() ||
+          !moment(endDateStr, 'YYYYMMDD', true).isValid()
         ) {
           return helpers.error('any.invalid');
         }
@@ -147,6 +166,23 @@ module.exports = {
         'string.pattern.base': '日期范围格式应为"YYYY-MM-DD, YYYY-MM-DD"',
         'any.invalid': '包含无效的日期',
         'date.endBeforeStart': '结束日期不能早于开始日期',
+      }),
+    isDeleted: Joi.number().integer().valid(0, 1).messages({
+      'number.integer': 'isDeleted必须是整数',
+      'any.only': 'isDeleted必须是0或1',
+    }),
+  }),
+  restoreUserSchema: Joi.object({
+    ids: Joi.array()
+      .items(Joi.number().integer()) // 数组元素必须是整数
+      .required() // 必填字段
+      .min(1) // 数组不能为空（至少1个元素）
+      .messages({
+        'array.base': 'ids必须是数组',
+        'array.empty': 'ids数组不能为空',
+        'array.min': 'ids数组至少包含一个元素',
+        'number.base': 'ids数组元素必须是数字',
+        'number.integer': 'ids数组元素必须是整数',
       }),
   }),
 
@@ -219,7 +255,7 @@ module.exports = {
       .messages({
         'array.base': 'ids必须是数组',
         'array.empty': 'ids数组不能为空',
-        'array.min': 'ids数组不能为空',
+        'array.min': 'ids数组至少包含一个元素',
         'number.base': 'ids数组元素必须是数字',
         'number.integer': 'ids数组元素必须是整数',
       }),
@@ -249,23 +285,132 @@ module.exports = {
     name: Joi.string().required().messages({
       'string.empty': '分类名不能为空',
     }),
-    route: Joi.object({
-      path: Joi.string().required().messages({
-        'string.empty': 'path 不能为空',
-      }),
-      name: Joi.string().required().messages({
-        'string.empty': 'name 不能为空',
-      }),
-      meta: Joi.object({
-        icon: Joi.string().allow('').optional(),
-      }).required(),
+    slug: Joi.string().required().messages({
+      'string.empty': '路由标识不能为空',
     }),
+    icon: Joi.string().allow(''),
+  }),
+  getCategorySchema: Joi.object({
+    name: Joi.string().allow(''),
+    createDate: Joi.string()
+      .pattern(/^\d{4}\d{2}\d{2},\s*\d{4}\d{2}\d{2}$/)
+      .custom((value, helpers) => {
+        const [startDateStr, endDateStr] = value.split(/\s*,\s*/);
+
+        // 验证是否为有效日期
+        if (
+          !moment(startDateStr, 'YYYYMMDD', true).isValid() ||
+          !moment(endDateStr, 'YYYYMMDD', true).isValid()
+        ) {
+          return helpers.error('any.invalid');
+        }
+
+        // 验证结束日期不小于开始日期
+        if (moment(endDateStr).isBefore(moment(startDateStr))) {
+          return helpers.error('date.endBeforeStart');
+        }
+
+        return value;
+      })
+      .messages({
+        'string.pattern.base': 'createDate日期范围格式应为"YYYYMMDD, YYYYMMDD"',
+        'any.invalid': '包含无效的日期',
+        'date.endBeforeStart': '结束日期不能早于开始日期',
+      }),
+    pageNum: Joi.number().integer().required().messages({
+      'number.integer': 'pageNum必须是整数',
+      'number.empty': 'pageNum不能为空',
+    }),
+    pageSize: Joi.number().integer().required().messages({
+      'number.integer': 'pageSize必须是整数',
+      'number.empty': 'pageNum不能为空',
+    }),
+  }),
+  updateCategorySchema: Joi.object({
+    name: Joi.string().required().messages({
+      'string.empty': '分类名不能为空',
+    }),
+    slug: Joi.string().required().messages({
+      'string.empty': '路由标识不能为空',
+    }),
+    icon: Joi.string().allow(''),
+  }),
+  deleteCategorySchema: Joi.object({
+    ids: Joi.array()
+      .items(Joi.number().integer()) // 数组元素必须是整数
+      .required() // 必填字段
+      .min(1) // 数组不能为空（至少1个元素）
+      .messages({
+        'array.base': 'ids必须是数组',
+        'array.empty': 'ids数组不能为空',
+        'array.min': 'ids数组至少包含一个元素',
+        'number.base': 'ids数组元素必须是数字',
+        'number.integer': 'ids数组元素必须是整数',
+      }),
   }),
 
   createTagSchema: Joi.object({
     name: Joi.string().required().messages({
       'string.empty': '标签名不能为空',
     }),
+  }),
+  getTagsSchema: Joi.object({
+    name: Joi.string().allow(''),
+    createDate: Joi.string()
+      .pattern(/^\d{4}\d{2}\d{2},\s*\d{4}\d{2}\d{2}$/)
+      .custom((value, helpers) => {
+        const [startDateStr, endDateStr] = value.split(/\s*,\s*/);
+
+        // 验证是否为有效日期
+        if (
+          !moment(startDateStr, 'YYYYMMDD', true).isValid() ||
+          !moment(endDateStr, 'YYYYMMDD', true).isValid()
+        ) {
+          return helpers.error('any.invalid');
+        }
+
+        // 验证结束日期不小于开始日期
+        if (moment(endDateStr).isBefore(moment(startDateStr))) {
+          return helpers.error('date.endBeforeStart');
+        }
+
+        return value;
+      })
+      .messages({
+        'string.pattern.base': 'createDate日期范围格式应为"YYYYMMDD, YYYYMMDD"',
+        'any.invalid': '包含无效的日期',
+        'date.endBeforeStart': '结束日期不能早于开始日期',
+      }),
+    isBuiltin: Joi.number().integer().valid(0, 1).messages({
+      'number.integer': 'isBuiltin必须是整数',
+      'any.only': 'isBuiltin必须是0或1',
+    }),
+    pageNum: Joi.number().integer().required().messages({
+      'number.integer': 'pageNum必须是整数',
+      'number.empty': 'pageNum不能为空',
+    }),
+    pageSize: Joi.number().integer().required().messages({
+      'number.integer': 'pageSize必须是整数',
+      'number.empty': 'pageNum不能为空',
+    }),
+  }),
+  updateTagSchema: Joi.object({
+    name: Joi.string().required().messages({
+      'string.empty': 'name不能为空',
+    }),
+  }),
+  deleteTagSchema: Joi.object({
+    ids: Joi.array()
+      .items(Joi.number().integer()) // 数组元素必须是整数
+      .required() // 必填字段
+      .min(1) // 数组不能为空（至少1个元素）
+      .messages({
+        'array.base': 'ids必须是数组',
+        'array.empty': 'ids数组不能为空',
+        'array.min': 'ids数组至少包含一个元素',
+        'number.base': 'ids数组元素必须是数字',
+        'number.integer': 'ids数组元素必须是整数',
+      }),
   }),
 
   articleMaintenanceSchema: Joi.object({
@@ -302,6 +447,14 @@ module.exports = {
 
     content: Joi.string().required().messages({
       'string.empty': '文章内容不能为空',
+    }),
+  }),
+  getHotArticlesSchema: Joi.object({
+    pageNum: Joi.number().integer().messages({
+      'number.integer': 'pageNum必须是整数',
+    }),
+    pageSize: Joi.number().integer().messages({
+      'number.integer': 'pageSize必须是整数',
     }),
   }),
   getPaginationArticlesSchema: Joi.object({
@@ -418,10 +571,12 @@ module.exports = {
         }),
       )
       .min(1)
+      .max(3)
       .required()
       .messages({
         'array.base': 'tagIds必须是数组',
         'array.min': 'tagIds至少包含一个元素',
+        'array.max': 'tagIds小于等于三个元素',
         'any.required': 'tagIds不能为空',
       }),
   }),

@@ -11,6 +11,17 @@ const Category = sequelize.define(
       unique: true,
       comment: '分类名称',
     },
+    slug: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      comment: '路由标识',
+    },
+    icon: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      comment: '分类图标',
+    },
   },
   {
     paranoid: false, // 🚫 覆盖全局配置，使用硬删除

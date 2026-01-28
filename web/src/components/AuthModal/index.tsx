@@ -1,3 +1,11 @@
+/*
+ * @Author: yolo
+ * @Date: 2025-10-03 16:05:51
+ * @LastEditors: yolo
+ * @LastEditTime: 2026-01-13 01:16:36
+ * @FilePath: /web/src/components/AuthModal/index.tsx
+ * @Description: 登录/注册模态框
+ */
 import { memo, useState } from 'react';
 import { Modal } from 'antd';
 import LoginForm from './LoginForm';
@@ -13,6 +21,10 @@ const AuthModal = ({ open, handleCancel }: ModalProps) => {
   console.log('登录/注册页面');
   const [mode, setMode] = useState('login'); // 'login' | 'register' | 'reset'
 
+  /**
+   * @description: 关闭模态框
+   * @return {*}
+   */
   const closeModal = () => {
     setMode('login');
     handleCancel();
@@ -31,6 +43,7 @@ const AuthModal = ({ open, handleCancel }: ModalProps) => {
         closable={{ 'aria-label': '关闭登录/注册对话框按钮' }}
         open={open}
         footer={null}
+        maskClosable={false}
         onCancel={closeModal}
         destroyOnHidden
       >

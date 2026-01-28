@@ -5,7 +5,7 @@ import type {
 } from '@/types/app/common';
 
 export interface OutputArticle {
-  Request: { ids: string };
+  Request: { ids?: string };
   Config: { responseType: 'blob' };
   Response: Blob;
 }
@@ -44,6 +44,7 @@ export interface GetArticles {
     author?: string;
     sort?: 'new' | 'hot';
     publishTimeRange?: string;
+    flag?: boolean;
   };
   Response: {
     list: ArticleSearchResult['list'];

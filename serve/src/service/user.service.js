@@ -2,6 +2,8 @@ const { Sequelize, Op } = require('sequelize');
 
 const { user: User } = require('../model/index'); // 引入 index.js 中的 db 对象，包含所有模型
 
+const { yyyymmddToDateTime } = require('../utils/index');
+
 class UserService {
   /**
    * @description: 查询用户信息
@@ -47,13 +49,13 @@ class UserService {
 
   /**
    * @description: 删除用户
-   * @param {*} userId 用户id
+   * @param {number[]} ids 用户id数组
    * @return {*}
    */
-  async removeUser(userId) {
+  async removeUser(ids) {
     const res = await User.destroy({
       where: {
-        id: userId,
+        id: ids,
       },
     });
     return res > 0 ? true : false;
@@ -88,7 +90,7 @@ class UserService {
 
     const res = await User.update(newUser, {
       where: whereOpt,
-      ...(transaction ? { transaction } : {}),
+      ...(transaction ? { transaction, paranoid: false } : { paranoid: false }),
     });
 
     return res[0] > 0 ? true : false;
@@ -102,53 +104,62 @@ class UserService {
    * @param {*} type 1 github用户；2 站内用户
    * @param {*} rangeDate 用户注册日期范围，起止日期以逗号分隔
    * @param {*} userId 用户id
+   * @param {*} isDeleted 是否软删除过滤 0：未删除 1：已删除
    * @return {*}
    */
-  async findUsers({ pageNum, pageSize, username, type, rangeDate }, userId) {
+  async findUsers({ pageNum, pageSize, username, role, registerDate, isDeleted }, userId) {
     const whereOpt = {
       // 查询id不为登录用户id的用户数据
       id: {
         [Op.ne]: userId,
       },
     };
-    username && Object.assign(whereOpt, { username });
-    // 检索类型 type = 1 github 用户 type = 2 站内用户 不传则检索所有
-    if (type == 1) {
-      // github用户需要github字段有值且password字段为空
-      whereOpt[Op.and] = [
-        {
-          gitHub: {
-            [Op.and]: [{ [Op.not]: null }, { [Op.not]: '' }],
-          },
+
+    username &&
+      Object.assign(whereOpt, {
+        username: {
+          [Op.like]: `%${username}%`,
         },
-        {
-          password: {
-            [Op.or]: [{ [Op.eq]: null }, { [Op.eq]: '' }],
-          },
+      });
+    role && Object.assign(whereOpt, { role });
+
+    // 是否软删除过滤
+    if (isDeleted * 1 === 0) {
+      // 只查询未被软删除用户
+      Object.assign(whereOpt, {
+        deletedAt: null,
+      });
+    } else if (isDeleted * 1 === 1) {
+      // 只查询被软删除用户
+      Object.assign(whereOpt, {
+        deletedAt: {
+          [Op.ne]: null,
         },
-      ];
-    } else if (type == 2) {
-      // 站内用户需要password字段有值且github字段为空
-      whereOpt[Op.and] = [
-        {
-          gitHub: {
-            [Op.or]: [{ [Op.eq]: null }, { [Op.eq]: '' }],
-          },
-        },
-        {
-          password: {
-            [Op.and]: [{ [Op.not]: null }, { [Op.not]: '' }],
-          },
-        },
-      ];
+      });
     }
 
-    if (rangeDate) {
-      // 查询createdAt在日期[new Date(interval[0]), new Date(interval[1])]范围内的用户
-      const interval = rangeDate.split(',');
-      whereOpt.createdAt = {
-        [Op.between]: [new Date(interval[0]), new Date(interval[1])],
-      };
+    // 文章发布起止时间
+    if (registerDate) {
+      const [start, end] = registerDate.split(',') || [];
+      if (start && end) {
+        Object.assign(whereOpt, {
+          createdAt: {
+            [Op.between]: [yyyymmddToDateTime(start), yyyymmddToDateTime(end, true)],
+          },
+        });
+      } else if (start) {
+        Object.assign(whereOpt, {
+          createdAt: {
+            [Op.gte]: yyyymmddToDateTime(start), // 大于等于开始时间
+          },
+        });
+      } else if (end) {
+        Object.assign(whereOpt, {
+          createdAt: {
+            [Op.lte]: yyyymmddToDateTime(end, true), // 小于等于结束时间
+          },
+        });
+      }
     }
 
     const { count, rows } = await User.findAndCountAll({
@@ -163,26 +174,94 @@ class UserService {
         'username',
         'banned',
         'createdAt',
-        // 判断是否是github用户和站内用户，并根据判断结果生成虚拟字段type，type = 1 github 用户 type = 2 站内用户，默认站内用户
-        [
-          Sequelize.literal(`
-      CASE 
-        WHEN gitHub IS NOT NULL AND gitHub != '' AND (password IS NULL OR password = '') THEN 1
-        WHEN password IS NOT NULL AND password != '' AND (gitHub IS NULL OR gitHub = '') THEN 2
-        ELSE 2
-      END
-    `),
-          'type',
-        ],
+        'email',
+        'role',
+        'avatar',
+        'createdAt',
+        'deletedAt',
       ],
+      paranoid: false, // 查出被软删除用户
     });
 
     return {
-      pageNum,
-      pageSize,
       total: count,
       list: rows,
     };
+  }
+
+  /**
+   * @description: 查出所有（包括软删除）
+   * @param {number[]} ids 用户id数组
+   * @return {*}
+   */
+  async findAllWithDeleted(ids) {
+    const users = await User.findAll({
+      where: { id: ids },
+      paranoid: false,
+    });
+
+    return users;
+  }
+
+  /**
+   * @description: 恢复用户
+   * @param {number[]} ids 恢复被删除用户的id数组
+   * @return {*}
+   */
+  async restoreUser(ids) {
+    const res = await User.restore({
+      where: {
+        id: ids,
+      },
+    });
+
+    return res;
+  }
+
+  /**
+   * @description: 修改用户名时检查用户名是否已存在
+   * @param {*} username 用户名
+   * @param {*} userId 用户id
+   * @return {*}
+   */
+  async checkUsername(username, userId) {
+    const whereOpt = {
+      // 查询id不为登录用户id的用户数据
+      id: {
+        [Op.ne]: userId,
+      },
+      username,
+    };
+
+    const res = await User.findOne({
+      where: whereOpt,
+      paranoid: false, // 查出被软删除用户
+    });
+
+    return res ? res.dataValues : null;
+  }
+
+  /**
+   * @description: 修改邮箱名时检查邮箱是否已存在
+   * @param {*} email 用户名
+   * @param {*} userId 用户id
+   * @return {*}
+   */
+  async checkEmail(email, userId) {
+    const whereOpt = {
+      // 查询id不为登录用户id的用户数据
+      id: {
+        [Op.ne]: userId,
+      },
+      email,
+    };
+
+    const res = await User.findOne({
+      where: whereOpt,
+      paranoid: false, // 查出被软删除用户
+    });
+
+    return res ? res.dataValues : null;
   }
 }
 

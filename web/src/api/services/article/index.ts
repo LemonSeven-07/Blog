@@ -8,8 +8,8 @@ import type {
   GetArticles
 } from './types';
 
-// 导出文章
-export const outputArticle = (params: OutputArticle['Request'], config: OutputArticle['Config']) =>
+// 导出文章（支持单个、批量和全部导出）
+export const outputArticles = (params: OutputArticle['Request'], config: OutputArticle['Config']) =>
   http.get<OutputArticle['Response'], OutputArticle['Response'], OutputArticle['Request'], true>(
     '/article/output',
     params,
@@ -36,6 +36,14 @@ export const viewArticleDetail = (params: ViewArticleDetail['Request']) =>
 export const toggleArticleFavorite = (params: ToggleArticleFavorite['Request']) =>
   http.post('/article/favorites', params);
 
-// 分页查询文章列表
-export const getArticles = (params: GetArticles['Request']) =>
+// 获取热门文章排行榜
+export const getHotArticles = (params: { pageNum: number; pageSize: number }) =>
   http.get<GetArticles['Response']>('/article/list', params);
+
+// 后台分页查询文章列表
+export const getAllArticles = (params: GetArticles['Request']) =>
+  http.get<GetArticles['Response']>('/article/admin/list', params);
+
+// 删除文章
+export const deleteArticles = (params: { ids: number[] }) =>
+  http.delete('/article', params, {}, { useBodyForDelete: true });

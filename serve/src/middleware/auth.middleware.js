@@ -1,3 +1,11 @@
+/*
+ * @Author: yolo
+ * @Date: 2025-06-09 00:58:58
+ * @LastEditors: yolo
+ * @LastEditTime: 2026-01-22 04:17:50
+ * @FilePath: /serve/src/middleware/auth.middleware.js
+ * @Description: 鉴权中间件
+ */
 const jwt = require('jsonwebtoken');
 
 const { issueTokens } = require('../utils/index.js');
@@ -8,7 +16,11 @@ const {
   userOfflineError,
   userKickedError,
   hasNotAdminPermission,
+  tagOperateError,
+  tagUsageError,
 } = require('../constant/err.type.js');
+const { checkTagsUsage } = require('../service/articleTag.service');
+const { isSystemTag } = require('../service/tag.service.js');
 
 /**
  * @description: 校验token
@@ -103,11 +115,17 @@ const auth = async (ctx, next) => {
           };
           return await next();
         } catch (refreshErr) {
-          if (ctx.path !== '/app/init' && ctx.path !== '/article/list')
+          if (
+            !ctx.path.includes('/app/init') &&
+            !(ctx.path.includes('/article/list') && !ctx.query.flag)
+          )
             return ctx.app.emit('error', tokenInvalidError, ctx);
         }
       default:
-        if (ctx.path !== '/app/init' && ctx.path !== '/article/list')
+        if (
+          !ctx.path.includes('/app/init') &&
+          !(ctx.path.includes('/article/list') && !ctx.query.flag)
+        )
           return ctx.app.emit('error', tokenInvalidError, ctx);
     }
   }
@@ -116,19 +134,52 @@ const auth = async (ctx, next) => {
 
 /**
  * @description: 校验用户权限
- * @param {*} ctx 上下文对象
- * @param {*} next 下一个中间件
+ * @param {number} level 权限等级 1 超级管理员 2 普通管理员 3 普通用户 4 游客
  * @return {*}
  */
-const hadAdminPermission = async (ctx, next) => {
+const hadAdminPermission = level => {
+  return async (ctx, next) => {
+    const { role } = ctx.state.user;
+    if (role > level) {
+      return ctx.app.emit('error', hasNotAdminPermission, ctx);
+    }
+    await next();
+  };
+};
+
+/**
+ * @description: 校验标签操作权限
+ * @param {*} ctx
+ * @param {*} next
+ * @return {*}
+ */
+const checkTagPermission = async (ctx, next) => {
   const { role } = ctx.state.user;
-  if (role !== 1) {
+  const { ids } = ctx.request.body;
+  const { id } = ctx.request.params;
+  if (role === 1) {
+    // 超级管理员拥有所有权限
+    await next();
+  } else if (role === 2) {
+    try {
+      // 普通管理员不能操作系统内置标签
+      const isBuiltin = await isSystemTag(id || ids);
+      if (isBuiltin) return ctx.app.emit('error', hasNotAdminPermission, ctx);
+
+      // 普通管理员必须是修改或删除的标签没有被某篇文章使用才能操作标签
+      const result = await checkTagsUsage(id || ids);
+      if (result) return ctx.app.emit('error', tagUsageError, ctx);
+      await next();
+    } catch (err) {
+      return ctx.app.emit('error', tagOperateError, ctx);
+    }
+  } else {
     return ctx.app.emit('error', hasNotAdminPermission, ctx);
   }
-  await next();
 };
 
 module.exports = {
   auth,
   hadAdminPermission,
+  checkTagPermission,
 };

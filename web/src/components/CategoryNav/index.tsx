@@ -11,6 +11,7 @@ const CategoryNav: React.FC<ArticleCategoryNavProps> = ({ direction = 'vertical'
   const location = useLocation();
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
   console.log('分类导航栏渲染');
+
   return (
     <>
       <div

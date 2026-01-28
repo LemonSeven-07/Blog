@@ -8,6 +8,7 @@ export interface UserProfile {
   email: string; // 用户邮箱
   banned: boolean; // 用户是否被禁言
   createdAt: string; // 用户注册时间
+  deletedAt: string | null; // 用户注销时间
 }
 
 export interface RegisterAction {
@@ -59,6 +60,7 @@ export interface ArticleCategory {
 
 export interface UpdateUser {
   Request: {
+    userId: number;
     username?: string;
     role?: number;
     banned?: boolean;
@@ -69,8 +71,15 @@ export interface GetUsers {
   Request: {
     pageNum: number;
     pageSize: number;
-    username: string;
-    rangeDate: string;
+    username?: string;
+    registerDate?: string;
+    role?: number;
+    banned?: boolean;
+    isDeleted?: number;
+  };
+  Response: {
+    list: (UserProfile & { id: number })[];
+    total: number;
   };
 }
 

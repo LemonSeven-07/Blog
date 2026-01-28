@@ -9,6 +9,6 @@ const { create } = require('../controller/route.controller.js');
 const router = new Router();
 
 // 创建路由
-router.post('/route', auth, joiValidate(createRouteSchema), hadAdminPermission, create);
+router.post('/route', auth, joiValidate(createRouteSchema), hadAdminPermission(1), create);
 
 module.exports = router;

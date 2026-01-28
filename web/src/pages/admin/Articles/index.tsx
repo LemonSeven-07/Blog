@@ -2,14 +2,14 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-07 04:57:34
+ * @LastEditTime: 2026-01-29 02:23:25
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
 
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Table, Tooltip, Modal, Tag } from 'antd';
+import { Button, Table, Tooltip, Modal, Tag, message } from 'antd';
 import type { TableColumnsType, TableProps, UploadFile, TablePaginationConfig } from 'antd';
 import {
   DeleteOutlined,
@@ -20,6 +20,7 @@ import {
   UploadOutlined
 } from '@ant-design/icons';
 import api from '@/api';
+import { Utils } from '@/utils';
 import { useAppSelector } from '@/store/hooks';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
@@ -66,7 +67,7 @@ interface SearchFormValues {
 }
 
 // 文章标签显示颜色
-const tagColor = ['geekblue', 'purple', 'cyan'];
+const tagColor = ['green', 'cyan', 'purple'];
 
 const Articles = () => {
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
@@ -98,7 +99,7 @@ const Articles = () => {
       required: true,
       options: categoryRoutes.map((item) => ({
         label: item.meta?.title || '未命名',
-        value: item.id
+        value: item.meta.categoryId
       }))
     },
     {
@@ -142,10 +143,17 @@ const Articles = () => {
       width: 230,
       labelCol: 7,
       wrapperCol: 17,
-      options: categoryRoutes.map((item) => ({
-        label: item.meta?.title || '未命名',
-        value: item.id
-      })),
+      options: categoryRoutes
+        .map((item) => ({
+          label: item.meta?.title || '未命名',
+          value: item.meta.categoryId
+        }))
+        .concat([
+          {
+            label: '未分类',
+            value: 0
+          }
+        ]),
       onChange: (value) => {
         searchFormRef.current?.resetForm(['tagId']);
         if (value) getTags({ categoryId: value as number });
@@ -186,7 +194,20 @@ const Articles = () => {
   const searchFormRef = useRef<DynamicFormRef<SearchFormValues>>(null);
   // 文章列表表头
   const [columns] = useState<TableColumnsType<DataType>>([
-    { title: '作者', dataIndex: 'user', align: 'center', render: (value) => value.username },
+    {
+      title: '作者',
+      dataIndex: 'user',
+      align: 'center',
+      render: (value) =>
+        value.deletedAt ? (
+          <div>
+            <span>{value.username}</span>
+            <span style={{ color: 'red' }}>(账号已注销)</span>
+          </div>
+        ) : (
+          value.username
+        )
+    },
     { title: '标题', dataIndex: 'title', align: 'center' },
     {
       title: '封面',
@@ -199,7 +220,12 @@ const Articles = () => {
           ''
         )
     },
-    { title: '分类', dataIndex: 'category', align: 'center', render: (value) => value.name },
+    {
+      title: '分类',
+      dataIndex: 'category',
+      align: 'center',
+      render: (value) => (value ? value.name : <span style={{ color: '#d6d6d6' }}>未分类</span>)
+    },
     {
       title: '标签',
       dataIndex: 'tags',
@@ -229,14 +255,16 @@ const Articles = () => {
         <>
           <Tooltip placement="bottom" title="查看">
             <Link to={`/article/${record.id}`} style={{ marginRight: '12px' }}>
-              <Button shape="circle" icon={<EyeOutlined />} />
+              <Button shape="circle" color="primary" variant="outlined" icon={<EyeOutlined />} />
             </Link>
           </Tooltip>
 
           <Tooltip placement="bottom" title="导出">
             <Button
               shape="circle"
-              onClick={() => exportArticle(record.id)}
+              color="primary"
+              variant="outlined"
+              onClick={() => exportArticle('single', [record.id])}
               icon={<DownloadOutlined />}
               style={{ marginRight: '12px' }}
             />
@@ -245,6 +273,8 @@ const Articles = () => {
           <Tooltip placement="bottom" title="编辑">
             <Button
               shape="circle"
+              color="primary"
+              variant="outlined"
               onClick={() => editArticle(record.id)}
               icon={<EditOutlined />}
               style={{ marginRight: '12px' }}
@@ -254,7 +284,7 @@ const Articles = () => {
           <Tooltip placement="bottom" title="删除">
             <Button
               shape="circle"
-              onClick={() => deleteArticle(record.id)}
+              onClick={() => deleteArticles([record.id])}
               danger
               icon={<DeleteOutlined />}
             />
@@ -290,9 +320,9 @@ const Articles = () => {
    */
   const getTags = async (params: { categoryId?: number } = {}) => {
     if (JSON.stringify(params) === '{}') {
-      const res = await api.tagApi.getTags();
-      const datas = res.data || [];
-      const tags = datas.map((item) => ({
+      const res = await api.tagApi.getTags({ pageNum: 1, pageSize: 1000 });
+      const { list = [] } = res.data;
+      const tags = list.map((item) => ({
         label: item.name,
         value: item.id
       }));
@@ -326,7 +356,6 @@ const Articles = () => {
    * @return {*}
    */
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
-    console.log('selectedRowKeys changed: ', newSelectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
@@ -339,11 +368,34 @@ const Articles = () => {
 
   /**
    * @description: 导出文章
-   * @param {number} id 文章id
+   * @param {'single' | 'batch' | 'all'} type 文章导出操作类型 single 单篇导出 batch 多篇导出 all 全部导出
+   * @param {number[] | null} ids 文章 id 数组
    * @return {*}
    */
-  const exportArticle = (id: number) => {
-    console.log('导出文章', id);
+  const exportArticle = async (type: 'single' | 'batch' | 'all', ids: number[] | null) => {
+    let result = null;
+    if (type === 'single' || type === 'batch') {
+      // 单篇文章获多篇文章导出
+      const params = { ids: ids ? ids.join() : (selectedRowKeys as number[]).join() };
+      result = await api.articleApi.outputArticles(params, { responseType: 'blob' });
+
+      // 清空批量已选择的文章
+      if (type === 'batch') setSelectedRowKeys([]);
+    } else {
+      // 导出所有文章
+      result = await api.articleApi.outputArticles({}, { responseType: 'blob' });
+    }
+
+    // 获取 Content-Disposition 头部
+    const disposition = result.headers['content-disposition'] as string;
+    // 获取加密的文件名
+    const encodedFilename = disposition && disposition.match(/filename=([^;]+)/)?.[1];
+    if (encodedFilename) {
+      // 解密文件名
+      const decodedFilename = decodeURIComponent(encodedFilename);
+      // 文件下载
+      Utils.downloadFile(decodedFilename, result.data);
+    }
   };
 
   /**
@@ -357,11 +409,26 @@ const Articles = () => {
 
   /**
    * @description: 删除文章
-   * @param {number} id 文章id
+   * @param {number} ids 文章 id 数组
    * @return {*}
    */
-  const deleteArticle = (id: number) => {
-    console.log('删除文章', id);
+  const deleteArticles = async (ids: number[] | null) => {
+    Modal.confirm({
+      title: '系统提示',
+      content: '您确定要删除该文章吗?',
+      okText: '确认',
+      cancelText: '取消',
+      async onOk() {
+        const params = { ids: ids ? ids : (selectedRowKeys as number[]) };
+        const res = await api.articleApi.deleteArticles(params);
+        message.success(res.message);
+        // 清空已选择的文章
+        setSelectedRowKeys([]);
+        // 重新获取文章列表
+        getArticles({ pageNum: 1, pageSize: pagination.pageSize });
+      },
+      onCancel() {}
+    });
   };
 
   /**
@@ -413,9 +480,20 @@ const Articles = () => {
       author,
       publishTimeRange: publishTimeRange ? publishTimeRange.join() : publishTimeRange
     };
-    console.log(419, params);
-    const res = await api.articleApi.getArticles(params);
+    const res = await api.articleApi.getAllArticles(params);
     const { list, total } = res.data;
+    if (total > 0 && !list.length) {
+      getArticles({
+        keyword,
+        categoryId,
+        tagId,
+        author,
+        publishTimeRange,
+        pageNum: 1,
+        pageSize
+      });
+      return;
+    }
     setPagination({ pageNum, pageSize, total });
     setTableDatas(list);
   };
@@ -469,12 +547,26 @@ const Articles = () => {
           <Button
             type="primary"
             icon={<DownloadOutlined />}
+            onClick={() => exportArticle('all', null)}
+          >
+            全部导出
+          </Button>
+
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
             disabled={selectedRowKeys.length ? false : true}
+            onClick={() => exportArticle('batch', null)}
           >
             批量导出
           </Button>
 
-          <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length ? false : true}>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            disabled={selectedRowKeys.length ? false : true}
+            onClick={() => deleteArticles(null)}
+          >
             批量删除
           </Button>
 

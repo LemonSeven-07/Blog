@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-15 16:18:26
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-03 06:32:50
+ * @LastEditTime: 2026-01-29 05:44:24
  * @FilePath: /web/src/components/ArticleRankingList/index.tsx
  * @Description: 热门文章
  */
@@ -20,7 +20,7 @@ const ArticleRankingList = () => {
   const [articles, setArticles] = useState<ArticleSearchResult['list']>([]);
 
   useEffect(() => {
-    api.articleApi.getArticles({ pageNum, pageSize: 5, sort: 'hot' }).then((res) => {
+    api.articleApi.getHotArticles({ pageNum, pageSize: 5 }).then((res) => {
       const list = res.data.list || [];
       setArticles(list);
     });
@@ -61,7 +61,48 @@ const ArticleRankingList = () => {
             <ul>
               {articles.map((article, index) => (
                 <li key={article.id}>
-                  <div className="body-index">{pageNum * 5 - 5 + index + 1}</div>
+                  {pageNum === 1 && index === 0 && (
+                    <div
+                      className="body-index"
+                      style={{
+                        background:
+                          'linear-gradient(180deg, #f64242 20%, rgba(246, 66, 66, .4) 80%)',
+                        backgroundClip: 'text',
+                        color: 'transparent'
+                      }}
+                    >
+                      {pageNum * 5 - 5 + index + 1}
+                    </div>
+                  )}
+                  {pageNum === 1 && index === 1 && (
+                    <div
+                      className="body-index"
+                      style={{
+                        background:
+                          'linear-gradient(180deg, #ff7426 20%, rgba(255, 116, 38, .4) 80%)',
+                        backgroundClip: 'text',
+                        color: 'transparent'
+                      }}
+                    >
+                      {pageNum * 5 - 5 + index + 1}
+                    </div>
+                  )}
+                  {pageNum === 1 && index === 2 && (
+                    <div
+                      className="body-index"
+                      style={{
+                        background:
+                          'linear-gradient(180deg, #ffac0c 20%, rgba(255, 172, 12, .4) 80%)',
+                        backgroundClip: 'text',
+                        color: 'transparent'
+                      }}
+                    >
+                      {pageNum * 5 - 5 + index + 1}
+                    </div>
+                  )}
+                  {(pageNum !== 1 || index > 2) && (
+                    <div className="body-index">{pageNum * 5 - 5 + index + 1}</div>
+                  )}
                   <div className="hot-item-text">
                     <Link to={'/article/' + article.id} title={article.title}>
                       {article.title}

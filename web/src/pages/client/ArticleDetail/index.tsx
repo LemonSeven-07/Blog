@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:05:16
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-25 01:10:50
+ * @LastEditTime: 2026-01-27 05:08:29
  * @FilePath: /web/src/pages/client/ArticleDetail/index.tsx
  * @Description: 文章查看页面
  */
@@ -62,7 +62,7 @@ interface TocItem {
 }
 
 // 文章标签显示颜色
-const tagColor = ['geekblue', 'purple', 'cyan'];
+const tagColor = ['green', 'cyan', 'purple'];
 
 const ArticleDetail = () => {
   console.log('ArticleDetail 渲染');
@@ -395,7 +395,7 @@ const ArticleDetail = () => {
               <div className="article-mate">
                 <div className="article-author">
                   <img src={authorSvg} title="文章作者" />
-                  <span>{articleDatail.user.username}</span>
+                  <span>{articleDatail.user ? articleDatail.user.username : '匿名用户'}</span>
                 </div>
 
                 <div className="release-time">
@@ -405,17 +405,21 @@ const ArticleDetail = () => {
 
                 <div className="article-category">
                   <img src={categorySvg} title="分类" />
-                  <Tag color="blue">{articleDatail.category.name}</Tag>
+                  <Tag color={articleDatail.category ? 'blue' : '#d6d6d6'}>
+                    {articleDatail.category ? articleDatail.category.name : '未分类'}
+                  </Tag>
                 </div>
 
-                <div className="article-tags">
-                  <img src={tagSvg} title="标签" />
-                  {articleDatail.tags.map((tag, index) => (
-                    <Tag color={tagColor[index]} key={tag.id}>
-                      {tag.name}
-                    </Tag>
-                  ))}
-                </div>
+                {articleDatail.tags && articleDatail.tags.length ? (
+                  <div className="article-tags">
+                    <img src={tagSvg} title="标签" />
+                    {articleDatail.tags.map((tag, index) => (
+                      <Tag color={tagColor[index]} key={tag.id}>
+                        {tag.name}
+                      </Tag>
+                    ))}
+                  </div>
+                ) : null}
 
                 <div className="article-views">
                   <img src={viewsSvg} title="浏览量" />
@@ -444,7 +448,7 @@ const ArticleDetail = () => {
 
             <div className="comment-box">
               <div className="comment-box__avatar">
-                {articleDatail.user.avatar ? (
+                {articleDatail.user && articleDatail.user.avatar ? (
                   <img src={articleDatail.user.avatar} alt="作者头像" />
                 ) : (
                   <Avatar size={44} icon={<UserOutlined />} />

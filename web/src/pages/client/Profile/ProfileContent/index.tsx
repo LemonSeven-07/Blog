@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-30 03:05:58
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-01 00:39:50
+ * @LastEditTime: 2026-01-29 03:43:59
  * @FilePath: /web/src/pages/client/Profile/ProfileContent/index.tsx
  * @Description: 个人中心右侧操作区
  */
@@ -13,8 +13,8 @@ import type { userProfileFormValues, ChangePasswordProps, ChangeEmailProps } fro
 import BaseInfo from './BaseInfo';
 import ChangePassword from './ChangePassword';
 import ChangeEmail from './ChangeEmail';
-import { useAppDispatch } from '@/store/hooks';
-import { fetchAppInit } from '@/store/modules/user';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { updateUser } from '@/store/modules/user';
 import api from '@/api';
 
 const ProfileContent = ({
@@ -23,6 +23,7 @@ const ProfileContent = ({
   withLoading: <T>(promise: Promise<T>) => Promise<T>;
 }) => {
   const dispatch = useAppDispatch();
+  const { userId } = useAppSelector((state) => state.userInfo);
 
   /**
    * @description: 保存个人信息修改
@@ -30,9 +31,9 @@ const ProfileContent = ({
    * @return {*}
    */
   const saveBaseInfo = async (values: userProfileFormValues) => {
-    const res = await withLoading(api.userApi.updateUser(values));
+    const res = await withLoading(api.userApi.updateUser({ ...values, userId: userId! }));
     message.success(res.message);
-    dispatch(fetchAppInit());
+    dispatch(updateUser(values));
   };
 
   /**
@@ -57,6 +58,7 @@ const ProfileContent = ({
     const res = await withLoading(api.userApi.updateEmail(values));
     message.success(res.message);
     cb();
+    dispatch(updateUser({ email: values.email }));
   };
 
   const [tabItems] = useState([

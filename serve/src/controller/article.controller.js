@@ -38,15 +38,15 @@ const {
 } = require('../service/favorite.service');
 
 const {
-  createArticleError,
-  findArticleError,
-  deleteArticleError,
+  articleCreateError,
+  articleFindError,
+  articleDeleteError,
   articleUpdateError,
-  outputArticlesError,
-  uploadArticlesError,
+  articlesOutputError,
+  articlesUploadError,
   loadMoreError,
-  addFavoriteError,
-  removeFavoriteError,
+  favoriteAddError,
+  favoriteRemoveError,
 } = require('../constant/err.type');
 
 class articleController {
@@ -70,12 +70,37 @@ class articleController {
       };
     } catch (err) {
       await transaction.rollback();
-      ctx.app.emit('error', createArticleError, ctx);
+      ctx.app.emit('error', articleCreateError, ctx);
     }
   }
 
   /**
-   * @description: 按条件分页查询文章列表
+   * @description: 获取热门文章
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async findHotArticles(ctx) {
+    try {
+      const params = {
+        pageNum: 1,
+        pageSize: 5,
+        sort: 'hot',
+      };
+
+      const res = await findArticle(params);
+
+      ctx.body = {
+        code: '200',
+        data: res,
+        message: '获取文章列表成功',
+      };
+    } catch (err) {
+      ctx.app.emit('error', articleFindError, ctx);
+    }
+  }
+
+  /**
+   * @description: 后台按条件分页查询文章列表
    * @param {*} ctx 上下文对象
    * @return {*}
    */
@@ -101,11 +126,13 @@ class articleController {
         pageSize,
         sort,
       };
+
       if (ctx.state.user && ctx.state.user.role === 1) {
         params.username = author;
       } else if (ctx.state.user && ctx.state.user.role === 2) {
         params.userId = ctx.state.user.userId;
       }
+
       const res = await findArticle(params);
 
       ctx.body = {
@@ -114,8 +141,7 @@ class articleController {
         message: '获取文章列表成功',
       };
     } catch (err) {
-      console.log(117, err);
-      ctx.app.emit('error', findArticleError, ctx);
+      ctx.app.emit('error', articleFindError, ctx);
     }
   }
 
@@ -182,7 +208,7 @@ class articleController {
         message: '获取文章详情成功',
       };
     } catch (err) {
-      ctx.app.emit('error', findArticleError, ctx);
+      ctx.app.emit('error', articleFindError, ctx);
     }
   }
 
@@ -197,9 +223,11 @@ class articleController {
     const transaction = await sequelize.transaction();
     try {
       // 查询文章下的评论
-      const notices = await findComment(ids, transaction);
+      // const notices = await findComment(ids, transaction);
+
       // 删除文章下的评论
-      await removeComment(ids, transaction);
+      // await removeComment(ids, transaction);
+
       // 删除文章
       const res = await removeArticle(ids, transaction);
       if (!res) throw new Error();
@@ -207,19 +235,19 @@ class articleController {
       await transaction.commit();
 
       // 删除文章，通知其他服务更新评论数
-      const datas = optimizeGroupAndFilter(notices);
-      if (datas && Object.keys(datas).length) {
-        await Object.keys(datas).forEach(async key => {
-          await ctx.pubClient.publish(
-            `notify:${key}`,
-            JSON.stringify({
-              step: datas[key].length,
-              articleIds: ids,
-              type: 'DELETE_ARTICLE_NOTIFY',
-            }),
-          );
-        });
-      }
+      // const datas = optimizeGroupAndFilter(notices);
+      // if (datas && Object.keys(datas).length) {
+      //   await Object.keys(datas).forEach(async key => {
+      //     await ctx.pubClient.publish(
+      //       `notify:${key}`,
+      //       JSON.stringify({
+      //         step: datas[key].length,
+      //         articleIds: ids,
+      //         type: 'DELETE_ARTICLE_NOTIFY',
+      //       }),
+      //     );
+      //   });
+      // }
 
       ctx.body = {
         code: '200',
@@ -228,7 +256,7 @@ class articleController {
       };
     } catch (err) {
       await transaction.rollback();
-      ctx.app.emit('error', deleteArticleError, ctx);
+      ctx.app.emit('error', articleDeleteError, ctx);
     }
   }
 
@@ -264,14 +292,14 @@ class articleController {
    */
   async output(ctx) {
     const { ids } = ctx.query;
-    const { userId } = ctx.state.user;
+    const { userId, role } = ctx.state.user;
     let safeFileName = '',
       uuid = randomUUID().replace(/-/g, '_');
     const tempDir = path.join(os.tmpdir(), 'article_exports_' + uuid + '_' + userId); // 使用系统临时目录
     const zipName = 'mdFiles.zip';
     let articleGrouped = {};
     try {
-      const res = await outputArticle(ids);
+      const res = await outputArticle(ids, userId, role);
       if (!res.length) throw new Error();
 
       if (res.length === 1) {
@@ -285,11 +313,7 @@ class articleController {
             .trim() + '.md';
 
         // 2. 构建 Markdown 内容
-        const markdownContent =
-          `**category**: ${article.category?.name || '无'}\n\n` +
-          `**tags**: ${article.tags?.map(t => t.name).join(', ') || '无'}\n\n` +
-          `**date**: ${article.createdAt}\n\n` +
-          `---\n\n${article.content}`;
+        const markdownContent = article.content;
 
         // 3. 创建临时目录
         if (!fs.existsSync(tempDir)) {
@@ -312,11 +336,7 @@ class articleController {
                 .trim() + '.md';
 
             // 2. 构建 Markdown 内容
-            const markdownContent =
-              `**分类**: ${article.category?.name || '无'}\n\n` +
-              `**标签**: ${article.tags?.map(t => t.name).join(', ') || '无'}\n\n` +
-              `**创建时间**: ${article.createdAt}\n\n` +
-              `---\n\n${article.content}`;
+            const markdownContent = article.content;
 
             // 3. 创建临时目录
             if (!fs.existsSync(tempDir + '/mdFiles')) {
@@ -345,11 +365,7 @@ class articleController {
                   .trim() + '.md';
 
               // 2. 构建 Markdown 内容
-              const markdownContent =
-                `**分类**: ${article.category?.name || '无'}\n\n` +
-                `**标签**: ${article.tags?.map(t => t.name).join(', ') || '无'}\n\n` +
-                `**创建时间**: ${article.createdAt}\n\n` +
-                `---\n\n${article.content}`;
+              const markdownContent = article.content;
 
               // 3. 创建临时目录
               if (
@@ -387,12 +403,13 @@ class articleController {
       }
 
       // 设置Content-Disposition头，触发浏览器下载
-      ctx.attachment(res.length === 1 ? safeFileName : zipName);
-      ctx.set(
-        'Content-Disposition',
-        'attachment; filename=' + encodeURIComponent(res.length === 1 ? safeFileName : zipName),
-      );
+      // ctx.attachment(res.length === 1 ? safeFileName : zipName);
+      // ctx.set(
+      //   'Content-Disposition',
+      //   'attachment; filename=' + encodeURIComponent(res.length === 1 ? safeFileName : zipName),
+      // );
 
+      const fileName = res.length === 1 ? safeFileName : zipName;
       // 使用koa-send发送文件
       await send(ctx, res.length === 1 ? safeFileName : zipName, {
         root: tempDir, // 文件根目录
@@ -400,10 +417,17 @@ class articleController {
         immutable: false, // 不启用不可变缓存
         setHeaders: res => {
           res.setHeader('Cache-Control', 'no-store'); // 强制不缓存
+          // 设置 Content-Disposition 头部，触发下载
+          res.setHeader(
+            'Content-Disposition',
+            'attachment; filename=' + encodeURIComponent(fileName),
+          );
+          // 设置 Content-Type 头部，指示文件类型为二进制流
+          res.setHeader('Content-Type', 'application/octet-stream');
         },
       });
     } catch (err) {
-      ctx.app.emit('error', outputArticlesError, ctx);
+      ctx.app.emit('error', articlesOutputError, ctx);
     } finally {
       // 延迟5秒后清理临时目录（确保文件已发送完成）
       clearCacheFiles([tempDir], 5000);
@@ -459,7 +483,7 @@ class articleController {
       // 删除已上传的封面图片
       deleteGitHubImage(coverImage);
       await transaction.rollback();
-      ctx.app.emit('error', uploadArticlesError, ctx);
+      ctx.app.emit('error', articlesUploadError, ctx);
     } finally {
       // 延迟5秒后清理临时目录（确保文件导入完成）
       clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
@@ -510,9 +534,9 @@ class articleController {
     } catch (err) {
       await transaction.rollback();
       if (action === 'add') {
-        ctx.app.emit('error', addFavoriteError, ctx);
+        ctx.app.emit('error', favoriteAddError, ctx);
       } else {
-        ctx.app.emit('error', removeFavoriteError, ctx);
+        ctx.app.emit('error', favoriteRemoveError, ctx);
       }
     }
   }

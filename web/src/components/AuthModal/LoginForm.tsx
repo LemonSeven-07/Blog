@@ -3,7 +3,7 @@ import { Form, Input, Button, Flex, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 
 import api from '@/api';
-import { setUser } from '@/store/modules/user';
+import { setPhase } from '@/store/modules/user';
 import { useAppDispatch } from '@/store/hooks';
 
 interface LoginProps {
@@ -39,7 +39,7 @@ const LoginForm = ({ closeModal, onSwitchRegister, onSwitchReset }: LoginProps) 
     }
 
     const res = await api.userApi.login(params);
-    dispatch(setUser({ ...res.data, phase: 'initializing' }));
+    dispatch(setPhase({ phase: 'initializing' }));
     message.success(res.message);
     closeModal();
   };

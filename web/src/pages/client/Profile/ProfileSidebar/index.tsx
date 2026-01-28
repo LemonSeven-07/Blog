@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-30 03:04:50
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-01 00:37:59
+ * @LastEditTime: 2026-01-29 03:39:33
  * @FilePath: /web/src/pages/client/Profile/ProfileSidebar/index.tsx
  * @Description: 个人中心左侧身份区
  */
@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
 import { message } from 'antd';
 import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { fetchAppInit } from '@/store/modules/user';
+import { updateUser } from '@/store/modules/user';
 import api from '@/api';
 
 const ProfileSidebar = ({
@@ -51,7 +51,10 @@ const ProfileSidebar = ({
     const formData = new FormData();
     formData.append('avatar', file);
     await withLoading(api.userApi.updateAvatar(formData));
-    await dispatch(fetchAppInit());
+
+    // 使用 URL.createObjectURL 生成临时 URL
+    const tempUrl = URL.createObjectURL(file);
+    dispatch(updateUser({ avatar: tempUrl }));
   };
 
   return (

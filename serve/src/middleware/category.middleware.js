@@ -1,9 +1,9 @@
 const { getCategoryInfo } = require('../service/category.service');
 
 const {
-  categoryAlreadyExists,
-  categoryEnAlreadyExists,
-  createCategoryError,
+  categoryNameAlreadyExists,
+  categorySlugAlreadyExists,
+  categoryCreateError,
 } = require('../constant/err.type');
 
 /**
@@ -15,16 +15,37 @@ const {
 const verifyName = async (ctx, next) => {
   const { name } = ctx.request.body;
   try {
-    const res = await getCategoryInfo(name);
+    const res = await getCategoryInfo({ name });
     if (res) {
       // 分类名已存在
-      return ctx.app.emit('error', categoryAlreadyExists, ctx);
+      return ctx.app.emit('error', categoryNameAlreadyExists, ctx);
     }
   } catch (err) {
-    return ctx.app.emit('error', createCategoryError, ctx);
+    return ctx.app.emit('error', categoryCreateError, ctx);
   }
 
   await next();
 };
 
-module.exports = { verifyName };
+/**
+ * @description: 校验分类路由标识，路由标识唯一
+ * @param {*} ctx 上下文对象
+ * @param {*} next 下一个中间件
+ * @return {*}
+ */
+const verifySlug = async (ctx, next) => {
+  const { slug } = ctx.request.body;
+  try {
+    const res = await getCategoryInfo({ slug });
+    if (res) {
+      // 分类路由标识已存在
+      return ctx.app.emit('error', categorySlugAlreadyExists, ctx);
+    }
+  } catch (err) {
+    return ctx.app.emit('error', categoryCreateError, ctx);
+  }
+
+  await next();
+};
+
+module.exports = { verifyName, verifySlug };

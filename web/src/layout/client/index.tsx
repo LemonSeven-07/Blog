@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 17:11:07
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-03 01:24:28
+ * @LastEditTime: 2026-01-20 02:53:47
  * @FilePath: /web/src/layout/client/index.tsx
  * @Description: 前台页面布局
  */
@@ -15,7 +15,6 @@ import CategoryNav from '@/components/CategoryNav';
 import AuthorCard from '@/components/AuthorCard';
 import ArticleRankingList from '@/components/ArticleRankingList';
 import { useAppSelector } from '@/store/hooks';
-
 import Header from '@/components/Header';
 
 const ClientLayout = () => {
@@ -25,6 +24,7 @@ const ClientLayout = () => {
 
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
   const location = useLocation();
+
   // 判断当前路径，选择不同的布局
   const renderLayout = () => {
     if (

@@ -1,5 +1,5 @@
 const { createRoute } = require('../service/route.service');
-const { createRouteError } = require('../constant/err.type');
+const { routeCreateError } = require('../constant/err.type');
 const { sequelize } = require('../model/index');
 
 class RouteController {
@@ -15,7 +15,7 @@ class RouteController {
         message: '页面路由创建成功',
       };
     } catch (err) {
-      ctx.app.emit('error', createRouteError, ctx);
+      ctx.app.emit('error', routeCreateError, ctx);
     }
   }
 

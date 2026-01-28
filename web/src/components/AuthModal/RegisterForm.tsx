@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import api from '@/api';
-import { setUser } from '@/store/modules/user';
+import { setPhase } from '@/store/modules/user';
 import { useAppDispatch } from '@/store/hooks';
 
 interface LoginProps {
@@ -43,7 +43,7 @@ const RegisterForm = ({ handleRegister, onSwitchLogin }: LoginProps) => {
     const { username, email, code, password } = values;
 
     const res = await api.userApi.register({ username, email, code, password });
-    dispatch(setUser({ ...res.data, phase: 'initializing' }));
+    dispatch(setPhase({ phase: 'initializing' }));
     message.success(res.message);
 
     handleRegister();
@@ -95,8 +95,8 @@ const RegisterForm = ({ handleRegister, onSwitchLogin }: LoginProps) => {
           rules={[
             { required: true, message: '请输入用户名' },
             {
-              pattern: /^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,12}$/,
-              message: '用户名由中文、字母、数字、下划线或减号组成，长度4-12位'
+              pattern: /^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/,
+              message: '用户名由中文、字母、横杠和下划线组成，长度4-16位'
             }
           ]}
         >

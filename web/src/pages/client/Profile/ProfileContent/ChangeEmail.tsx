@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-28 04:04:28
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-31 05:52:51
+ * @LastEditTime: 2026-01-29 04:50:17
  * @FilePath: /web/src/pages/client/Profile/ProfileContent/ChangeEmail.tsx
  * @Description: 更换邮箱tab页
  */
@@ -64,10 +64,7 @@ const ChangeEmail = ({ handleSubmit }: ChangeEmailProps) => {
         label="当前密码"
         rules={[
           { required: true, message: '请输入当前密码' },
-          {
-            pattern: /^[a-zA-Z0-9!@#*,]{6,16}$/,
-            message: '密码由字母、数字或特殊字符“!@#*,”组成，长度6-16位'
-          }
+          { min: 6, message: '密码至少为6个字符' }
         ]}
       >
         <Input type="password" size="large" placeholder="请输入当前密码" />

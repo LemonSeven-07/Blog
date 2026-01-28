@@ -11,6 +11,12 @@ const Tag = sequelize.define(
       unique: true,
       comment: '标签名称，唯一',
     },
+    isBuiltin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: '是否系统内置标签',
+    },
   },
   {
     paranoid: false, // 🚫 覆盖全局配置，使用硬删除

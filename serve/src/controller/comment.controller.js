@@ -11,9 +11,9 @@ const {
 
 const {
   commentError,
-  deleteCommentError,
-  findCommentError,
-  updateNoticeError,
+  commentDeleteError,
+  commentFindError,
+  noticeUpdateError,
   findNoticeError,
 } = require('../constant/err.type');
 
@@ -146,7 +146,7 @@ class CommentController {
         message: '删除成功',
       };
     } catch (error) {
-      ctx.app.emit('error', deleteCommentError, ctx);
+      ctx.app.emit('error', commentDeleteError, ctx);
     }
   }
 
@@ -170,7 +170,7 @@ class CommentController {
         message: '查询成功',
       };
     } catch (error) {
-      ctx.app.emit('error', findCommentError, ctx);
+      ctx.app.emit('error', commentFindError, ctx);
     }
   }
 
@@ -213,7 +213,7 @@ class CommentController {
         message: '消息通知修改成功',
       };
     } catch (error) {
-      ctx.app.emit('error', updateNoticeError, ctx);
+      ctx.app.emit('error', noticeUpdateError, ctx);
     }
   }
 

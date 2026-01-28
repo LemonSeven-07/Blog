@@ -1,10 +1,21 @@
-const { createCategory, findCategory } = require('../service/category.service');
 const {
-  findCategoriesError,
-  createCategoryError,
+  createCategory,
+  findCategories,
+  updateCategory,
+  removeCategory,
+  getCategoryInfo,
+} = require('../service/category.service');
+const {
+  categoriesFindError,
+  categoryCreateError,
   getTagsByCategoryError,
+  categoryUpdateError,
+  categoryDoesNotExist,
+  categoryDeleteError,
+  categoryNameAlreadyExists,
+  categorySlugAlreadyExists,
 } = require('../constant/err.type');
-const { createRoute } = require('../service/route.service');
+const { createRoute, updateRoute, deleteRoute } = require('../service/route.service');
 const { findTagsByCategoryId } = require('../service/tag.service');
 const { sequelize } = require('../model/index');
 
@@ -15,24 +26,35 @@ class CategoryController {
    * @return {*}
    */
   async create(ctx) {
-    const { name, route } = ctx.request.body;
-    // 确保多个数据库操作作为一个原子单元执行，要么全部成功提交，要么全部失败回滚，从而维护数据的一致性。
+    let { name, slug, icon } = ctx.request.body;
+    if (!icon) icon = slug;
     const transaction = await sequelize.transaction();
     try {
-      const res = await createCategory(name, transaction);
+      const res = await createCategory({ name, slug, icon }, transaction);
       if (!res) throw new Error();
 
-      route.component = 'ArticleExplorer';
-      route.meta.title = name;
-      route.meta.type = 'category';
-      route.meta.categoryId = res.id;
-      route.role = 4;
-
-      const routeInfo = await createRoute(route, transaction);
-      if (!routeInfo) throw new Error();
+      const route = await createRoute(
+        {
+          path: slug,
+          name: slug
+            .replace(/[_-](\w)/g, (_, letter) => letter.toUpperCase())
+            .replace(/^./, match => match.toLowerCase()), // 将路径转为小驼峰名称
+          component: 'ArticleExplorer',
+          meta: {
+            title: name,
+            type: 'category',
+            categoryId: res.id,
+            icon: 'icon-' + icon,
+          },
+          role: 4,
+        },
+        transaction,
+      );
+      if (!route) throw new Error();
 
       // 提交事务
       await transaction.commit();
+
       // 返回查询结果
       ctx.body = {
         code: '200',
@@ -41,7 +63,7 @@ class CategoryController {
       };
     } catch (err) {
       await transaction.rollback();
-      ctx.app.emit('error', createCategoryError, ctx);
+      ctx.app.emit('error', categoryCreateError, ctx);
     }
   }
 
@@ -51,8 +73,14 @@ class CategoryController {
    * @return {*}
    */
   async findAll(ctx) {
+    const { pageNum = 1, pageSize = 10, name, createDate } = ctx.query;
     try {
-      const res = await findCategory();
+      const res = await findCategories({
+        pageNum,
+        pageSize,
+        name,
+        createDate,
+      });
 
       // 返回查询结果
       ctx.body = {
@@ -61,7 +89,7 @@ class CategoryController {
         message: '操作成功',
       };
     } catch (err) {
-      ctx.app.emit('error', findCategoriesError, ctx);
+      ctx.app.emit('error', categoriesFindError, ctx);
     }
   }
 
@@ -82,6 +110,90 @@ class CategoryController {
       };
     } catch (err) {
       ctx.app.emit('error', getTagsByCategoryError, ctx);
+    }
+  }
+
+  /**
+   * @description: 更新分类
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async update(ctx) {
+    const { id } = ctx.request.params;
+    let { name, slug, icon } = ctx.request.body;
+    if (!icon) icon = slug;
+    const transaction = await sequelize.transaction();
+    try {
+      // 查询除指定分类id之外的表数据
+      const categoryByNameData = await getCategoryInfo({ id, name }, false);
+      if (categoryByNameData) return ctx.app.emit('error', categoryNameAlreadyExists, ctx);
+
+      // 查询除指定分类id之外的表数据
+      const categoryBySlugData = await getCategoryInfo({ id, slug }, false);
+      if (categoryBySlugData) return ctx.app.emit('error', categorySlugAlreadyExists, ctx);
+
+      const res = await updateCategory({ id, name, slug, icon }, transaction);
+      if (!res) throw new Error();
+
+      const route = await updateRoute(
+        {
+          categoryId: id,
+          path: slug,
+          name: slug
+            .replace(/[_-](\w)/g, (_, letter) => letter.toUpperCase())
+            .replace(/^./, match => match.toLowerCase()), // 将路径转为小驼峰名称
+          meta: {
+            title: name,
+            type: 'category',
+            categoryId: id,
+            icon: 'icon-' + icon,
+          },
+        },
+        transaction,
+      );
+      if (!route) throw new Error();
+
+      // 提交事务
+      await transaction.commit();
+
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '修改成功',
+      };
+    } catch (err) {
+      await transaction.rollback();
+      ctx.app.emit('error', categoryUpdateError, ctx);
+    }
+  }
+
+  /**
+   * @description: 删除分类
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async remove(ctx) {
+    const { ids } = ctx.request.body;
+    const transaction = await sequelize.transaction();
+    try {
+      // 删除分类数据
+      const res = await removeCategory(ids, transaction);
+      if (!res) return ctx.app.emit('error', categoryDoesNotExist, ctx);
+
+      // 删除分类对应的分类路由数据
+      const route = await deleteRoute({ categoryIds: ids }, transaction);
+      if (!route) throw new Error();
+
+      // 提交事务
+      await transaction.commit();
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '删除成功',
+      };
+    } catch (err) {
+      await transaction.rollback();
+      ctx.app.emit('error', categoryDeleteError, ctx);
     }
   }
 }

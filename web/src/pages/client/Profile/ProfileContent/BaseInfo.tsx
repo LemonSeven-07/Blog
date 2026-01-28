@@ -2,13 +2,13 @@
  * @Author: yolo
  * @Date: 2025-12-28 03:27:00
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-31 04:25:03
+ * @LastEditTime: 2026-01-29 04:46:27
  * @FilePath: /web/src/pages/client/Profile/ProfileContent/BaseInfo.tsx
  * @Description: 个人信息修改tab页
  */
 
 import { useRef, useState } from 'react';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import { useAppSelector } from '@/store/hooks';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
@@ -18,12 +18,14 @@ const BaseInfo = ({ handleSubmit }: BaseInfoProps) => {
   const userProfileFormRef = useRef<DynamicFormRef<userProfileFormValues>>(null); // 个人信息修改表单dom节点
   const { username } = useAppSelector((state) => state.userInfo); // 用户信息
 
-  const [userProfileFormItems] = useState<DynamicFormItem[]>([
+  const [userProfileFormItems, setUserProfileFormItems] = useState<DynamicFormItem[]>([
     {
       label: '用户名',
       name: 'username',
       type: 'input' as const,
       required: true,
+      pattern: /^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/,
+      tip: '用户名由中文、字母、横杠和下划线组成，长度4-16位',
       value: username
     }
   ]); // 个人信息修改表单项
@@ -33,9 +35,21 @@ const BaseInfo = ({ handleSubmit }: BaseInfoProps) => {
    * @param {userProfileFormValues} values
    * @return {*}
    */
-  const save = (values: userProfileFormValues) => {
-    if (values.username.trim() === username) return;
-    handleSubmit(values);
+  const save = async (values: userProfileFormValues) => {
+    if (values.username.trim() === username) {
+      return message.warning('无修改项！！！');
+    }
+    await handleSubmit({ ...values, username: values.username.trim() });
+
+    setUserProfileFormItems([
+      {
+        label: '用户名',
+        name: 'username',
+        type: 'input' as const,
+        required: true,
+        value: values.username.trim()
+      }
+    ]);
   };
 
   /**

@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-17 14:44:28
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-01 05:24:47
+ * @LastEditTime: 2026-01-11 01:31:57
  * @FilePath: /web/src/components/PreviewArticle/index.tsx
  * @Description: 预览文章
  */
@@ -25,7 +25,9 @@ const PreviewArticle = ({ article }: { article: ArticleSearchResult['list'][numb
 
           <div className="article-meta">
             <ul className="article-meta-info">
-              <li className="article-author">{article.user.username}</li>
+              <li className="article-author">
+                {article.user ? article.user.username : '匿名用户'}
+              </li>
 
               <li className="vertical-line"></li>
 

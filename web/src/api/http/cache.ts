@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:53
  * @LastEditors: yolo
- * @LastEditTime: 2025-09-11 10:52:16
- * @FilePath: /Blog/web/src/api/http/cache.ts
+ * @LastEditTime: 2026-01-11 02:35:30
+ * @FilePath: /web/src/api/http/cache.ts
  * @Description: ✅ 性能优化：请求缓存处理
  */
 
@@ -138,6 +138,7 @@ class CacheRequest {
         }
       }
     }
+
     return { newRule: rule, cacheData };
   }
 

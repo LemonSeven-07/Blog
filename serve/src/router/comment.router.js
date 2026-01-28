@@ -43,6 +43,6 @@ router.get('/unread/count', auth, findUnreadCount);
 router.get('/notice/list', auth, joiValidate(getNoticeSchema), findMessageList);
 
 // 删除评论或回复
-router.delete('/', auth, hadAdminPermission, joiValidate(deleteCommentSchema), remove);
+router.delete('/', auth, hadAdminPermission(2), joiValidate(deleteCommentSchema), remove);
 
 module.exports = router;

@@ -52,6 +52,13 @@ export const updateEmail = (params: UpdateEmail['Request']) => http.put('/user/e
 // 获取文章分类
 export const getCategory = () => http.get<ArticleCategory['Response']>('/user/category');
 
-export const getUsers = (params: GetUsers['Request']) => http.get('/user/list', params);
+// 获取用户列表
+export const getUsers = (params: GetUsers['Request']) =>
+  http.get<GetUsers['Response']>('/user/list', params);
 
-export const deleteUser = (userId: number) => http.delete('/user/' + userId);
+// 删除用户
+export const deleteUser = (params: { ids: number[] }) =>
+  http.delete('/user', params, {}, { useBodyForDelete: true });
+
+// 恢复删除用户
+export const restoreUser = (params: { ids: number[] }) => http.put('/user/restore', params);

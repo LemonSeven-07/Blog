@@ -14,6 +14,7 @@
     right: 0;
     left: 0;
     z-index: 100;
+    padding: 0 1rem;
     background: #fff;
     box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
     justify-content: space-between;
@@ -97,13 +98,50 @@
           margin-bottom: 1rem;
 
           .ant-btn:first-child,
-          .ant-btn:nth-child(2) {
+          .ant-btn:nth-child(2),
+          .ant-btn:nth-child(3) {
             margin-right: 0.75rem;
           }
 
           .ant-btn:last-child {
             float: right;
           }
+        }
+      }
+    }
+
+    .user-manage-container {
+      .user-management-main {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fff;
+
+        .user-function-buttons {
+          margin-bottom: 1rem;
+        }
+      }
+    }
+
+    .tag-manage-container {
+      .tag-management-main {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fff;
+
+        .tag-function-buttons {
+          margin-bottom: 1rem;
+        }
+      }
+    }
+
+    .category-manage-container {
+      .category-management-main {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fff;
+
+        .category-function-buttons {
+          margin-bottom: 1rem;
         }
       }
     }

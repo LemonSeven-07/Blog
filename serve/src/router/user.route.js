@@ -7,8 +7,10 @@ const {
   loginSchema,
   updateUserSchema,
   getUersSchema,
+  restoreUserSchema,
   updatePasswordSchema,
   updateEmialSchema,
+  deleteUserSchema,
 } = require('../constant/schema.js');
 
 const { uploadMiddleware } = require('../middleware/upload.middleware');
@@ -37,6 +39,7 @@ const {
   updateAvatar,
   updatePassword,
   updateEmial,
+  restore,
 } = require('../controller/user.controller.js');
 
 const router = new Router();
@@ -71,16 +74,16 @@ router.post('/auth/login', joiValidate(loginSchema), verifyLogin, login);
 // 获取邮箱验证码
 router.post('/auth/sendEmailCode', joiValidate(emailCodeSchema), verifyEmail, sendEmailCode);
 
-// 用户删除
-router.delete('/user/:userId', auth, hadAdminPermission, remove);
-
 // 修改用户头像
 router.post(
   '/user/avatar',
   auth,
-  uploadMiddleware({
-    avatar: { type: ['image/png', 'image/jpeg', 'image/jpg'], require: true },
-  }),
+  uploadMiddleware(
+    {
+      avatar: { type: ['image/png', 'image/jpeg', 'image/jpg'], require: true },
+    },
+    2,
+  ),
   updateAvatar,
 );
 
@@ -89,7 +92,6 @@ router.put(
   '/user/profile',
   auth,
   joiValidate(updateUserSchema),
-  verifyUser,
   hadUpdatePermission,
   updateProfile,
 );
@@ -98,19 +100,18 @@ router.put(
 router.put('/user/password', auth, joiValidate(updatePasswordSchema), updatePassword);
 
 // 更换邮箱
-router.put(
-  '/user/email',
-  auth,
-  joiValidate(updateEmialSchema),
-  verifyEmail,
-  verifyEmailCode,
-  updateEmial,
-);
+router.put('/user/email', auth, joiValidate(updateEmialSchema), verifyEmailCode, updateEmial);
 
 // 获取用户列表(需要管理员权限)
-router.get('/user/list', auth, joiValidate(getUersSchema), hadAdminPermission, findAll);
+router.get('/user/list', auth, joiValidate(getUersSchema), hadAdminPermission(1), findAll);
 
 // 退出登录
 router.post('/user/logout', auth, logout);
+
+// 恢复被删除的用户
+router.put('/user/restore', auth, joiValidate(restoreUserSchema), hadAdminPermission(1), restore);
+
+// 用户删除
+router.delete('/user', auth, joiValidate(deleteUserSchema), hadAdminPermission(1), remove);
 
 module.exports = router;

@@ -6,17 +6,20 @@ const { sequelize } = require('../model/index');
 
 const {
   userRegisterError,
-  resetPasswordError,
+  passwordResetError,
   SendError,
   userLoginError,
   userDeleteError,
   userDoesNotExist,
   userUpdateError,
-  findUsersError,
+  usersFindError,
   logoutError,
-  updateAvatarError,
-  updatePasswordError,
-  updateEmailError,
+  avatarUpdateError,
+  passwordUpdateError,
+  emailUpdateError,
+  userRestoreError,
+  userAlreadyExists,
+  emailAlreadyExists,
 } = require('../constant/err.type');
 
 const {
@@ -25,6 +28,10 @@ const {
   removeUser,
   updateUser,
   findUsers,
+  findAllWithDeleted,
+  restoreUser,
+  checkUsername,
+  checkEmail,
 } = require('../service/user.service.js');
 
 const { getRoutes } = require('../service/route.service.js');
@@ -110,7 +117,7 @@ class UserController {
         message: '密码重置成功',
       };
     } catch (error) {
-      ctx.app.emit('error', resetPasswordError, ctx);
+      ctx.app.emit('error', passwordResetError, ctx);
     }
   }
 
@@ -216,25 +223,41 @@ class UserController {
   }
 
   /**
-   * @description: 用户注销
+   * @description: 用户删除或恢复
    * @param {*} ctx 上下文对象
    * @return {*}
    */
   async remove(ctx) {
-    const { userId } = ctx.request.params;
+    const { ids } = ctx.request.body;
     try {
-      const res = await removeUser(userId);
-      if (!res) {
-        return ctx.app.emit('error', userDoesNotExist, ctx);
+      // 查出ids对应的用户（包括软删除）
+      const users = await findAllWithDeleted(ids);
+      if (users.length === 0) return ctx.app.emit('error', userDoesNotExist, ctx);
+
+      // 只恢复被删除的
+      const normalUsers = users.filter(u => !u.deletedAt);
+      if (normalUsers.length === 0) {
+        ctx.body = {
+          code: '400',
+          data: null,
+          message: '所选用户均被删除',
+        };
+        return;
       }
 
-      await redisClient.del(`refresh_token:user:${userId}`);
-      await redisClient.set(`user_status:${userId}`, 'deleted');
+      const normalUserIds = normalUsers.map(u => u.id);
+      const res = await removeUser(normalUserIds);
+      if (!res) throw new Error();
+
+      normalUserIds.forEach(async userId => {
+        await redisClient.del(`refresh_token:user:${userId}`);
+        await redisClient.set(`user_status:${userId}`, 'deleted');
+      });
 
       ctx.body = {
         code: '200',
         data: null,
-        message: '删除成功',
+        message: '用户删除成功',
       };
     } catch (err) {
       ctx.app.emit('error', userDeleteError, ctx);
@@ -250,35 +273,42 @@ class UserController {
     const { userId, avatar, username, email, role, banned } = ctx.state.user;
     const transaction = await sequelize.transaction();
     try {
+      if (ctx.request.body.username) {
+        const res = await checkUsername(ctx.request.body.username, userId);
+        if (res) return ctx.app.emit('error', userAlreadyExists, ctx);
+      }
+
       const res = await updateUser(
         {
           ...ctx.request.body,
         },
-        userId,
+        ctx.request.body.userId,
         transaction,
       );
       if (!res) throw new Error();
 
-      // 更新 token 和 refreshToken
-      const userInfo = {
-        userId,
-        avatar,
-        username,
-        email,
-        role,
-        banned,
-        ...ctx.request.body,
-      };
-      const { NODE_ENV, REDIS_TOKEN_CACHE_TTL } = process.env;
-      const { accessToken, refreshToken } = issueTokens(userInfo);
-      ctx.cookies.set('refresh_token', refreshToken, {
-        httpOnly: true, // 前端 JS 无法读取
-        secure: NODE_ENV === 'production', // 开发环境 http = false；生产 https = true
-        sameSite: NODE_ENV === 'production' ? 'None' : 'Lax', // 防 CSRF，生产可用 'None'
-        path: '/', // Cookie 对整个域名有效
-        maxAge: 1000 * 60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL, // 过期时间
-      });
-      ctx.set('x-access-token', accessToken);
+      if (userId === ctx.request.body.userId * 1) {
+        // 更新 token 和 refreshToken
+        const userInfo = {
+          userId,
+          avatar,
+          username,
+          email,
+          role,
+          banned,
+          ...ctx.request.body,
+        };
+        const { NODE_ENV, REDIS_TOKEN_CACHE_TTL } = process.env;
+        const { accessToken, refreshToken } = issueTokens(userInfo);
+        ctx.cookies.set('refresh_token', refreshToken, {
+          httpOnly: true, // 前端 JS 无法读取
+          secure: NODE_ENV === 'production', // 开发环境 http = false；生产 https = true
+          sameSite: NODE_ENV === 'production' ? 'None' : 'Lax', // 防 CSRF，生产可用 'None'
+          path: '/', // Cookie 对整个域名有效
+          maxAge: 1000 * 60 * 60 * 24 * REDIS_TOKEN_CACHE_TTL, // 过期时间
+        });
+        ctx.set('x-access-token', accessToken);
+      }
 
       // 提交事务
       await transaction.commit();
@@ -305,9 +335,7 @@ class UserController {
     try {
       if (userId) {
         const res = await getUserInfo({ id: userId });
-        if (!res) {
-          return ctx.app.emit('error', userDoesNotExist, ctx);
-        }
+        if (!res) return ctx.app.emit('error', userDoesNotExist, ctx);
 
         const routes = await getRoutes({ role: ctx.state.user.role });
 
@@ -351,17 +379,21 @@ class UserController {
    * @return {*}
    */
   async findAll(ctx) {
-    const { pageNum = 1, pageSize = 10, username, type, rangeDate } = ctx.query;
+    const { pageNum = 1, pageSize = 10, username, role, registerDate, isDeleted } = ctx.query;
     const { userId } = ctx.state.user;
     try {
-      const res = await findUsers({ pageNum, pageSize, username, type, rangeDate }, userId);
+      const res = await findUsers(
+        { pageNum, pageSize, username, role, registerDate, isDeleted },
+        userId,
+      );
+
       ctx.body = {
         code: '200',
         data: res,
         message: '操作成功',
       };
     } catch (err) {
-      ctx.app.emit('error', findUsersError, ctx);
+      ctx.app.emit('error', usersFindError, ctx);
     }
   }
 
@@ -471,7 +503,7 @@ class UserController {
     } catch (err) {
       deleteGitHubImage(avatarUrl);
       await transaction.rollback();
-      ctx.app.emit('error', updateAvatarError, ctx);
+      ctx.app.emit('error', avatarUpdateError, ctx);
     } finally {
       // 延迟5秒后清理临时目录（确保文件导入完成）
       clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
@@ -487,7 +519,7 @@ class UserController {
     const { oldPassword, newPassword } = ctx.request.body;
     const { userId } = ctx.state.user;
     try {
-      const user = await getUserInfo({ userId });
+      const user = await getUserInfo({ id: userId });
       if (!user) throw new Error();
 
       const match = await bcrypt.compare(oldPassword, user.password);
@@ -508,7 +540,7 @@ class UserController {
         message: '修改成功',
       };
     } catch (err) {
-      ctx.app.emit('error', updatePasswordError, ctx);
+      ctx.app.emit('error', passwordUpdateError, ctx);
     }
   }
 
@@ -521,9 +553,15 @@ class UserController {
     const { email, password } = ctx.request.body;
     const { userId } = ctx.state.user;
     try {
-      const user = await getUserInfo({ userId });
-      if (!user) throw new Error();
+      // 判断用户是否存在
+      const user = await getUserInfo({ id: userId });
+      if (!user) return ctx.app.emit('error', userDoesNotExist, ctx);
 
+      // 检查邮箱是否已被注册
+      const userByEmail = await checkEmail(email, userId);
+      if (userByEmail) return ctx.app.emit('error', emailAlreadyExists, ctx);
+
+      // 校验密码
       const match = await bcrypt.compare(password, user.password);
       if (!match) throw new Error();
 
@@ -546,7 +584,48 @@ class UserController {
         message: '修改成功',
       };
     } catch (err) {
-      ctx.app.emit('error', updateEmailError, ctx);
+      ctx.app.emit('error', emailUpdateError, ctx);
+    }
+  }
+
+  /**
+   * @description: 恢复被删除的用户
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async restore(ctx) {
+    const { ids } = ctx.request.body;
+    try {
+      // 查出ids对应的用户（包括软删除）
+      const users = await findAllWithDeleted(ids);
+      if (users.length === 0) return ctx.app.emit('error', userDoesNotExist, ctx);
+
+      // 只恢复被删除的
+      const deletedUsers = users.filter(u => u.deletedAt);
+      if (deletedUsers.length === 0) {
+        ctx.body = {
+          code: '400',
+          data: null,
+          message: '所选用户均未被删除',
+        };
+        return;
+      }
+
+      const delUserIds = deletedUsers.map(u => u.id);
+      const res = await restoreUser(delUserIds);
+      if (res !== delUserIds.length) throw new Error();
+
+      delUserIds.forEach(async userId => {
+        await redisClient.del(`user_status:${userId}`);
+      });
+
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '用户恢复成功',
+      };
+    } catch (err) {
+      ctx.app.emit('error', userRestoreError, ctx);
     }
   }
 }

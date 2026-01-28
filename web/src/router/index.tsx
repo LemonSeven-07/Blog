@@ -20,6 +20,8 @@ const Favorites = lazy(() => import('@/pages/client/Favorites'));
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const Articles = lazy(() => import('@/pages/admin/Articles'));
 const Users = lazy(() => import('@/pages/admin/Users'));
+const Tags = lazy(() => import('@/pages/admin/Tags'));
+const Categories = lazy(() => import('@/pages/admin/Categories'));
 
 // 解决闪屏问题
 const withLoadingComponent = (component: JSX.Element) => (
@@ -43,7 +45,9 @@ const componentMap: ComponentMap = {
 
   Dashboard: withLoadingComponent(<Dashboard />),
   Articles: withLoadingComponent(<Articles />),
-  Users: withLoadingComponent(<Users />)
+  Users: withLoadingComponent(<Users />),
+  Tags: withLoadingComponent(<Tags />),
+  Categories: withLoadingComponent(<Categories />)
 };
 
 export const routes = [

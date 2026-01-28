@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-25 01:42:46
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-05 05:53:28
+ * @LastEditTime: 2026-01-12 03:06:07
  * @FilePath: /web/src/pages/client/Favorites/index.tsx
  * @Description: 我的收藏页
  */
@@ -122,25 +122,27 @@ const Favorites = () => {
 
   return (
     <Spin spinning={loading} wrapperClassName="favorites-container">
-      <div className="favorites-operate">
-        <Select
-          showSearch
-          defaultValue={0}
-          value={categoryId}
-          optionFilterProp="label"
-          onChange={handleCategoryChange}
-          options={options}
-        />
-        <div>我的收藏</div>
-        <Button
-          danger
-          icon={<CloseCircleOutlined />}
-          disabled={selectedIds.length ? false : true}
-          onClick={batchCancel}
-        >
-          批量取消
-        </Button>
-      </div>
+      {list.length && categoryId === 0 ? (
+        <div className="favorites-operate">
+          <Select
+            showSearch
+            defaultValue={0}
+            value={categoryId}
+            optionFilterProp="label"
+            onChange={handleCategoryChange}
+            options={options}
+          />
+          <div>我的收藏</div>
+          <Button
+            danger
+            icon={<CloseCircleOutlined />}
+            disabled={selectedIds.length ? false : true}
+            onClick={batchCancel}
+          >
+            批量取消
+          </Button>
+        </div>
+      ) : null}
 
       {list.length ? (
         <div className="favorites-main">

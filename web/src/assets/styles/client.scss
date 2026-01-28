@@ -45,7 +45,7 @@
       max-width: 90rem;
       height: 3.75rem;
       margin: auto;
-      padding: 0 0.75rem;
+      padding: 0 1.25rem;
 
       @media screen and (width <= 52rem) {
         justify-content: space-between;
@@ -634,9 +634,12 @@
 
                 .body-index {
                   width: 1.5635rem;
+                  font-size: 1rem;
+                  font-weight: bold;
                   line-height: 2.375rem;
                   text-align: left;
                   flex: 0 0 auto;
+                  color: #8a919f;
                 }
 
                 .hot-item-text {

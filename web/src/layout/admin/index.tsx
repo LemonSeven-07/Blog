@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 17:11:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-07 05:04:09
+ * @LastEditTime: 2026-01-07 05:21:53
  * @FilePath: /web/src/layout/admin/index.tsx
  * @Description: 后台页面布局
  */
@@ -13,7 +13,9 @@ import {
   DesktopOutlined,
   LogoutOutlined,
   DashboardOutlined,
-  FileOutlined
+  FileOutlined,
+  TagOutlined,
+  FolderOpenOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Layout, Menu, Popover, Avatar, Divider, Modal, message } from 'antd';
@@ -48,12 +50,16 @@ interface IconMap {
   DashboardOutlined: JSX.Element;
   FileOutlined: JSX.Element;
   UserOutlined: JSX.Element;
+  TagOutlined: JSX.Element;
+  FolderOpenOutlined: JSX.Element;
 }
 
 const iconMap: IconMap = {
   DashboardOutlined: <DashboardOutlined />,
   FileOutlined: <FileOutlined />,
-  UserOutlined: <UserOutlined />
+  UserOutlined: <UserOutlined />,
+  TagOutlined: <TagOutlined />,
+  FolderOpenOutlined: <FolderOpenOutlined />
 };
 
 const { Header, Sider, Content } = Layout;

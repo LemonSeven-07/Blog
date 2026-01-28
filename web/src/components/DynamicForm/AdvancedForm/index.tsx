@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-01 01:32:08
+ * @LastEditTime: 2026-01-23 03:18:36
  * @FilePath: /web/src/components/DynamicForm/AdvancedForm/index.tsx
  * @Description: 水平布局表单组件，例如：查询表单等
  */
@@ -330,7 +330,10 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
               </Button>
               <Button
                 htmlType="button"
-                onClick={() => form.resetFields()}
+                onClick={() => {
+                  form.resetFields();
+                  onFinish(getFields() as TValues);
+                }}
                 icon={<ReloadOutlined />}
               >
                 重置

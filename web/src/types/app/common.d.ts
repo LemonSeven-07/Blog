@@ -7,6 +7,8 @@ export type ComponentMap = {
   Dashboard: JSX.Element;
   Articles: JSX.Element;
   Users: JSX.Element;
+  Tags: JSX.Element;
+  Categories: JSX.Element;
 };
 
 export interface RouteItem {
@@ -26,6 +28,7 @@ export interface RouteItem {
 export interface tagItem {
   id: number;
   name: string;
+  createdAt: string;
 }
 
 export interface ArticleSearchParams {

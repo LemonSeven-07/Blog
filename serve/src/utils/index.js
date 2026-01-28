@@ -243,7 +243,8 @@ class blogPackagingMethod {
             <p>验证码：
               <span style="color: #409EFF;">${code}</span>
             </p>
-            <p>${EMAIL_CODE_EXPIRE} 分钟内有效。</p>
+            <p>该验证码 <strong>${EMAIL_CODE_EXPIRE} 分钟</strong> 内有效。</p>
+            <p>如果这不是您本人的操作，请忽略此邮件。</p>
           </div>
         `;
       }

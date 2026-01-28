@@ -43,7 +43,7 @@ const verifyUser = async (ctx, next) => {
  * @return {*}
  */
 const verifyEmail = async (ctx, next) => {
-  const { email, type = 'update' } = ctx.request.body;
+  const { email, type } = ctx.request.body;
   try {
     const res = await getUserInfo({ email, paranoid: false });
 
@@ -54,10 +54,6 @@ const verifyEmail = async (ctx, next) => {
     // 重置密码校验邮箱是否不存在
     if ((ctx.path.includes('/reset') || type === 'reset') && !res)
       return ctx.app.emit('error', emailNotRegistered, ctx);
-
-    // 更换绑定邮箱校验新邮箱是否存在
-    if ((ctx.path.includes('/user/email') || type === 'update') && res)
-      return ctx.app.emit('error', emailAlreadyExists, ctx);
   } catch (err) {
     return ctx.app.emit('error', userRegisterError, ctx);
   }

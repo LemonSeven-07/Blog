@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-28 15:18:54
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-17 02:47:38
+ * @LastEditTime: 2026-01-28 16:42:05
  * @FilePath: /web/src/utils/index.ts
  * @Description: 封装公共工具类
  */
@@ -33,5 +33,15 @@ export class Utils {
 
       if (callNow) func.apply(this, args);
     };
+  }
+
+  static downloadFile(name: string, blob: Blob) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name; // 设置下载文件名
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 }

@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:32
  * @LastEditors: yolo
- * @LastEditTime: 2025-10-12 01:50:27
+ * @LastEditTime: 2026-01-11 04:15:40
  * @FilePath: /web/src/api/http/request.ts
  * @Description: axios 请求核心封装
  */
@@ -84,6 +84,8 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
     cKey,
     httpConditionalCache
   );
+
+  console.log('缓存数据：', cacheData);
   if (cacheData) {
     // 命中缓存，返回缓存数据
     return new Promise((resolve) => {
@@ -138,6 +140,7 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
           res.headers as AxiosHeaders,
           data
         );
+
         // 🏷️ 业务逻辑处理成功直接返回 data
         return data as Full extends true ? never : P;
       } else {

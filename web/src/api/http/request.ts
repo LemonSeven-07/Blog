@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:32
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-11 04:15:40
+ * @LastEditTime: 2026-02-27 02:41:19
  * @FilePath: /web/src/api/http/request.ts
  * @Description: axios 请求核心封装
  */
@@ -164,7 +164,7 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
   * 方法参数
     🟩 url: string类型，为接口请求地址
     🟩 params: R类型，为接口请求参数
-    🟩 config: MyAxiosRequestConfig类型，为扩展后 axios 请求配置，包含：url、method、baseURL、headers，params、data、timeout、responseType、ignoreGlobalLoading、cancelOnRouteChange等。重点 💡ignoreGlobalLoading?: boolean 扩展字段，接口请求 pending 过程中控制全局 loading 显示与否的开关。如果某些请求是“静默”或低优先级的，全局 loading 会闪烁，影响用户体验。默认 true 不显示页面loading; 
+    🟩 config: MyAxiosRequestConfig类型，为扩展后 axios 请求配置，包含：url、method、baseURL、headers，params、data、timeout、responseType、ignoreLoading、cancelOnRouteChange等。重点 💡ignoreLoading?: boolean 扩展字段，接口请求 pending 过程中控制全局 loading 显示与否的开关。如果某些请求是“静默”或低优先级的，全局 loading 会闪烁，影响用户体验。默认 true 不显示页面loading; 
     🟩 customizeOpt: CustomizeOpt & { fullResponseData?: Full } 类型，为自定义选项包括：💡autoCancelRequests?: boolean(路由切换时取消上个页面还在 pending 中的请求，默认 true 取消 pending 中的请求)、💡fullResponseData?: boolean(响应数据是否全量交给交互逻辑层，默认 false 非全量)、💡handleBusinessCode?: boolean(是否统一处理接口业务code状态码，默认 true 统一处理)、💡useBodyForDelete?: boolean(delete 请求参数是放在query还是body里面，默认 false 放在query)
   * 方法返回类型结构
     🟩 Promise<P>: 如果 fullResponseData = false（默认），返回接口实际数据结构（默认 CommonResponse<T>）

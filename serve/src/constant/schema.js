@@ -445,9 +445,7 @@ module.exports = {
         'any.required': 'tagIds不能为空',
       }),
 
-    content: Joi.string().required().messages({
-      'string.empty': '文章内容不能为空',
-    }),
+    content: Joi.string(),
   }),
   getHotArticlesSchema: Joi.object({
     pageNum: Joi.number().integer().messages({
@@ -547,10 +545,6 @@ module.exports = {
       }),
   }),
   importArticleSchema: Joi.object({
-    categoryId: Joi.number().integer().required().messages({
-      'number.empty': 'categoryId不能为空',
-      'number.integer': 'categoryId必须是整数',
-    }),
     title: Joi.string()
       .pattern(/^.{4,50}$/)
       .required()
@@ -563,6 +557,47 @@ module.exports = {
       .messages({
         'string.pattern.base': '文章摘要长度应在16-150个字符之间',
       }),
+    categoryId: Joi.number().integer().required().messages({
+      'number.empty': 'categoryId不能为空',
+      'number.integer': 'categoryId必须是整数',
+    }),
+    tagIds: Joi.array()
+      .items(
+        Joi.number().integer().messages({
+          'number.base': '每一项必须是数字',
+          'number.integer': '每一项必须是整数',
+        }),
+      )
+      .min(1)
+      .max(3)
+      .required()
+      .messages({
+        'array.base': 'tagIds必须是数组',
+        'array.min': 'tagIds至少包含一个元素',
+        'array.max': 'tagIds小于等于三个元素',
+        'any.required': 'tagIds不能为空',
+      }),
+  }),
+  createArticleSchema: Joi.object({
+    title: Joi.string()
+      .pattern(/^.{4,50}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '文章标题长度应在4-50个字符之间',
+      }),
+    summary: Joi.string()
+      .pattern(/^.{16,150}$/)
+      .required()
+      .messages({
+        'string.pattern.base': '文章摘要长度应在16-150个字符之间',
+      }),
+    content: Joi.string().required().messages({
+      'string.empty': '文章内容不能为空',
+    }),
+    categoryId: Joi.number().integer().required().messages({
+      'number.empty': 'categoryId不能为空',
+      'number.integer': 'categoryId必须是整数',
+    }),
     tagIds: Joi.array()
       .items(
         Joi.number().integer().messages({

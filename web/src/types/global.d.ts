@@ -1,2 +1,2 @@
 declare module 'rehype-callouts/theme/obsidian';
-declare module 'lodash/debounce';
+declare module 'markdown-it-mark';

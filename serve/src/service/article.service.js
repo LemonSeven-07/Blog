@@ -513,7 +513,7 @@ class ArticleService {
 
     if (res[0] > 0) {
       // 4️⃣ 删除 GitHub 上旧的封面图片
-      if (article && article.dataValues && article.dataValues.coverImage)
+      if (article && article.dataValues && article.dataValues.coverImage && coverImage)
         deleteGitHubImage(article.dataValues.coverImage);
 
       // 5️⃣ 替换标签（自动插入 article_tags）

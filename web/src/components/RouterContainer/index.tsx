@@ -47,9 +47,9 @@ const RouterContainer = () => {
 
   return (
     <ConfigProvider locale={locale}>
-      <FloatingBlock />
-
       <Spin spinning={globalLoading}>
+        <FloatingBlock />
+
         <RouterProvider router={router} />
       </Spin>
     </ConfigProvider>

@@ -166,7 +166,7 @@ module.exports = {
     message: '请确保文件为有效内容，避免上传不必要的文件',
     data: null,
   },
-  articlesUploadError: {
+  articleUploadError: {
     code: '10026',
     message: '上传失败',
     data: null,
@@ -309,6 +309,16 @@ module.exports = {
   tagUsageError: {
     code: '10057',
     message: '标签已被使用',
+    data: null,
+  },
+  articlePublishError: {
+    code: '10060',
+    message: '文章发布失败',
+    data: null,
+  },
+  imagePublishError: {
+    code: '10061',
+    message: '图片上传失败',
     data: null,
   },
 };

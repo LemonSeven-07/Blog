@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-25 01:42:46
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-12 03:06:07
+ * @LastEditTime: 2026-02-27 03:14:42
  * @FilePath: /web/src/pages/client/Favorites/index.tsx
  * @Description: 我的收藏页
  */

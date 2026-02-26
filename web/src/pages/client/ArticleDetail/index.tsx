@@ -2,30 +2,30 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:05:16
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-27 05:08:29
+ * @LastEditTime: 2026-02-09 18:10:35
  * @FilePath: /web/src/pages/client/ArticleDetail/index.tsx
  * @Description: 文章查看页面
  */
 
 import { memo, useRef, useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import dayjs from 'dayjs';
-import remarkGfm from 'remark-gfm';
-import { visit } from 'unist-util-visit';
-import hljs from 'highlight.js';
 import { message, Tag, Button, Anchor, Input, Badge, Avatar } from 'antd';
 import { CopyOutlined, UserOutlined } from '@ant-design/icons';
-import { PhotoProvider, PhotoView } from 'react-photo-view';
+import ReactMarkdown from 'react-markdown'; // 将 Markdown 格式的文本渲染为 HTML
+import dayjs from 'dayjs'; // 用于日期格式化和处理
+import remarkGfm from 'remark-gfm'; // 支持 GitHub Flavored Markdown（GFM）扩展功能，如任务列表、表格等
+import { visit } from 'unist-util-visit'; // 用于遍历 AST（抽象语法树）
+import hljs from 'highlight.js'; // 用于代码高亮
+import { PhotoProvider, PhotoView } from 'react-photo-view'; // 用于图片查看功能，提供放大镜效果
 import 'react-photo-view/dist/react-photo-view.css';
-import remarkMath from 'remark-math';
-import { remarkMark } from 'remark-mark-highlight';
-import rehypeRaw from 'rehype-raw';
-import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math'; // 用于支持 Markdown 中的数学公式
+import { remarkMark } from 'remark-mark-highlight'; // 支持 Markdown 中的高亮文本（==text==）
+import rehypeRaw from 'rehype-raw'; // 用于将 HTML 标签插入 Markdown 中的原始内容
+import rehypeKatex from 'rehype-katex'; // 用于渲染 KaTeX 数学公式
 import 'katex/dist/katex.min.css';
-import rehypeCallouts from 'rehype-callouts';
+import rehypeCallouts from 'rehype-callouts'; // 支持在 Markdown 中插入带有特定样式的提示框（如注意、警告）
 import 'rehype-callouts/theme/obsidian';
-import rehypeSemanticBlockquotes from 'rehype-semantic-blockquotes';
+import rehypeSemanticBlockquotes from 'rehype-semantic-blockquotes'; // 用于渲染语义化的引用块
 import 'highlight.js/styles/atom-one-dark.css';
 import type { Root, Element, Properties } from 'hast';
 import '@/assets/styles/markdown.scss';

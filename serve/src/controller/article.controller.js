@@ -29,6 +29,7 @@ const {
   loadMoreArticle,
   getExistingArticleIds,
   updateArticleFavoriteCount,
+  getArticleInfo,
 } = require('../service/article.service');
 
 const {
@@ -43,11 +44,16 @@ const {
   articleDeleteError,
   articleUpdateError,
   articlesOutputError,
-  articlesUploadError,
+  articleUploadError,
+  articlePublishError,
   loadMoreError,
   favoriteAddError,
   favoriteRemoveError,
+  imagePublishError,
+  articleAlreadyExists,
 } = require('../constant/err.type');
+
+const { articleMaintenanceSchema } = require('../constant/schema.js');
 
 class articleController {
   /**
@@ -81,8 +87,9 @@ class articleController {
    */
   async findHotArticles(ctx) {
     try {
+      const { pageNum } = ctx.query;
       const params = {
-        pageNum: 1,
+        pageNum,
         pageSize: 5,
         sort: 'hot',
       };
@@ -267,10 +274,62 @@ class articleController {
    */
   async update(ctx) {
     const { id } = ctx.params;
-    const { categoryId, content, tagList, title } = ctx.request.body;
+    let coverImage = '',
+      params = {};
+    const { image } = ctx.request.files;
+    const { userId } = ctx.state.user;
     const transaction = await sequelize.transaction();
     try {
-      const res = await updateArticle({ id, categoryId, content, tagList, title }, transaction);
+      // 对报文参数进行解析和转换
+      if (ctx.request.body) {
+        const { image, ...rest } = ctx.request.body;
+        params = { ...rest };
+        if (ctx.request.body.tagIds) params.tagIds = JSON.parse(ctx.request.body.tagIds);
+      }
+
+      // 使用 Joi 进行参数验证
+      const { error } = await articleMaintenanceSchema.validate(params);
+      if (error) {
+        // 如果验证失败，返回错误信息
+        const errorMessages = error.details.map(detail => detail.message);
+
+        // 延迟5秒后清理文章封面临时目录
+        clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
+
+        return ctx.app.emit(
+          'error',
+          {
+            code: '400',
+            data: null,
+            message: errorMessages.toString(),
+          },
+          ctx,
+        );
+      }
+
+      const { categoryId, content, tagIds, title, summary } = params;
+
+      // 校验文章标题唯一性（同一用户下不能有重复标题）
+      const articleInfo = await getArticleInfo({ userId, title, id });
+      if (articleInfo) return ctx.app.emit('error', articleAlreadyExists, ctx);
+
+      // 如果有新的封面图片，需上传gitHub获取图片url
+      if (image) {
+        const { cdnUrl } = await uploadImageToGitHub(
+          fs.readFileSync(image.filepath),
+          image.mimetype,
+          'cover',
+        );
+
+        if (!cdnUrl) throw new Error();
+        coverImage = cdnUrl;
+      }
+
+      // 更新文章信息
+      const res = await updateArticle(
+        { id, categoryId, content, tagIds, title, summary, coverImage },
+        transaction,
+      );
       if (!res) throw new Error();
 
       await transaction.commit();
@@ -280,8 +339,13 @@ class articleController {
         message: '修改成功',
       };
     } catch (err) {
+      // 删除已上传的封面图片
+      deleteGitHubImage(coverImage);
       await transaction.rollback();
       ctx.app.emit('error', articleUpdateError, ctx);
+    } finally {
+      // 延迟5秒后清理文章封面临时目录
+      clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
     }
   }
 
@@ -442,10 +506,15 @@ class articleController {
   async createArticleFromFile(ctx) {
     const { userId } = ctx.state.user;
     const { file, image } = ctx.request.files;
+    const { title } = ctx.request.body;
     let files = !Array.isArray(file) ? [file] : file;
     const transaction = await sequelize.transaction();
     let coverImage = '';
     try {
+      // 检查文章标题是否已存在（同一用户下不能有重复标题）
+      const articleInfo = await getArticleInfo({ userId, title });
+      if (articleInfo) return ctx.app.emit('error', articleAlreadyExists, ctx);
+
       if (image) {
         const { cdnUrl } = await uploadImageToGitHub(
           fs.readFileSync(image.filepath),
@@ -483,10 +552,111 @@ class articleController {
       // 删除已上传的封面图片
       deleteGitHubImage(coverImage);
       await transaction.rollback();
-      ctx.app.emit('error', articlesUploadError, ctx);
+      ctx.app.emit('error', articleUploadError, ctx);
     } finally {
       // 延迟5秒后清理临时目录（确保文件导入完成）
       clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
+    }
+  }
+
+  /**
+   * @description: 文章发布
+   * @param {*} ctx 上下文对象
+   * @return {*}
+   */
+  async createArticleFromContent(ctx) {
+    const { userId } = ctx.state.user;
+    const { image } = ctx.request.files;
+    const { title } = ctx.request.body;
+    const transaction = await sequelize.transaction();
+    let coverImage = '';
+    try {
+      // 检查文章标题是否已存在
+      const articleInfo = await getArticleInfo({ userId, title });
+      if (articleInfo) return ctx.app.emit('error', articleAlreadyExists, ctx);
+
+      if (image) {
+        const { cdnUrl } = await uploadImageToGitHub(
+          fs.readFileSync(image.filepath),
+          image.mimetype,
+          'cover',
+        );
+
+        if (!cdnUrl) throw new Error();
+        coverImage = cdnUrl;
+      }
+
+      let res = await createArticle(
+        {
+          ...ctx.request.body,
+          tagIds: JSON.parse(ctx.request.body.tagIds),
+          userId,
+          coverImage,
+        },
+        transaction,
+      );
+
+      if (!res) throw new Error();
+
+      await transaction.commit();
+      ctx.body = {
+        code: '200',
+        data: null,
+        message: '文章发布成功',
+      };
+    } catch (err) {
+      // 删除已上传的封面图片
+      deleteGitHubImage(coverImage);
+      await transaction.rollback();
+      ctx.app.emit('error', articlePublishError, ctx);
+    } finally {
+      // 延迟5秒后清理临时目录（确保文件导入完成）
+      clearCacheFiles(ctx.state.uploadedFilepaths || [], 5000);
+    }
+  }
+
+  /**
+   * @description: 上传文章图片
+   * @param {*} ctx
+   * @return {*}
+   */
+  async uploadImage(ctx) {
+    const { images } = ctx.request.files;
+    let imageUrls = [];
+    try {
+      // 多张图片上传
+      if (images && Array.isArray(images) && images.length) {
+        for (const image of images) {
+          const { cdnUrl } = await uploadImageToGitHub(
+            fs.readFileSync(image.filepath),
+            image.mimetype,
+            'md',
+          );
+          if (!cdnUrl) throw new Error();
+          imageUrls.push(cdnUrl);
+        }
+      }
+
+      // 单张图片上传
+      if (images && !Array.isArray(images)) {
+        const { cdnUrl } = await uploadImageToGitHub(
+          fs.readFileSync(images.filepath),
+          images.mimetype,
+          'md',
+        );
+        if (!cdnUrl) throw new Error();
+        imageUrls.push(cdnUrl);
+      }
+
+      ctx.body = {
+        code: '200',
+        data: { imageUrls },
+        message: '图片上传成功',
+      };
+    } catch (err) {
+      // 删除已上传的封面图片
+      imageUrls.forEach(url => deleteGitHubImage(url));
+      ctx.app.emit('error', imagePublishError, ctx);
     }
   }
 

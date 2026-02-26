@@ -7,6 +7,7 @@ const {
   getLoadMoreArticlesSchema,
   deleteArticlesSchema,
   importArticleSchema,
+  createArticleSchema,
   outputArticlesSchema,
   toggleArticleFavoriteSchema,
 } = require('../constant/schema.js');
@@ -25,7 +26,9 @@ const {
   output,
   loadMore,
   createArticleFromFile,
+  createArticleFromContent,
   toggleArticleFavorite,
+  uploadImage,
 } = require('../controller/article.controller.js');
 
 const router = new Router({ prefix: '/article' });
@@ -58,13 +61,24 @@ router.post(
   createArticleFromFile,
 );
 
-// // 通过 Markdown 内容创建文章
-// router.post(
-//   '/create/content',
-//   auth,
-//   hadAdminPermission,
-//   createArticleFromContent
-// );
+// 通过 Markdown 内容创建文章
+router.post(
+  '/create/content',
+  auth,
+  hadAdminPermission(2),
+  joiValidate(createArticleSchema),
+  uploadMiddleware(
+    {
+      image: {
+        type: ['image/png', 'image/jpeg', 'image/jpg'],
+        require: false,
+        multiple: false,
+      },
+    },
+    2,
+  ),
+  createArticleFromContent,
+);
 
 // 文章导出（单个导出、批量导出和全部导出）
 router.get('/output', auth, hadAdminPermission(2), joiValidate(outputArticlesSchema), output);
@@ -80,9 +94,32 @@ router.put(
   '/:id',
   auth,
   hadAdminPermission(2),
-  joiValidate(articleMaintenanceSchema),
-  verifyArticle,
+  uploadMiddleware(
+    {
+      image: {
+        type: ['image/png', 'image/jpeg', 'image/jpg'],
+        require: false,
+        multiple: false,
+      },
+    },
+    2,
+  ),
+  // joiValidate(articleMaintenanceSchema),
   update,
+);
+
+// markdown 文章图片上传
+router.post(
+  '/upload/image',
+  auth,
+  hadAdminPermission(2),
+  uploadMiddleware(
+    {
+      images: { type: ['image/png', 'image/jpeg', 'image/jpg'], require: true, multiple: true },
+    },
+    99,
+  ),
+  uploadImage,
 );
 
 module.exports = router;

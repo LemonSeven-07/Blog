@@ -35,7 +35,8 @@ export type DynamicFormItemType =
   | 'checkbox'
   | 'radio'
   | 'uploadFile'
-  | 'uploadImg';
+  | 'uploadImg'
+  | 'markdown';
 
 // 所有可能的 value 类型
 export type DynamicFormValue =

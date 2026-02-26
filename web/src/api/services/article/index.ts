@@ -5,7 +5,9 @@ import type {
   GetArticleList,
   ViewArticleDetail,
   ToggleArticleFavorite,
-  GetArticles
+  GetArticles,
+  PublishArticle,
+  UploadImage
 } from './types';
 
 // 导出文章（支持单个、批量和全部导出）
@@ -47,3 +49,15 @@ export const getAllArticles = (params: GetArticles['Request']) =>
 // 删除文章
 export const deleteArticles = (params: { ids: number[] }) =>
   http.delete('/article', params, {}, { useBodyForDelete: true });
+
+// 上传文章图片
+export const uploadImage = (params: UploadImage['Request']) =>
+  http.post<UploadImage['Response']>('article/upload/image', params, { timeout: 30000 });
+
+// 发布文章
+export const publishArticle = (params: PublishArticle['Request']) =>
+  http.post('/article/create/content', params, { ignoreLoading: false, timeout: 30000 });
+
+// 文章编辑
+export const updateArticle = (params: FormData, id: number) =>
+  http.put(`/article/${id}`, params, { ignoreLoading: false, timeout: 30000 });

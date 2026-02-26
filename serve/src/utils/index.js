@@ -373,6 +373,12 @@ class blogPackagingMethod {
     }
   }
 
+  /**
+   * @description: 将 YYYYMMDD 格式的日期字符串转换为日期时间字符串
+   * @param {*} yyyymmdd 日期字符串，格式为 YYYYMMDD，例如 20240601
+   * @param {*} endOfDay 是否转换为当天的结束时间（23:59:59），默认为 false（转换为当天的开始时间 00:00:00）
+   * @return {*}
+   */
   yyyymmddToDateTime(yyyymmdd, endOfDay = false) {
     const str = String(yyyymmdd);
 

@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-11-18 00:38:43
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-01 01:36:29
+ * @LastEditTime: 2026-02-26 12:33:11
  * @FilePath: /web/src/components/DynamicForm/BaseForm/index.tsx
  * @Description: 提交类表单组件
  */
@@ -35,6 +35,7 @@ import type { DynamicFormItem, DynamicFormRef } from '../types';
 import { pickerPlaceholder, format } from '../types';
 import { useForm } from '../hooks/useForm';
 import RangeInputFormItem from '../RangeInputFormItem';
+import MarkdownEditor from '@/components/MarkdownEditor';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 dayjs.extend(isoWeek);
@@ -87,8 +88,9 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
-  const [fileList] = useState<UploadFile[]>([]);
-  const [imgList, setImgList] = useState<UploadFile[]>([]);
+  const [files, setFiles] = useState<{
+    [key: string]: UploadFile[];
+  }>({});
 
   // 使用 useImperativeHandle 暴露给父组件的 ref 方法
   useImperativeHandle(ref, () => ({
@@ -462,6 +464,29 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
               </Form.Item>
             );
 
+          // markdown编辑器
+          if (item.type === 'markdown')
+            return (
+              <Form.Item
+                label={item.label}
+                name={item.name}
+                key={item.name}
+                rules={[
+                  {
+                    required: item.required ? item.required : false,
+                    message: '请输入' + item.label + '!'
+                  }
+                ]}
+                initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
+              >
+                <MarkdownEditor
+                  initialValue={typeof item.value !== 'undefined' ? (item.value as string) : ''}
+                  onChange={(value: string) => form.setFieldsValue({ [item.name]: value })}
+                  height="600px"
+                />
+              </Form.Item>
+            );
+
           // 文件上传
           if (item.type === 'uploadFile')
             return (
@@ -478,7 +503,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                 <Upload.Dragger
                   multiple={item.multiple ? item.multiple : false}
                   accept={item.accept}
-                  fileList={fileList}
+                  fileList={files[item.name] || []}
                   beforeUpload={() => false}
                   maxCount={
                     typeof item.maxCount === 'number' && item.maxCount >= 0 ? item.maxCount : 1
@@ -502,8 +527,8 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                 label={item.label}
                 name={item.name}
                 key={item.name}
-                valuePropName="imgList"
-                getValueFromEvent={({ fileList: imgList }) => imgList}
+                valuePropName="fileList"
+                getValueFromEvent={({ fileList }) => fileList}
                 rules={[
                   { required: item.required ? item.required : false, message: '请选择一个文件!' }
                 ]}
@@ -512,11 +537,13 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   multiple={item.multiple ? item.multiple : false}
                   accept={item.accept}
                   listType={item.listType ? item.listType : 'picture-card'}
-                  fileList={imgList}
+                  fileList={files[item.name] || []}
                   showUploadList={{ showPreviewIcon: true, showRemoveIcon: true }}
                   onPreview={handlePreview}
                   beforeUpload={() => false}
-                  onChange={({ fileList: newFileList }) => setImgList(newFileList)}
+                  onChange={({ fileList: newFileList }) =>
+                    setFiles({ ...files, [item.name]: newFileList })
+                  }
                   maxCount={
                     typeof item.maxCount === 'number' && item.maxCount >= 0 ? item.maxCount : 1
                   }

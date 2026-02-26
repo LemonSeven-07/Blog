@@ -51,3 +51,12 @@ export interface GetArticles {
     total: number;
   };
 }
+
+export type PublishArticle = UploadArticle;
+
+export interface UploadImage {
+  Request: FormData;
+  Response: {
+    imageUrls: string[];
+  };
+}

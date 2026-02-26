@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-29 02:23:25
+ * @LastEditTime: 2026-02-27 04:20:02
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
@@ -19,12 +19,15 @@ import {
   EditOutlined,
   UploadOutlined
 } from '@ant-design/icons';
+import { v4 as uuidv4 } from 'uuid';
 import api from '@/api';
 import { Utils } from '@/utils';
 import { useAppSelector } from '@/store/hooks';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
 import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import ArticleBuilder from './ArticleBuilder';
+import { type RowData } from './types';
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
 
@@ -75,7 +78,7 @@ const Articles = () => {
   // 文章导入表单
   const [formItems, setFormItems] = useState<DynamicFormItem[]>([
     {
-      label: '文章标题',
+      label: '标题',
       name: 'title',
       type: 'input' as const,
       required: true,
@@ -83,7 +86,15 @@ const Articles = () => {
       tip: '文章标题长度应在4-50个字符之间!'
     },
     {
-      label: '文章摘要',
+      label: '上传',
+      name: 'file',
+      type: 'uploadFile' as const,
+      required: true,
+      accept: '.md',
+      hint: '仅支持Markdown文件（.md）。严禁上传违禁文件。'
+    },
+    {
+      label: '摘要',
       name: 'summary',
       type: 'textarea' as const,
       required: true,
@@ -93,7 +104,7 @@ const Articles = () => {
       maxLength: 150
     },
     {
-      label: '文章分类',
+      label: '分类',
       name: 'categoryId',
       type: 'select' as const,
       required: true,
@@ -103,7 +114,7 @@ const Articles = () => {
       }))
     },
     {
-      label: '文章标签',
+      label: '标签',
       name: 'tagIds',
       type: 'select' as const,
       required: true,
@@ -112,15 +123,7 @@ const Articles = () => {
       options: []
     },
     {
-      label: '文章上传',
-      name: 'file',
-      type: 'uploadFile' as const,
-      required: true,
-      accept: '.md',
-      hint: '仅支持Markdown文件（.md）。严禁上传违禁文件。'
-    },
-    {
-      label: '文章封面',
+      label: '封面',
       name: 'image',
       type: 'uploadImg' as const,
       accept: 'image/png,image/jpeg,image/jpg',
@@ -188,6 +191,8 @@ const Articles = () => {
   const [tableDatas, setTableDatas] = useState<DataType[]>([]);
   // 是否打开文章导入对话框
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // 当前编辑文章数据
+  const [selectedRowData, setSelectedRowData] = useState<RowData | null>(null);
   // 文章导入表单对象
   const importFormRef = useRef<DynamicFormRef<ImportFormValues>>(null);
   // 文章查询表单对象
@@ -275,7 +280,11 @@ const Articles = () => {
               shape="circle"
               color="primary"
               variant="outlined"
-              onClick={() => editArticle(record.id)}
+              onClick={() =>
+                editArticle(
+                  record as DataType & { content: string; summary: string; categoryId: number }
+                )
+              }
               icon={<EditOutlined />}
               style={{ marginRight: '12px' }}
             />
@@ -293,6 +302,10 @@ const Articles = () => {
       )
     }
   ]);
+  // 是否显示文章发布获文章修改界面
+  const [isShow, setIsShow] = useState(false);
+  // 文章是否是编辑模式。true 编辑模式 false 发布模式
+  const [isEdit, setIsEdit] = useState(false);
 
   useEffect(() => {
     // 超级管理员可按文章作者查询，普通管理员不可见该查询条件只能查自身发布的文章
@@ -403,8 +416,39 @@ const Articles = () => {
    * @param {number} id 文章id
    * @return {*}
    */
-  const editArticle = (id: number) => {
-    console.log('编辑文章', id);
+  const editArticle = (
+    row: DataType & { content: string; summary: string; categoryId: number }
+  ) => {
+    const { id, title, content, summary, categoryId, tags, coverImage } = row;
+    const uid = uuidv4();
+    setSelectedRowData({
+      id,
+      title,
+      content,
+      summary,
+      categoryId,
+      tagIds: tags.map((tag) => tag.id),
+      image: [
+        {
+          uid: coverImage.match(/([^/]+)(?=\.[a-zA-Z0-9]+$)/)?.[0] || uid,
+          name: coverImage.match(/([^/]+\.[a-zA-Z0-9]+)$/)?.[0] || uid + '.jpg',
+          status: 'done',
+          url: coverImage
+        }
+      ]
+    });
+    setIsEdit(true);
+    setIsShow(true);
+  };
+
+  /**
+   * @description: 发布文章
+   * @return {*}
+   */
+  const publishArticle = () => {
+    setSelectedRowData(null);
+    setIsEdit(false);
+    setIsShow(true);
   };
 
   /**
@@ -525,6 +569,19 @@ const Articles = () => {
     });
   };
 
+  /**
+   * @description: 关闭文章发布/编辑界面
+   * @return {*}
+   */
+  const closeBuilder = (isRefresh?: boolean) => {
+    setIsShow(false);
+    if (isRefresh) {
+      searchFormRef.current?.validateForm().then((values) => {
+        getArticles({ ...values, pageNum: pagination.pageNum, pageSize: pagination.pageSize });
+      });
+    }
+  };
+
   return (
     <div className="article-manage-container">
       {/* 查询表单 */}
@@ -540,6 +597,7 @@ const Articles = () => {
           <Button
             type="primary"
             icon={<SendOutlined rotate={-45} style={{ verticalAlign: 'unset' }} />}
+            onClick={publishArticle}
           >
             文章发布
           </Button>
@@ -592,6 +650,14 @@ const Articles = () => {
           onChange={handlePaginationChange}
         />
       </div>
+
+      {isShow && (
+        <ArticleBuilder
+          isEdit={isEdit}
+          rowData={selectedRowData}
+          cancel={(isRefresh) => closeBuilder(isRefresh)}
+        />
+      )}
 
       <Modal
         title="文章导入"

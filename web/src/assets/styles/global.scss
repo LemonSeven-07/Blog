@@ -30,13 +30,16 @@ body {
   > .ant-spin-nested-loading {
     height: 100%;
 
+    > div > .ant-spin {
+      max-height: none;
+    }
+
     > .ant-spin-container {
       height: 100%;
     }
   }
 }
 /* stylelint-enable selector-max-id */
-
 .text-area-with-count .ant-input-data-count {
   right: 0.5rem !important;
   bottom: 0.05rem !important;

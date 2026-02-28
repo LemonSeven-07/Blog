@@ -321,4 +321,9 @@ module.exports = {
     message: '图片上传失败',
     data: null,
   },
+  dashboardStatsError: {
+    code: '10062',
+    message: '统计数据获取失败',
+    data: null,
+  },
 };

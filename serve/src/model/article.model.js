@@ -75,7 +75,8 @@ Article.associate = models => {
   // 一篇文章可以有多个标签，一个标签也可以关联多篇文章。两者之间的关系由 ArticleTag 表维护
   Article.belongsToMany(models.tag, {
     through: models.articleTag,
-    foreignKey: 'articleId',
+    foreignKey: 'articleId', // article_tags 中的外键字段名
+    otherKey: 'tagId', // article_tags 中的外键字段名
     as: 'tags',
     onDelete: 'CASCADE', // 删除文章时，同时删除关联的文章标签记录
   });

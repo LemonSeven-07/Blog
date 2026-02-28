@@ -530,7 +530,7 @@
                 margin-left: 0.625rem;
               }
 
-              &.icon-github {
+              &.icon-github-circle {
                 @include use-theme {
                   color: get-var('--yolo-github-icon-text');
 
@@ -541,7 +541,7 @@
                 }
               }
 
-              &.icon-gitee {
+              &.icon-gitee-circle {
                 @include use-theme {
                   color: get-var('--yolo-gitee-icon-text');
 

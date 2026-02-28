@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-02-27 04:20:02
+ * @LastEditTime: 2026-02-28 17:26:20
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
@@ -198,21 +198,7 @@ const Articles = () => {
   // 文章查询表单对象
   const searchFormRef = useRef<DynamicFormRef<SearchFormValues>>(null);
   // 文章列表表头
-  const [columns] = useState<TableColumnsType<DataType>>([
-    {
-      title: '作者',
-      dataIndex: 'user',
-      align: 'center',
-      render: (value) =>
-        value.deletedAt ? (
-          <div>
-            <span>{value.username}</span>
-            <span style={{ color: 'red' }}>(账号已注销)</span>
-          </div>
-        ) : (
-          value.username
-        )
-    },
+  const [columns, setColumns] = useState<TableColumnsType<DataType>>([
     { title: '标题', dataIndex: 'title', align: 'center' },
     {
       title: '封面',
@@ -306,6 +292,8 @@ const Articles = () => {
   const [isShow, setIsShow] = useState(false);
   // 文章是否是编辑模式。true 编辑模式 false 发布模式
   const [isEdit, setIsEdit] = useState(false);
+  // 文章导入对话框加载状态
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     // 超级管理员可按文章作者查询，普通管理员不可见该查询条件只能查自身发布的文章
@@ -320,6 +308,24 @@ const Articles = () => {
           labelCol: 8,
           wrapperCol: 16
         }
+      ]);
+
+      setColumns([
+        {
+          title: '作者',
+          dataIndex: 'user',
+          align: 'center',
+          render: (value) =>
+            value.deletedAt ? (
+              <div>
+                <span>{value.username}</span>
+                <span style={{ color: 'red' }}>(账号已注销)</span>
+              </div>
+            ) : (
+              value.username
+            )
+        },
+        ...columns
       ]);
     }
     getTags();
@@ -482,7 +488,7 @@ const Articles = () => {
   const handleImport = () => {
     importFormRef
       .current!.validateForm()
-      .then((values) => {
+      .then(async (values) => {
         const { title, summary, categoryId, tagIds, file, image } = values;
         const formData = new FormData();
         formData.append('title', title!);
@@ -491,7 +497,17 @@ const Articles = () => {
         formData.append('tagIds', JSON.stringify(tagIds));
         formData.append('file', file![0].originFileObj!);
         if (image && image.length) formData.append('image', image[0].originFileObj!);
-        api.articleApi.uploadArticle(formData);
+        setModalLoading(true);
+        try {
+          const res = await api.articleApi.uploadArticle(formData);
+          message.success(res.message);
+          setModalLoading(false);
+          setIsModalOpen(false);
+          // 重新获取文章列表
+          getArticles({ pageNum: 1, pageSize: pagination.pageSize });
+        } catch {
+          setModalLoading(false);
+        }
       })
       .catch(() => {
         importFormRef.current!.scrollToFirstError();
@@ -666,6 +682,8 @@ const Articles = () => {
         open={isModalOpen}
         onOk={handleImport}
         onCancel={() => setIsModalOpen(false)}
+        confirmLoading={modalLoading}
+        destroyOnHidden
       >
         {/* 文章导入表单 */}
         <BaseForm

@@ -1,9 +1,9 @@
 @font-face {
   font-family: "iconfont"; /* Project id 5021745 */
-  src: url('iconfont.woff2?t=1766595723534') format('woff2'),
-       url('iconfont.woff?t=1766595723534') format('woff'),
-       url('iconfont.ttf?t=1766595723534') format('truetype'),
-       url('iconfont.svg?t=1766595723534#iconfont') format('svg');
+  src: url('iconfont.woff2?t=1772192982101') format('woff2'),
+       url('iconfont.woff?t=1772192982101') format('woff'),
+       url('iconfont.ttf?t=1772192982101') format('truetype'),
+       url('iconfont.svg?t=1772192982101#iconfont') format('svg');
 }
 
 .iconfont {
@@ -12,6 +12,14 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-article-circle:before {
+  content: "\e600";
+}
+
+.icon-favorite-circle:before {
+  content: "\e613";
 }
 
 .icon-come-back:before {
@@ -30,35 +38,35 @@
   content: "\e64a";
 }
 
-.icon-author:before {
+.icon-author-circle:before {
   content: "\e615";
 }
 
-.icon-category:before {
+.icon-category-circle:before {
   content: "\e603";
 }
 
-.icon-views:before {
+.icon-views-circle:before {
   content: "\e629";
 }
 
-.icon-release-time:before {
+.icon-release-time-circle:before {
   content: "\ea46";
 }
 
-.icon-tag:before {
+.icon-tag-circle:before {
   content: "\100da";
 }
 
-.icon-comments:before {
+.icon-comments-circle:before {
   content: "\e650";
 }
 
-.icon-github:before {
+.icon-github-circle:before {
   content: "\e64c";
 }
 
-.icon-gitee:before {
+.icon-gitee-circle:before {
   content: "\e675";
 }
 

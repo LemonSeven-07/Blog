@@ -2,16 +2,17 @@
  * @Author: yolo
  * @Date: 2025-09-15 10:13:20
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-07 02:25:53
+ * @LastEditTime: 2026-02-28 19:27:47
  * @FilePath: /web/src/components/Header/Right.tsx
  * @Description: header 消息通知和 gitHub 地址
  */
 
 import { memo, useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Badge, Flex, Segmented, Button, Avatar, Modal, Popover, message, Divider } from 'antd';
+import { Flex, Segmented, Button, Avatar, Modal, Popover, message, Divider } from 'antd';
+// import { Badge, Flex, Segmented, Button, Avatar, Modal, Popover, message, Divider } from 'antd';
 import {
-  BellFilled,
+  // BellFilled,
   SunOutlined,
   MoonOutlined,
   UserOutlined,
@@ -37,7 +38,7 @@ const HeaderRight = () => {
   const capsuleRef = useRef<HTMLDivElement>(null);
   const [openSearchModal, setOpenSearchModal] = useState(false);
   const [openAuthModal, setOpenAuthModal] = useState(false);
-  const count = 100;
+  // const count = 100;
 
   const content = (
     <div className="panel-content">
@@ -154,11 +155,11 @@ const HeaderRight = () => {
         />
       </Flex>
 
-      {userId && (
+      {/* {userId && (
         <Badge count={count} onClick={() => navigate('/notify')}>
           <BellFilled className={`${count > 0 ? 'has-unread' : ''}`} />
         </Badge>
-      )}
+      )} */}
 
       {userId ? (
         <Popover

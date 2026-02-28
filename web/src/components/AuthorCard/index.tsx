@@ -12,14 +12,14 @@ const AuthorCard = () => {
       <div className="personal-signature">{config.SIGNATURE}</div>
       <div className="social-links">
         <a
-          className="iconfont icon-github"
+          className="iconfont icon-github-circle"
           href={config.GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
         />
 
         <a
-          className="iconfont icon-gitee"
+          className="iconfont icon-gitee-circle"
           href={config.GITEE_URL}
           target="_blank"
           rel="noopener noreferrer"

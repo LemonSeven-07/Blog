@@ -1,7 +1,6 @@
 const Router = require('koa-router');
 
 const {
-  articleMaintenanceSchema,
   getHotArticlesSchema,
   getPaginationArticlesSchema,
   getLoadMoreArticlesSchema,
@@ -104,7 +103,6 @@ router.put(
     },
     2,
   ),
-  // joiValidate(articleMaintenanceSchema),
   update,
 );
 

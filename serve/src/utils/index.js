@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer');
 
 const { redisClient } = require('../db/redis.js');
 
-class blogPackagingMethod {
+class BlogPackagingMethod {
   /**
    * @description: 生成 accessToken 和 refreshToken
    * @param {*} userInfo 登录用户关键信息 包含：用户id、用户名、邮箱、用户头像、用户权限、禁言
@@ -390,4 +390,4 @@ class blogPackagingMethod {
   }
 }
 
-module.exports = new blogPackagingMethod();
+module.exports = new BlogPackagingMethod();

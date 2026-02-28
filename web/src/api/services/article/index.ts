@@ -21,7 +21,7 @@ export const outputArticles = (params: OutputArticle['Request'], config: OutputA
 
 // 导入 Markdown 文件创建文章
 export const uploadArticle = (params: UploadArticle['Request']) =>
-  http.post('/article/import/file', params);
+  http.post('/article/import/file', params, { timeout: 30000 });
 
 // 按分类、标签、排序、关键字滚动查询文章列表
 export const getArticleList = (params: GetArticleList['Request']) =>

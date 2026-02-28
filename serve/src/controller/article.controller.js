@@ -55,7 +55,7 @@ const {
 
 const { articleMaintenanceSchema } = require('../constant/schema.js');
 
-class articleController {
+class ArticleController {
   /**
    * @description: 创建文章
    * @param {*} ctx 上下文对象
@@ -712,4 +712,4 @@ class articleController {
   }
 }
 
-module.exports = new articleController();
+module.exports = new ArticleController();

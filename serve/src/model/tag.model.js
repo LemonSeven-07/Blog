@@ -27,9 +27,10 @@ const Tag = sequelize.define(
 Tag.associate = models => {
   // 一个标签可以属于多篇文章，一篇文章可以有多个标签，两者之间的关系由 ArticleTag 表维护
   Tag.belongsToMany(models.article, {
-    through: models.articleTag,
-    foreignKey: 'tagId',
-    as: 'articles',
+    through: models.articleTag, // 指定中间表
+    foreignKey: 'tagId', // article_tags 中的外键字段名
+    otherKey: 'articleId', // article_tags 中的外键字段名
+    as: 'articles', // 为该关系指定别名
     onDelete: 'CASCADE', // 删除标签时，同时删除关联的文章标签记录
   });
 };

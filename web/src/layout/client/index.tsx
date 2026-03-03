@@ -2,11 +2,12 @@
  * @Author: yolo
  * @Date: 2025-09-12 17:11:07
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-20 02:53:47
+ * @LastEditTime: 2026-03-02 17:40:27
  * @FilePath: /web/src/layout/client/index.tsx
  * @Description: 前台页面布局
  */
 
+import { memo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useHeaderScroll } from '@/hooks/useHeaderScroll';
 import { useAutoCancelRequests } from '@/api/http';
@@ -77,4 +78,4 @@ const ClientLayout = () => {
   );
 };
 
-export default ClientLayout;
+export default memo(ClientLayout);

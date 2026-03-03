@@ -55,7 +55,7 @@ router.post(
       file: { type: ['text/markdown'], require: true, multiple: false },
       image: { type: ['image/png', 'image/jpeg', 'image/jpg'], require: false, multiple: false },
     },
-    2,
+    5,
   ),
   createArticleFromFile,
 );
@@ -74,7 +74,7 @@ router.post(
         multiple: false,
       },
     },
-    2,
+    5,
   ),
   createArticleFromContent,
 );
@@ -101,7 +101,7 @@ router.put(
         multiple: false,
       },
     },
-    2,
+    5,
   ),
   update,
 );

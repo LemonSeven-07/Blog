@@ -1,3 +1,12 @@
+/*
+ * @Author: yolo
+ * @Date: 2025-06-23 21:39:52
+ * @LastEditors: chenshijie
+ * @LastEditTime: 2026-03-04 03:19:55
+ * @FilePath: /Blog/serve/src/app/app.js
+ * @Description: 应用入口文件，初始化 Koa 应用、配置中间件、挂载路由和错误处理。
+ */
+
 const path = require('path');
 
 const Koa = require('koa');

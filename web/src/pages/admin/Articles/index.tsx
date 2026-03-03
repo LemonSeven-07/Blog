@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-02-28 17:26:20
+ * @LastEditTime: 2026-03-02 17:29:44
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
@@ -434,14 +434,16 @@ const Articles = () => {
       summary,
       categoryId,
       tagIds: tags.map((tag) => tag.id),
-      image: [
-        {
-          uid: coverImage.match(/([^/]+)(?=\.[a-zA-Z0-9]+$)/)?.[0] || uid,
-          name: coverImage.match(/([^/]+\.[a-zA-Z0-9]+)$/)?.[0] || uid + '.jpg',
-          status: 'done',
-          url: coverImage
-        }
-      ]
+      image: coverImage
+        ? [
+            {
+              uid: coverImage.match(/([^/]+)(?=\.[a-zA-Z0-9]+$)/)?.[0] || uid,
+              name: coverImage.match(/([^/]+\.[a-zA-Z0-9]+)$/)?.[0] || uid + '.jpg',
+              status: 'done',
+              url: coverImage
+            }
+          ]
+        : []
     });
     setIsEdit(true);
     setIsShow(true);

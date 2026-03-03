@@ -82,7 +82,7 @@ router.post(
     {
       avatar: { type: ['image/png', 'image/jpeg', 'image/jpg'], require: true },
     },
-    2,
+    5,
   ),
   updateAvatar,
 );

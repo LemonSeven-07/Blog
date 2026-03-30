@@ -1,5 +1,3 @@
-const { remove } = require('../controller/tag.controller');
-
 module.exports = {
   userRegisterError: {
     code: '10002',

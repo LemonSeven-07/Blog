@@ -66,7 +66,6 @@ AUTHOR: 'yolo'
 | | | | | └── 📄 useWebSocket.ts                   # WebSocket React Hook，管理连接生命周期。
 | | | └── 📄 index.ts                              # API 模块统一导出。
 │ | ├── 📁 assets                                  # 静态资源目录（经过 webpack 处理）
-│ │ | | ├── 📁 fonts                               # 字体文件目录
 │ │ | | ├── 📁 iconfont                            # 图标字体目录
 │ │ | | ├── 📁 icons                               # 图标资源目录
 │ │ | | ├── 📁 images                              # 图片资源目录

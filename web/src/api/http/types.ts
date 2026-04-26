@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:52:20
  * @LastEditors: yolo
- * @LastEditTime: 2025-10-11 17:57:24
- * @FilePath: /web/src/api/http/types.ts
+ * @LastEditTime: 2026-04-27 06:13:16
+ * @FilePath: /Blog/web/src/api/http/types.ts
  * @Description: axios 相关类型定义
  */
 
@@ -18,26 +18,43 @@ export interface MyAxiosRequestConfig extends AxiosRequestConfig {
 export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 /**
- * @description: 通用 HTTP 请求函数类型
+ * @description: 请求配置项类型
  *
- * @template: T 返回的数据类型（data）
- * @template: P 返回的业务数据类型，⭐️ 默认 CommonResponse<T>
  * @template: R 请求参数类型（query 或 body），⭐️ 默认 unknown
  * @template: Full 是否返回完整 AxiosResponse，⭐️ 默认 false
  *
  * @param: url 请求地址
  * @param: params 请求参数，可选
  * @param: config axios 请求配置，可选
- * @param: customizeOpt 自定义选项，可控制返回完整响应
+ * @param: customizeOpt 自定义选项，可控制返回完整响应, 可控制是否统一处理业务 code，是否使用 body 传参（delete 请求），是否自动取消请求，http 协商缓存配置等
  *
- * @returns 当 Full 为 true 时，返回 AxiosResponse；否则返回业务数据 P
  */
-export type Service = <T, P = CommonResponse<T>, R = unknown, Full extends boolean = false>(
-  url: string,
-  params?: R,
-  config?: MyAxiosRequestConfig,
-  customizeOpt?: CustomizeOpt & { fullResponseData?: Full }
-) => Promise<Full extends true ? AxiosResponse : P>;
+type ServiceOptions<R = unknown, Full extends boolean = false> = {
+  url: string;
+  params?: R;
+  config?: MyAxiosRequestConfig;
+  customizeOpt?: CustomizeOpt & {
+    fullResponseData?: Full;
+  };
+};
+
+/**
+ * @description: 通用 HTTP 请求函数类型
+ *
+ * @template: T 返回的数据类型（data）
+ * @template: R 请求参数类型（query 或 body），⭐️ 默认 unknown
+ * @template: Full 是否返回完整 AxiosResponse，⭐️ 默认 false
+ *
+ * @param: url 请求地址
+ * @param: params 请求参数，可选
+ * @param: config axios 请求配置，可选
+ * @param: customizeOpt 自定义选项，可控制返回完整响应, 可控制是否统一处理业务 code，是否使用 body 传参（delete 请求），是否自动取消请求，http 协商缓存配置等
+ *
+ * @returns 当 Full 为 true 时，返回 AxiosResponse；否则返回业务数据 CommonResponse<T>
+ */
+export type Service = <T, R = unknown, Full extends boolean = false>(
+  options: ServiceOptions<R, Full>
+) => Promise<Full extends true ? AxiosResponse : CommonResponse<T>>;
 
 // 接口公共响应结构(对于特殊响应数据结构可自定义)
 export interface CommonResponse<T> {

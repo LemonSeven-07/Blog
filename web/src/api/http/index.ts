@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:21
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-29 04:38:10
- * @FilePath: /web/src/api/http/index.ts
+ * @LastEditTime: 2026-04-27 05:37:17
+ * @FilePath: /Blog/web/src/api/http/index.ts
  * @Description: 对外统一导出方法。axios 封装包含：自动添加 token、更新 token、取消不必要的请求、缓存接口请求、页面 loading
  */
 
@@ -14,7 +14,7 @@ import { message } from 'antd';
 import type { MyAxiosRequestConfig } from './types';
 import { store } from '@/store';
 import { startLoading, stopLoading } from '@/store/modules/loading';
-import { getMthod, postMthod, putMthod, deleteMthod, patchMthod } from './request';
+import createService from './request';
 import { config } from '@/config';
 
 /* 创建 axios 实例 */
@@ -130,11 +130,11 @@ httpInstance.interceptors.response.use(
 );
 
 export const http = {
-  get: getMthod,
-  post: postMthod,
-  put: putMthod,
-  delete: deleteMthod,
-  patch: patchMthod
+  get: createService('get'),
+  post: createService('post'),
+  put: createService('put'),
+  delete: createService('delete'),
+  patch: createService('patch')
 };
 
 export * from './cancel';

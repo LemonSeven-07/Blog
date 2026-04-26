@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-08 15:51:32
  * @LastEditors: yolo
- * @LastEditTime: 2026-02-27 02:41:19
- * @FilePath: /web/src/api/http/request.ts
+ * @LastEditTime: 2026-04-27 06:19:23
+ * @FilePath: /Blog/web/src/api/http/request.ts
  * @Description: axios 请求核心封装
  */
 
@@ -158,30 +158,22 @@ function request<T, P = CommonResponse<T>, R = unknown, Full extends boolean = f
 /* axios 封装请求方法使用说明：
   * 范型参数
     🟩 T: 接口返回的业务数据结构，例如：获取用户信息 { id: number; name: string; age: number }
-    🟩 P: 默认 CommonResponse<T> 结构，以获取用户信息为例： {code: string, data: { id: number; name: string; age: number }, message: string }。接口完整响应结构，如果接口响应数据有特殊数据结构可自定义覆盖
     🟩 R: 默认 unknown。请求参数类型
     🟩 Full: 泛型布尔值，默认 false。控制返回类型，如果 true 返回 AxiosResponse，否则返回 P
   * 方法参数
     🟩 url: string类型，为接口请求地址
     🟩 params: R类型，为接口请求参数
-    🟩 config: MyAxiosRequestConfig类型，为扩展后 axios 请求配置，包含：url、method、baseURL、headers，params、data、timeout、responseType、ignoreLoading、cancelOnRouteChange等。重点 💡ignoreLoading?: boolean 扩展字段，接口请求 pending 过程中控制全局 loading 显示与否的开关。如果某些请求是“静默”或低优先级的，全局 loading 会闪烁，影响用户体验。默认 true 不显示页面loading; 
+    🟩 config: MyAxiosRequestConfig类型，为扩展后 axios 请求配置，包含：url、method、baseURL、headers，params、data、timeout、responseType、ignoreLoading等。重点 💡ignoreLoading?: boolean 扩展字段，接口请求 pending 过程中控制全局 loading 显示与否的开关。如果某些请求是“静默”或低优先级的，全局 loading 会闪烁，影响用户体验。默认 true 不显示页面loading
     🟩 customizeOpt: CustomizeOpt & { fullResponseData?: Full } 类型，为自定义选项包括：💡autoCancelRequests?: boolean(路由切换时取消上个页面还在 pending 中的请求，默认 true 取消 pending 中的请求)、💡fullResponseData?: boolean(响应数据是否全量交给交互逻辑层，默认 false 非全量)、💡handleBusinessCode?: boolean(是否统一处理接口业务code状态码，默认 true 统一处理)、💡useBodyForDelete?: boolean(delete 请求参数是放在query还是body里面，默认 false 放在query)
   * 方法返回类型结构
-    🟩 Promise<P>: 如果 fullResponseData = false（默认），返回接口实际数据结构（默认 CommonResponse<T>）
+    🟩 CommonResponse<T>: 如果 fullResponseData = false（默认），返回接口实际数据结构（默认 CommonResponse<T>）
     🟩 Promise<AxiosResponse>: 如果 fullResponseData = true, 返回完整的 Axios 响应对象，包括：data、status、headers、config、statusText
 */
-export const getMthod: Service = (url, params, config, customizeOpt) => {
-  return request('get', url, params, config, customizeOpt);
+const createService = (method: HttpMethod): Service => {
+  return (options) => {
+    const { url, params, config, customizeOpt } = options;
+    return request(method, url, params, config, customizeOpt);
+  };
 };
-export const postMthod: Service = (url, params, config, customizeOpt) => {
-  return request('post', url, params, config, customizeOpt);
-};
-export const putMthod: Service = (url, params, config, customizeOpt) => {
-  return request('put', url, params, config, customizeOpt);
-};
-export const deleteMthod: Service = (url, params, config, customizeOpt) => {
-  return request('delete', url, params, config, customizeOpt);
-};
-export const patchMthod: Service = (url, params, config, customizeOpt) => {
-  return request('patch', url, params, config, customizeOpt);
-};
+
+export default createService;

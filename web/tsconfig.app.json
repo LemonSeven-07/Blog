@@ -25,9 +25,8 @@
     "noUncheckedSideEffectImports": true,
 
     /* 设置模块解析的基准目录和路径别名配置 */
-    "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "**/*.ts"]

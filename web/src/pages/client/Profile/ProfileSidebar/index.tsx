@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-30 03:04:50
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-29 03:39:33
+ * @LastEditTime: 2026-04-26 17:39:36
  * @FilePath: /web/src/pages/client/Profile/ProfileSidebar/index.tsx
  * @Description: 个人中心左侧身份区
  */
@@ -14,6 +14,7 @@ import { UserOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { updateUser } from '@/store/modules/user';
 import api from '@/api';
+import SmartImage from '@/components/SmartImage';
 
 const ProfileSidebar = ({
   withLoading
@@ -60,7 +61,11 @@ const ProfileSidebar = ({
   return (
     <div className="profile-sidebar">
       <div className="profile-avatar">
-        {avatar ? <img src={avatar} alt="" /> : <UserOutlined />}
+        {avatar ? (
+          <SmartImage src={avatar} shape="circle" width="5.625rem" height="5.625rem" alt="头像" />
+        ) : (
+          <UserOutlined />
+        )}
 
         <div className="click-cover" onClick={handleAvatarClick}>
           <PlusCircleOutlined />

@@ -1,0 +1,22 @@
+.image-wrapper {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+
+.skeleton {
+  display: block;
+  position: absolute;
+  z-index: 1;
+  width: 100% !important;
+  height: 100% !important;
+  inset: 0;
+}
+
+/* stylelint-disable selector-pseudo-class-no-unknown */
+.skeleton :global(.ant-skeleton-image) {
+  width: 100%;
+  height: 100%;
+}

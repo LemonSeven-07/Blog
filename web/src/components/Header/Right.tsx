@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-15 10:13:20
  * @LastEditors: yolo
- * @LastEditTime: 2026-02-28 19:27:47
+ * @LastEditTime: 2026-04-26 17:58:34
  * @FilePath: /web/src/components/Header/Right.tsx
  * @Description: header 消息通知和 gitHub 地址
  */
@@ -178,7 +178,8 @@ const HeaderRight = () => {
                 height: '44px',
                 objectFit: 'cover',
                 borderRadius: '50%',
-                margin: '0 0.75rem'
+                margin: '0 0.75rem',
+                cursor: 'pointer'
               }}
             />
           ) : (

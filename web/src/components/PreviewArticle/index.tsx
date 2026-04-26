@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-12-17 14:44:28
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-11 01:31:57
+ * @LastEditTime: 2026-04-26 17:33:52
  * @FilePath: /web/src/components/PreviewArticle/index.tsx
  * @Description: 预览文章
  */
@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import type { ArticleSearchResult } from '@/types/app/common';
 import { Tag } from 'antd';
 import { EyeOutlined, StarOutlined } from '@ant-design/icons';
+import SmartImage from '@/components/SmartImage';
 
 const PreviewArticle = ({ article }: { article: ArticleSearchResult['list'][number] }) => {
   return (
@@ -53,9 +54,7 @@ const PreviewArticle = ({ article }: { article: ArticleSearchResult['list'][numb
         </div>
 
         {article.coverImage ? (
-          <div className="article-cover-image">
-            <img src={article.coverImage} alt="" />
-          </div>
+          <SmartImage src={article.coverImage} shape="square" width="150px" alt="文章封面" />
         ) : (
           ''
         )}

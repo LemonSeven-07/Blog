@@ -2,7 +2,7 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-03-02 17:29:44
+ * @LastEditTime: 2026-04-26 18:02:27
  * @FilePath: /web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
@@ -28,6 +28,7 @@ import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
 import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
 import ArticleBuilder from './ArticleBuilder';
 import { type RowData } from './types';
+import SmartImage from '@/components/SmartImage';
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
 
@@ -206,7 +207,7 @@ const Articles = () => {
       align: 'center',
       render: (value) =>
         value ? (
-          <img src={value} alt="" style={{ width: '90px', height: '60px', objectFit: 'cover' }} />
+          <SmartImage src={value} shape="square" width="90px" height="60px" alt="文章封面" />
         ) : (
           ''
         )

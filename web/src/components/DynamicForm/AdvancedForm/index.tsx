@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-23 03:18:36
- * @FilePath: /web/src/components/DynamicForm/AdvancedForm/index.tsx
+ * @LastEditTime: 2026-04-29 08:01:57
+ * @FilePath: /Blog/web/src/components/DynamicForm/AdvancedForm/index.tsx
  * @Description: 水平布局表单组件，例如：查询表单等
  */
 
@@ -13,14 +13,14 @@ import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { SelectProps } from 'antd';
 import type { DefaultOptionType } from 'antd/es/select';
 import { useForm } from '../hooks/useForm';
-import type { DynamicFormItem, DynamicFormRef } from '../types';
+import type { AdvancedFormItem, DynamicFormRef } from '../types';
 import { pickerPlaceholder, format } from '../types';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 dayjs.extend(isoWeek);
 
 interface AdvancedFormProps<TValues extends object> {
-  formItems: DynamicFormItem[]; // 表单项数据
+  formItems: AdvancedFormItem[]; // 表单项数据
   labelCol?: number; // 标签布局
   wrapperCol?: number; // 组件布局
   children?: React.ReactNode; // 操作按钮插槽
@@ -255,7 +255,9 @@ const AdvancedFormInner = forwardRef(function AdvancedForm<TValues extends objec
                     disabled={item.disabled ? item.disabled : false}
                     allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                     picker={item.picker ? item.picker : 'date'}
-                    onChange={(_, dateString) => handleChange({ dateString }, item)}
+                    onChange={(_, dateString) =>
+                      handleChange({ dateString: dateString as string }, item)
+                    }
                     placeholder={'请选择' + item.label}
                   />
                 </Form.Item>

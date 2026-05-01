@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:04:30
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-27 04:52:54
- * @FilePath: /web/src/pages/admin/Users/index.tsx
+ * @LastEditTime: 2026-05-01 16:31:27
+ * @FilePath: /Blog/web/src/pages/admin/Users/index.tsx
  * @Description: 用户管理页面
  */
 
@@ -12,7 +12,7 @@ import { Table, Tooltip, Button, Switch, Radio, message, Modal } from 'antd';
 import { DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { TableColumnsType, TableProps, TablePaginationConfig, RadioChangeEvent } from 'antd';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
-import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import type { AdvancedFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
 import api from '@/api';
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
@@ -58,18 +58,18 @@ const Users = () => {
   // 表格数据加载状态
   const [loading, setLoading] = useState<boolean>(false);
   // 用户查询表单
-  const [searchOptions] = useState<DynamicFormItem[]>([
+  const [searchOptions] = useState<AdvancedFormItem[]>([
     {
       label: '用户名',
       name: 'username',
-      type: 'input' as const,
+      type: 'input',
       labelCol: 6,
       wrapperCol: 18
     },
     {
       label: '角色',
       name: 'role',
-      type: 'select' as const,
+      type: 'select',
       options: [
         { label: '普通管理员', value: 2 },
         { label: '普通用户', value: 3 }
@@ -80,14 +80,14 @@ const Users = () => {
     {
       label: '注册时间',
       name: 'registerDate',
-      type: 'rangePicker' as const,
+      type: 'rangePicker',
       labelCol: 7,
       wrapperCol: 17
     },
     {
       label: '是否注销',
       name: 'isDeleted',
-      type: 'select' as const,
+      type: 'select',
       options: [
         { label: '否', value: 0 },
         { label: '是', value: 1 }

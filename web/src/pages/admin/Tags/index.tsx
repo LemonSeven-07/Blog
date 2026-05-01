@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:04:30
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-27 05:27:42
- * @FilePath: /web/src/pages/admin/Tags/index.tsx
+ * @LastEditTime: 2026-05-01 16:30:25
+ * @FilePath: /Blog/web/src/pages/admin/Tags/index.tsx
  * @Description: 标签管理页面
  */
 
@@ -12,7 +12,11 @@ import { Table, Tooltip, Button, Modal, message } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { TableColumnsType, TableProps, TablePaginationConfig } from 'antd';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
-import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import type {
+  BaseFormItem,
+  AdvancedFormItem,
+  DynamicFormRef
+} from '@/components/DynamicForm/types';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import api from '@/api';
 import { useAppSelector } from '@/store/hooks';
@@ -53,25 +57,25 @@ const Tags = () => {
   // 表格数据加载状态
   const [loading, setLoading] = useState<boolean>(false);
   // 标签查询表单
-  const [searchOptions] = useState<DynamicFormItem[]>([
+  const [searchOptions] = useState<AdvancedFormItem[]>([
     {
       label: '标签名',
       name: 'name',
-      type: 'input' as const,
+      type: 'input',
       labelCol: 6,
       wrapperCol: 18
     },
     {
       label: '创建时间',
       name: 'createDate',
-      type: 'rangePicker' as const,
+      type: 'rangePicker',
       labelCol: 7,
       wrapperCol: 17
     },
     {
       label: '是否内置',
       name: 'isBuiltin',
-      type: 'select' as const,
+      type: 'select',
       options: [
         {
           label: '是',
@@ -136,11 +140,11 @@ const Tags = () => {
   // 当前操作数据
   const [rowData, setRowData] = useState<DataType | null>(null);
   // 标签新增/修改表单对象
-  const [formItems] = useState<DynamicFormItem[]>([
+  const [formItems] = useState<BaseFormItem[]>([
     {
       label: '标签名',
       name: 'name',
-      type: 'input' as const,
+      type: 'input',
       required: true
     }
   ]);

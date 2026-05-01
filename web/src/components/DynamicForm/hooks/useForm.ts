@@ -1,5 +1,5 @@
 import { Form } from 'antd';
-import type { DynamicFormItem, EventParams, FormUpdateValues } from '../types';
+import type { BaseFormItem as DynamicFormItem, EventParams, FormUpdateValues } from '../types';
 import { format } from '../types';
 import dayjs from 'dayjs';
 
@@ -255,7 +255,7 @@ export function useForm<TValues extends object>(
     item: DynamicFormItem
   ) => {
     form.validateFields([e.target.id]).then((value) => {
-      if (!item.onBlur || !value[e.target.id]) return;
+      if (!('onBlur' in item) || !item.onBlur || !value[e.target.id]) return;
       item.onBlur(e.target.value, e.target.id);
     });
   };
@@ -267,22 +267,22 @@ export function useForm<TValues extends object>(
    * @return {*}
    */
   const handleChange = (params: EventParams, item: DynamicFormItem) => {
-    if (!item.onChange) return;
+    if (!('onChange' in item) || !item.onChange) return;
     switch (item.type) {
       case 'select':
         item.onChange(params.value, item.options);
         return;
       case 'datePicker':
-        item.onChange(params.dateString);
+        item.onChange(params.dateString!);
         return;
       case 'rangePicker':
-        item.onChange(params.dateStrings);
+        item.onChange(params.dateStrings!);
         return;
       case 'switch':
-        item.onChange(params.checked);
+        item.onChange(params.checked!);
         return;
       case 'checkbox':
-        item.onChange(params.checkedValue, item.options);
+        item.onChange(params.checkedValue!, item.options);
         return;
       case 'radio':
         item.onChange(params.e?.target.value, item.options);

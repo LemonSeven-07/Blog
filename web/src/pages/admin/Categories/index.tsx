@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2026-01-12 03:27:46
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-29 05:14:34
- * @FilePath: /web/src/pages/admin/Categories/index.tsx
+ * @LastEditTime: 2026-05-01 16:31:06
+ * @FilePath: /Blog/web/src/pages/admin/Categories/index.tsx
  * @Description: 分类管理页面
  */
 
@@ -12,7 +12,11 @@ import { Table, Tooltip, Button, Modal, message } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { TableColumnsType, TableProps, TablePaginationConfig } from 'antd';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
-import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import type {
+  BaseFormItem,
+  AdvancedFormItem,
+  DynamicFormRef
+} from '@/components/DynamicForm/types';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import api from '@/api';
 import { setPhase } from '@/store/modules/user';
@@ -57,18 +61,18 @@ const Categories = () => {
   // 表格数据加载状态
   const [loading, setLoading] = useState<boolean>(false);
   // 分类查询表单
-  const [searchOptions] = useState<DynamicFormItem[]>([
+  const [searchOptions] = useState<AdvancedFormItem[]>([
     {
       label: '分类名',
       name: 'name',
-      type: 'input' as const,
+      type: 'input',
       labelCol: 6,
       wrapperCol: 18
     },
     {
       label: '创建时间',
       name: 'createDate',
-      type: 'rangePicker' as const,
+      type: 'rangePicker',
       labelCol: 7,
       wrapperCol: 17
     }
@@ -93,23 +97,23 @@ const Categories = () => {
   // 当前操作数据
   const [rowData, setRowData] = useState<DataType | null>(null);
   // 分类新增/修改表单对象
-  const [formItems] = useState<DynamicFormItem[]>([
+  const [formItems] = useState<BaseFormItem[]>([
     {
       label: '分类名',
       name: 'name',
-      type: 'input' as const,
+      type: 'input',
       required: true
     },
     {
       label: '路由标识',
       name: 'slug',
-      type: 'input' as const,
+      type: 'input',
       required: true
     },
     {
       label: '分类图标',
       name: 'icon',
-      type: 'input' as const,
+      type: 'input',
       required: false
     }
   ]);

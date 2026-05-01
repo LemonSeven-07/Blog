@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-11-18 00:38:43
  * @LastEditors: yolo
- * @LastEditTime: 2026-02-26 12:33:11
- * @FilePath: /web/src/components/DynamicForm/BaseForm/index.tsx
+ * @LastEditTime: 2026-04-29 08:06:26
+ * @FilePath: /Blog/web/src/components/DynamicForm/BaseForm/index.tsx
  * @Description: 提交类表单组件
  */
 
@@ -31,7 +31,7 @@ import type {
   SelectProps,
   FormProps
 } from 'antd';
-import type { DynamicFormItem, DynamicFormRef } from '../types';
+import type { BaseFormItem, DynamicFormRef } from '../types';
 import { pickerPlaceholder, format } from '../types';
 import { useForm } from '../hooks/useForm';
 import RangeInputFormItem from '../RangeInputFormItem';
@@ -43,7 +43,7 @@ dayjs.extend(isoWeek);
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
 interface BaseFormProps<TValues extends object> {
-  formItems: DynamicFormItem[]; // 表单项数据
+  formItems: BaseFormItem[]; // 表单项数据
   labelCol: number; // 标签布局
   wrapperCol: number; // 组件布局
   layout: FormProps['layout']; // 表单布局方式
@@ -243,10 +243,14 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                     required: item.required ? item.required : false,
                     message: '请输入' + item.label + '!'
                   },
-                  {
-                    pattern: item.pattern,
-                    message: item.tip
-                  }
+                  ...(item.pattern
+                    ? [
+                        {
+                          pattern: item.pattern,
+                          message: item.tip || '请输入正确的' + item.label + '格式!'
+                        }
+                      ]
+                    : [])
                 ]}
                 initialValue={typeof item.value !== 'undefined' ? item.value : undefined}
               >
@@ -277,6 +281,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                         if (!value || value.length !== 2) {
                           return Promise.reject(`请输入${item.label}`);
                         }
+
                         if (!value[0] || !value[1]) {
                           return Promise.reject(
                             item.rangeName &&
@@ -285,6 +290,12 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                               ? `${item.rangeName[0]}和${item.rangeName[1]}均为必填`
                               : '范围输入框均为必填'
                           );
+                        }
+
+                        if (item.pattern) {
+                          if (!item.pattern.test(value[0]) || !item.pattern.test(value[1])) {
+                            return Promise.reject(item.tip || `请输入正确的${item.label}格式`);
+                          }
                         }
                       }
 
@@ -363,7 +374,9 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   disabled={item.disabled ? item.disabled : false}
                   allowClear={typeof item.allowClear === 'undefined' ? true : item.allowClear}
                   picker={item.picker ? item.picker : 'date'}
-                  onChange={(_, dateString) => handleChange({ dateString }, item)}
+                  onChange={(_, dateString) =>
+                    handleChange({ dateString: dateString as string }, item)
+                  }
                   placeholder={'请选择' + item.label}
                 />
               </Form.Item>
@@ -508,6 +521,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   maxCount={
                     typeof item.maxCount === 'number' && item.maxCount >= 0 ? item.maxCount : 1
                   }
+                  disabled={item.disabled ? item.disabled : false}
                 >
                   <p className="ant-upload-drag-icon" style={{ marginTop: 0 }}>
                     <InboxOutlined />
@@ -547,6 +561,7 @@ const BaseFormInner = forwardRef(function BaseForm<TValues extends object>(
                   maxCount={
                     typeof item.maxCount === 'number' && item.maxCount >= 0 ? item.maxCount : 1
                   }
+                  disabled={item.disabled ? item.disabled : false}
                 >
                   {uploadButton}
                 </Upload>

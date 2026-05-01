@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-09-12 10:02:24
  * @LastEditors: yolo
- * @LastEditTime: 2026-04-26 18:02:27
- * @FilePath: /web/src/pages/admin/Articles/index.tsx
+ * @LastEditTime: 2026-05-01 16:30:54
+ * @FilePath: /Blog/web/src/pages/admin/Articles/index.tsx
  * @Description: 文章管理页面
  */
 
@@ -25,7 +25,11 @@ import { Utils } from '@/utils';
 import { useAppSelector } from '@/store/hooks';
 import BaseForm from '@/components/DynamicForm/BaseForm';
 import AdvancedForm from '@/components/DynamicForm/AdvancedForm';
-import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import type {
+  BaseFormItem,
+  AdvancedFormItem,
+  DynamicFormRef
+} from '@/components/DynamicForm/types';
 import ArticleBuilder from './ArticleBuilder';
 import { type RowData } from './types';
 import SmartImage from '@/components/SmartImage';
@@ -77,11 +81,11 @@ const Articles = () => {
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
   const { role } = useAppSelector((state) => state.userInfo);
   // 文章导入表单
-  const [formItems, setFormItems] = useState<DynamicFormItem[]>([
+  const [formItems, setFormItems] = useState<BaseFormItem[]>([
     {
       label: '标题',
       name: 'title',
-      type: 'input' as const,
+      type: 'input',
       required: true,
       pattern: /^.{4,50}$/,
       tip: '文章标题长度应在4-50个字符之间!'
@@ -89,7 +93,7 @@ const Articles = () => {
     {
       label: '上传',
       name: 'file',
-      type: 'uploadFile' as const,
+      type: 'uploadFile',
       required: true,
       accept: '.md',
       hint: '仅支持Markdown文件（.md）。严禁上传违禁文件。'
@@ -97,7 +101,7 @@ const Articles = () => {
     {
       label: '摘要',
       name: 'summary',
-      type: 'textarea' as const,
+      type: 'textarea',
       required: true,
       pattern: /^.{16,150}$/,
       tip: '输入长度必须大于等于16字符小于等于150字符',
@@ -107,7 +111,7 @@ const Articles = () => {
     {
       label: '分类',
       name: 'categoryId',
-      type: 'select' as const,
+      type: 'select',
       required: true,
       options: categoryRoutes.map((item) => ({
         label: item.meta?.title || '未命名',
@@ -117,7 +121,7 @@ const Articles = () => {
     {
       label: '标签',
       name: 'tagIds',
-      type: 'select' as const,
+      type: 'select',
       required: true,
       mode: 'multiple',
       maxCount: 3,
@@ -126,24 +130,27 @@ const Articles = () => {
     {
       label: '封面',
       name: 'image',
-      type: 'uploadImg' as const,
+      type: 'uploadImg',
       accept: 'image/png,image/jpeg,image/jpg',
-      listType: 'picture-card' as const
+      listType: 'picture-card'
     }
   ]);
   // 文章查询表单
-  const [searchOptions, setSearchOptions] = useState<DynamicFormItem[]>([
+  const [searchOptions, setSearchOptions] = useState<AdvancedFormItem[]>([
     {
       label: '关键词',
       name: 'keyword',
-      type: 'input' as const,
+      type: 'input',
       labelCol: 6,
-      wrapperCol: 18
+      wrapperCol: 18,
+      onBlur: (value) => {
+        console.log(value);
+      }
     },
     {
       label: '分类',
       name: 'categoryId',
-      type: 'select' as const,
+      type: 'select',
       width: 230,
       labelCol: 7,
       wrapperCol: 17,
@@ -166,7 +173,7 @@ const Articles = () => {
     {
       label: '标签',
       name: 'tagId',
-      type: 'select' as const,
+      type: 'select',
       disabled: true,
       maxCount: 3,
       labelCol: 6,
@@ -176,7 +183,7 @@ const Articles = () => {
     {
       label: '发布起止时间',
       name: 'publishTimeRange',
-      type: 'rangePicker' as const,
+      type: 'rangePicker',
       labelCol: 7,
       wrapperCol: 17
     }
@@ -304,7 +311,7 @@ const Articles = () => {
         {
           label: '文章作者',
           name: 'author',
-          type: 'input' as const,
+          type: 'input',
           width: 240,
           labelCol: 8,
           wrapperCol: 16

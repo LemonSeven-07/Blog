@@ -2,15 +2,15 @@
  * @Author: yolo
  * @Date: 2026-01-29 18:26:03
  * @LastEditors: yolo
- * @LastEditTime: 2026-02-27 02:02:45
- * @FilePath: /web/src/pages/admin/Articles/ArticleBuilder/index.tsx
+ * @LastEditTime: 2026-05-01 16:25:40
+ * @FilePath: /Blog/web/src/pages/admin/Articles/ArticleBuilder/index.tsx
  * @Description: 文章发布和修改界面
  */
 
 import { memo, useState, useRef, useEffect } from 'react';
 import { Button, Modal, message } from 'antd';
 import BaseForm from '@/components/DynamicForm/BaseForm';
-import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import type { BaseFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setDraftContent } from '@/store/modules/draft';
 import api from '@/api';
@@ -26,11 +26,11 @@ const ArticleBuilder = ({ rowData, isEdit, cancel }: ArticleBuilderProp) => {
   const { categoryRoutes } = useAppSelector((state) => state.navigation);
   const { content: draftContent } = useAppSelector((state) => state.draft);
   const dispatch = useAppDispatch();
-  const [formItems, setFormItems] = useState<DynamicFormItem[]>([
+  const [formItems, setFormItems] = useState<BaseFormItem[]>([
     {
       label: '标题',
       name: 'title',
-      type: 'input' as const,
+      type: 'input',
       required: true,
       pattern: /^.{4,50}$/,
       tip: '标题长度应在4-50个字符之间!'
@@ -38,14 +38,14 @@ const ArticleBuilder = ({ rowData, isEdit, cancel }: ArticleBuilderProp) => {
     {
       label: '内容',
       name: 'content',
-      type: 'markdown' as const,
+      type: 'markdown',
       required: true,
       value: rowData ? rowData.content : ''
     },
     {
       label: '摘要',
       name: 'summary',
-      type: 'textarea' as const,
+      type: 'textarea',
       required: true,
       pattern: /^.{16,150}$/,
       tip: '输入长度必须大于等于16字符小于等于150字符',
@@ -55,7 +55,7 @@ const ArticleBuilder = ({ rowData, isEdit, cancel }: ArticleBuilderProp) => {
     {
       label: '分类',
       name: 'categoryId',
-      type: 'select' as const,
+      type: 'select',
       required: true,
       options: categoryRoutes.map((item) => ({
         label: item.meta?.title || '未命名',
@@ -65,7 +65,7 @@ const ArticleBuilder = ({ rowData, isEdit, cancel }: ArticleBuilderProp) => {
     {
       label: '标签',
       name: 'tagIds',
-      type: 'select' as const,
+      type: 'select',
       required: true,
       mode: 'multiple',
       maxCount: 3,
@@ -74,9 +74,9 @@ const ArticleBuilder = ({ rowData, isEdit, cancel }: ArticleBuilderProp) => {
     {
       label: '封面',
       name: 'image',
-      type: 'uploadImg' as const,
+      type: 'uploadImg',
       accept: 'image/png,image/jpeg,image/jpg',
-      listType: 'picture-card' as const
+      listType: 'picture-card'
     }
   ]);
   const formRef = useRef<DynamicFormRef<FormValues>>(null);
@@ -93,7 +93,11 @@ const ArticleBuilder = ({ rowData, isEdit, cancel }: ArticleBuilderProp) => {
         onOk() {
           formRef.current?.setField('content', draftContent);
           setFormItems((prev) =>
-            prev.map((item) => (item.name === 'content' ? { ...item, value: draftContent } : item))
+            prev.map((item) =>
+              item.name === 'content' && item.type === 'markdown'
+                ? { ...item, value: draftContent }
+                : item
+            )
           );
           dispatch(setDraftContent({ content: '' }));
         },

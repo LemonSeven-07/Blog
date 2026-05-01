@@ -2,8 +2,8 @@
  * @Author: yolo
  * @Date: 2025-12-28 03:27:00
  * @LastEditors: yolo
- * @LastEditTime: 2026-01-29 04:46:27
- * @FilePath: /web/src/pages/client/Profile/ProfileContent/BaseInfo.tsx
+ * @LastEditTime: 2026-05-01 16:30:32
+ * @FilePath: /Blog/web/src/pages/client/Profile/ProfileContent/BaseInfo.tsx
  * @Description: 个人信息修改tab页
  */
 
@@ -11,18 +11,18 @@ import { useRef, useState } from 'react';
 import { Button, message } from 'antd';
 import { useAppSelector } from '@/store/hooks';
 import BaseForm from '@/components/DynamicForm/BaseForm';
-import type { DynamicFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
+import type { BaseFormItem, DynamicFormRef } from '@/components/DynamicForm/types';
 import type { userProfileFormValues, BaseInfoProps } from '../types';
 
 const BaseInfo = ({ handleSubmit }: BaseInfoProps) => {
   const userProfileFormRef = useRef<DynamicFormRef<userProfileFormValues>>(null); // 个人信息修改表单dom节点
   const { username } = useAppSelector((state) => state.userInfo); // 用户信息
 
-  const [userProfileFormItems, setUserProfileFormItems] = useState<DynamicFormItem[]>([
+  const [userProfileFormItems, setUserProfileFormItems] = useState<BaseFormItem[]>([
     {
       label: '用户名',
       name: 'username',
-      type: 'input' as const,
+      type: 'input',
       required: true,
       pattern: /^[\u4e00-\u9fa5a-zA-Z0-9-_]{4,16}$/,
       tip: '用户名由中文、字母、横杠和下划线组成，长度4-16位',
@@ -45,7 +45,7 @@ const BaseInfo = ({ handleSubmit }: BaseInfoProps) => {
       {
         label: '用户名',
         name: 'username',
-        type: 'input' as const,
+        type: 'input',
         required: true,
         value: values.username.trim()
       }

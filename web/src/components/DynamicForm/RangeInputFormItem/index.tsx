@@ -2,17 +2,20 @@
  * @Author: yolo
  * @Date: 2025-12-22 13:01:18
  * @LastEditors: yolo
- * @LastEditTime: 2025-12-23 01:48:57
- * @FilePath: /web/src/components/DynamicForm/RangeInputFormItem/index.tsx
+ * @LastEditTime: 2026-04-29 08:11:32
+ * @FilePath: /Blog/web/src/components/DynamicForm/RangeInputFormItem/index.tsx
  * @Description:
  */
 import { Space, Input } from 'antd';
-import type { DynamicFormItem } from '../types';
+import type { BaseFormItem } from '../types';
 
 interface RangeInputFormItemProps {
-  formItem: DynamicFormItem;
+  formItem: Extract<BaseFormItem, { type: 'rangeInput' }>;
   value?: string[];
-  handleBlur?: (e: React.FocusEvent<HTMLInputElement>, item: DynamicFormItem) => void;
+  handleBlur?: (
+    e: React.FocusEvent<HTMLInputElement>,
+    item: Extract<BaseFormItem, { type: 'rangeInput' }>
+  ) => void;
   onChange?: (value: string[]) => void;
 }
 const RangeInputFormItem = ({
